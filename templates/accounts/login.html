@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Iniciar Sesión - Carely{% endblock %}
+
+{% block body_class %}auth-page{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header text-center">
+                <a href="{% url 'landing:home' %}" class="auth-logo d-inline-flex align-items-center gap-2 mb-4 text-decoration-none">
+                    <div class="brand-icon"><i class="bi bi-droplet"></i></div>
+                    <span class="brand-text">Carely</span>
+                </a>
+                <h1 class="auth-title">Bienvenida de nuevo</h1>
+                <p class="auth-subtitle">Inicia sesión para acceder a tu panel.</p>
+            </div>
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
+                    <i class="bi bi-exclamation-circle"></i>
+                    <div>{{ form.non_field_errors.0 }}</div>
+                </div>
+                {% endif %}
+
+                <div class="mb-3">
+                    <label for="{{ form.email.id_for_label }}" class="form-label">{{ form.email.label }}</label>
+                    {{ form.email }}
+                    {% if form.email.errors %}
+                    <div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-4">
+                    <label for="{{ form.password.id_for_label }}" class="form-label">{{ form.password.label }}</label>
+                    {{ form.password }}
+                    {% if form.password.errors %}
+                    <div class="text-danger small mt-1">{{ form.password.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="btn btn-carely-primary w-100 btn-lg mb-3">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar Sesión
+                </button>
+
+                <p class="text-center mb-0 text-secondary">
+                    ¿No tienes cuenta?
+                    <a href="{% url 'accounts:register' %}" class="auth-link">Crear cuenta</a>
+                </p>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

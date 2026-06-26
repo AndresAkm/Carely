@@ -1,0 +1,236 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Catálogo - Carely{% endblock %}
+
+{% block content %}
+<nav class="navbar navbar-expand-lg navbar-light fixed-top carely-navbar">
+    <div class="container">
+        <a class="navbar-brand d-flex align-items-center gap-2" href="{% url 'landing:home' %}">
+            <div class="brand-icon">
+                <i class="bi bi-droplet"></i>
+            </div>
+            <span class="brand-text">Carely</span>
+        </a>
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCatalog">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarCatalog">
+            <ul class="navbar-nav ms-auto align-items-lg-center gap-2">
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'landing:home' %}">Inicio</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="{% url 'landing:catalog' %}">Catálogo</a>
+                </li>
+                {% if user.is_staff or user.is_superuser %}
+                <li class="nav-item">
+                    <a class="btn btn-carely-primary ms-lg-2" href="{% url 'dashboard:home' %}">
+                        <i class="bi bi-grid me-1"></i>Mi Panel
+                    </a>
+                </li>
+                {% endif %}
+                <li class="nav-item">
+                    <a class="btn btn-carely-outline ms-lg-2" href="{% url 'accounts:logout' %}">
+                        <i class="bi bi-box-arrow-right me-1"></i>Cerrar Sesión
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<section class="catalog-hero">
+    <div class="container">
+        <div class="text-center" data-aos="fade-up">
+            <span class="section-badge">Nuestros Productos</span>
+            <h1 class="catalog-title">Descubre nuestra colección</h1>
+            <p class="catalog-subtitle">Explora todos los productos que tenemos para ti, cuidadosamente seleccionados para tu bienestar.</p>
+        </div>
+    </div>
+</section>
+
+<section class="catalog-section section-padding pt-0">
+    <div class="container">
+        <ul class="nav nav-pills justify-content-center mb-5 gap-2 category-pills" id="categoryTabs">
+            <li class="nav-item">
+                <button class="nav-link active" data-category="all">
+                    Todos
+                </button>
+            </li>
+            {% for category in categories %}
+            <li class="nav-item">
+                <button class="nav-link" data-category="{{ category.slug }}">
+                    <i class="bi {{ category.icon }} me-1"></i>
+                    {{ category.name }}
+                </button>
+            </li>
+            {% endfor %}
+        </ul>
+
+        {% for category in categories %}
+        <div class="category-section" data-category="{{ category.slug }}">
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <div class="category-icon-sm">
+                    <i class="bi {{ category.icon }}"></i>
+                </div>
+                <div>
+                    <h2 class="category-section-title">{{ category.name }}</h2>
+                    {% if category.description %}
+                    <p class="category-section-desc mb-0">{{ category.description }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="row g-4">
+                {% for product in products %}
+                    {% if product.category.slug == category.slug %}
+                    <div class="col-md-6 col-lg-4 col-xl-3">
+                        <div class="product-card card-carely h-100">
+                            <div class="product-image-wrapper">
+                                {% if product.image %}
+                                <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image">
+                                {% else %}
+                                <div class="product-image-placeholder">
+                                    <i class="bi bi-box"></i>
+                                </div>
+                                {% endif %}
+                                {% if product.featured %}
+                                <span class="product-badge">Destacado</span>
+                                {% endif %}
+                            </div>
+                            <div class="product-info">
+                                <h3 class="product-name">{{ product.name }}</h3>
+                                {% if product.description %}
+                                <p class="product-description">{{ product.description|truncatechars:80 }}</p>
+                                {% endif %}
+                                <div class="product-footer">
+                                    <span class="product-price">${{ product.price|floatformat:2 }}</span>
+                                    {% if product.stock > 0 %}
+                                    <span class="product-stock in-stock">
+                                        <i class="bi bi-check-circle-fill"></i>
+                                        En stock
+                                    </span>
+                                    {% else %}
+                                    <span class="product-stock out-of-stock">
+                                        <i class="bi bi-x-circle-fill"></i>
+                                        Agotado
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            {% if not products|dictsort:"category.slug" %}
+            {% else %}
+                {% with category_products=products %}
+                {% if category_products|length == 0 %}
+                <div class="text-center py-5">
+                    <i class="bi bi-box-seam" style="font-size: 3rem; color: var(--color-secondary);"></i>
+                    <p class="mt-3 text-secondary">Próximamente disponibles</p>
+                </div>
+                {% endif %}
+                {% endwith %}
+            {% endif %}
+        </div>
+        {% empty %}
+        <div class="text-center py-5">
+            <i class="bi bi-box-seam" style="font-size: 4rem; color: var(--color-secondary);"></i>
+            <h3 class="mt-4">Próximamente</h3>
+            <p class="text-secondary">Estamos trabajando para traerte la mejor selección de productos de cuidado personal.</p>
+        </div>
+        {% endfor %}
+
+        <div class="text-center mt-5 pt-4">
+            <div class="cta-card-mini">
+                <h4>¿No encuentras lo que buscas?</h4>
+                <p class="text-secondary">Contáctanos y te ayudaremos a encontrar el producto perfecto para ti.</p>
+                <a href="{% url 'landing:home' %}" class="btn btn-carely-primary">
+                    <i class="bi bi-arrow-left me-2"></i>Volver al Inicio
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<footer class="carely-footer">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="footer-brand d-flex align-items-center gap-2 mb-3">
+                    <div class="brand-icon">
+                        <i class="bi bi-droplet"></i>
+                    </div>
+                    <span class="brand-text">Carely</span>
+                </div>
+                <p class="footer-description">Tu tienda de cuidado personal de confianza. Productos originales, asesoría personalizada y envíos rápidos.</p>
+                <div class="social-links d-flex gap-3">
+                    <a href="#" class="social-link" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+                    <a href="#" class="social-link" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+                    <a href="#" class="social-link" aria-label="TikTok"><i class="bi bi-music-note-beamed"></i></a>
+                    <a href="#" class="social-link" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>
+                </div>
+            </div>
+            <div class="col-lg-2 offset-lg-1 col-md-4">
+                <h5 class="footer-title">Categorías</h5>
+                <ul class="footer-links">
+                    {% for category in categories %}
+                    <li><a href="#">{{ category.name }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="col-lg-2 col-md-4">
+                <h5 class="footer-title">Ayuda</h5>
+                <ul class="footer-links">
+                    <li><a href="#">Contacto</a></li>
+                    <li><a href="#">Envíos</a></li>
+                    <li><a href="#">Devoluciones</a></li>
+                    <li><a href="#">FAQ</a></li>
+                    <li><a href="#">Términos</a></li>
+                </ul>
+            </div>
+            <div class="col-lg-3 col-md-4">
+                <h5 class="footer-title">Contacto</h5>
+                <ul class="footer-links contact-links">
+                    <li><i class="bi bi-envelope me-2"></i>hola@carely.com</li>
+                    <li><i class="bi bi-telephone me-2"></i>+52 55 1234 5678</li>
+                    <li><i class="bi bi-geo-alt me-2"></i>Ciudad de México, MX</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p class="mb-0">&copy; {% now "Y" %} Carely. Todos los derechos reservados.</p>
+        </div>
+    </div>
+</footer>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const pills = document.querySelectorAll('.category-pills .nav-link');
+    const sections = document.querySelectorAll('.category-section');
+
+    pills.forEach(pill => {
+        pill.addEventListener('click', function() {
+            pills.forEach(p => p.classList.remove('active'));
+            this.classList.add('active');
+
+            const category = this.dataset.category;
+
+            sections.forEach(section => {
+                if (category === 'all' || section.dataset.category === category) {
+                    section.style.display = 'block';
+                } else {
+                    section.style.display = 'none';
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}
