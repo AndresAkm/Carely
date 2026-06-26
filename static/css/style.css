@@ -1001,6 +1001,11 @@ body {
 
 .catalog-section {
     background: var(--color-bg-soft);
+    padding: 120px 0 80px;
+}
+
+.catalog-section .category-pills {
+    padding-bottom: 40px;
 }
 
 .badge.bg-soft-primary {
@@ -1024,6 +1029,202 @@ body {
 .cta-card-mini h4 {
     font-weight: 600;
     margin-bottom: 8px;
+}
+
+.featured-section {
+    background: var(--color-primary);
+}
+
+.product-card {
+    background: var(--color-primary);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    transition: var(--transition);
+    border: 1px solid var(--color-border);
+}
+
+.product-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-4px);
+    border-color: transparent;
+}
+
+.product-image-wrapper {
+    position: relative;
+    background: var(--color-bg-soft);
+    height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.product-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 1rem;
+    transition: var(--transition);
+}
+
+.product-card:hover .product-image {
+    transform: scale(1.05);
+}
+
+.product-image-placeholder {
+    width: 80px;
+    height: 80px;
+    background: var(--color-border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: var(--color-text-secondary);
+}
+
+.product-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: var(--color-button);
+    color: #fff;
+    padding: 4px 14px;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+.product-info {
+    padding: 1.25rem;
+}
+
+.product-category {
+    font-size: 0.8rem;
+    color: var(--color-button);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.product-name {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 6px 0 8px;
+    line-height: 1.4;
+}
+
+.product-description {
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+    margin-bottom: 12px;
+}
+
+.product-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.product-price {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--color-text);
+}
+
+.product-stock {
+    font-size: 0.78rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.product-stock.in-stock {
+    color: var(--color-success);
+}
+
+.product-stock.out-of-stock {
+    color: var(--color-text-secondary);
+}
+
+.category-pills .nav-link {
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 50px;
+    padding: 8px 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: var(--transition);
+    cursor: pointer;
+    background: var(--color-primary);
+}
+
+.category-pills .nav-link:hover {
+    border-color: var(--color-button);
+    color: var(--color-button);
+}
+
+.category-pills .nav-link.active {
+    background: var(--color-button);
+    border-color: var(--color-button);
+    color: #fff;
+}
+
+.category-icon-sm {
+    width: 48px;
+    height: 48px;
+    background: var(--color-bg-soft);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: var(--color-button);
+    flex-shrink: 0;
+}
+
+.category-section {
+    margin-bottom: 48px;
+}
+
+.category-section:last-child {
+    margin-bottom: 0;
+}
+
+.category-section-title {
+    font-size: 1.4rem;
+    font-weight: 600;
+}
+
+.category-section-desc {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+}
+
+.pagination .page-link {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    color: var(--color-text);
+    font-weight: 500;
+    padding: 8px 16px;
+    transition: var(--transition);
+}
+
+.pagination .page-link:hover {
+    border-color: var(--color-button);
+    color: var(--color-button);
+    background: transparent;
+}
+
+.pagination .page-item.active .page-link {
+    background: var(--color-button);
+    border-color: var(--color-button);
+    color: #fff;
 }
 
 ::-webkit-scrollbar {

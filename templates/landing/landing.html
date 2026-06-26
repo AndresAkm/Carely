@@ -65,12 +65,12 @@
                 <h1 class="hero-title">Tu bienestar es nuestra <span class="text-highlight">prioridad</span></h1>
                 <p class="hero-description">Descubre una selección cuidadosamente curada de productos de cuidado personal, diseñados para consentirte y realzar tu belleza natural.</p>
                 <div class="hero-cta d-flex flex-wrap gap-3">
-                    <a href="{% url 'accounts:register' %}" class="btn btn-carely-primary btn-lg">
-                        Comenzar Ahora
-                        <i class="bi bi-arrow-right ms-2"></i>
+                    <a href="{% url 'landing:catalog' %}" class="btn btn-carely-primary btn-lg">
+                        <i class="bi bi-shop me-2"></i>Ver Catálogo
                     </a>
-                    <a href="#beneficios" class="btn btn-carely-outline btn-lg">
-                        Conocer Más
+                    <a href="{% url 'accounts:register' %}" class="btn btn-carely-outline btn-lg">
+                        Crear Cuenta
+                        <i class="bi bi-arrow-right ms-2"></i>
                     </a>
                 </div>
             </div>
@@ -80,6 +80,61 @@
                     <img src="{% static 'images/hero-placeholder.svg' %}" alt="Cuidado personal" class="hero-img">
                 </div>
             </div>
+        </div>
+    </div>
+</section>
+
+<section id="destacados" class="section-padding featured-section">
+    <div class="container">
+        <div class="section-header text-center" data-aos="fade-up">
+            <span class="section-badge">Lo Más Vendido</span>
+            <h2 class="section-title">Productos Destacados</h2>
+            <p class="section-subtitle">Los favoritos de nuestra comunidad que no pueden faltar en tu rutina.</p>
+        </div>
+        <div class="row g-4 mt-4">
+            {% for product in featured_products %}
+            <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter0|add:'100' }}">
+                <div class="product-card card-carely h-100">
+                    <div class="product-image-wrapper">
+                        {% if product.image %}
+                        <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image">
+                        {% else %}
+                        <div class="product-image-placeholder">
+                            <i class="bi bi-box"></i>
+                        </div>
+                        {% endif %}
+                        <span class="product-badge">Destacado</span>
+                    </div>
+                    <div class="product-info">
+                        <span class="product-category">{{ product.category.name }}</span>
+                        <h3 class="product-name">{{ product.name }}</h3>
+                        {% if product.description %}
+                        <p class="product-description">{{ product.description|truncatechars:80 }}</p>
+                        {% endif %}
+                        <div class="product-footer">
+                            <span class="product-price">${{ product.price|floatformat:2 }}</span>
+                            {% if product.stock > 0 %}
+                            <span class="product-stock in-stock">
+                                <i class="bi bi-check-circle-fill"></i>
+                                En stock
+                            </span>
+                            {% else %}
+                            <span class="product-stock out-of-stock">
+                                <i class="bi bi-x-circle-fill"></i>
+                                Agotado
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="text-center mt-5" data-aos="fade-up">
+            <a href="{% url 'landing:catalog' %}" class="btn btn-carely-primary btn-lg">
+                Ver Catálogo Completo
+                <i class="bi bi-arrow-right ms-2"></i>
+            </a>
         </div>
     </div>
 </section>

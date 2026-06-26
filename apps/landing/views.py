@@ -47,6 +47,9 @@ class LandingView(TemplateView):
             },
         ]
         context['categories'] = Category.objects.filter(is_active=True)
+        context['featured_products'] = Product.objects.filter(
+            is_active=True, featured=True
+        ).select_related('category')[:6]
         return context
 
 
@@ -54,11 +57,17 @@ class CatalogView(ListView):
     model = Product
     template_name = 'landing/catalog.html'
     context_object_name = 'products'
+    paginate_by = 12
 
     def get_queryset(self):
-        return Product.objects.filter(is_active=True).select_related('category')
+        qs = Product.objects.filter(is_active=True).select_related('category')
+        category_slug = self.request.GET.get('category')
+        if category_slug:
+            qs = qs.filter(category__slug=category_slug)
+        return qs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['categories'] = Category.objects.filter(is_active=True)
+        context['current_category'] = self.request.GET.get('category', '')
         return context
