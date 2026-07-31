@@ -1,283 +1,305 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Carely - Cuidado Personal{% endblock %}
+{% block title %}Carely - Cuidado Personal Consciente{% endblock %}
 
 {% block content %}
-<nav class="navbar navbar-expand-lg navbar-light fixed-top carely-navbar">
-    <div class="container">
-        <a class="navbar-brand d-flex align-items-center gap-2" href="{% url 'landing:home' %}">
-            <div class="brand-icon">
-                <i class="bi bi-droplet"></i>
-            </div>
+<nav class="c-nav" id="mainNav">
+    <div class="c-nav__inner container">
+        <a class="c-nav__brand" href="{% url 'landing:home' %}">
+            <span class="c-nav__brand-icon"><i class="bi bi-droplet"></i></span>
             <span class="brand-text">Carely</span>
         </a>
-        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarMain">
-            <ul class="navbar-nav ms-auto align-items-lg-center gap-2">
-                <li class="nav-item">
-                    <a class="nav-link" href="#beneficios">Beneficios</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#categorias">Categorías</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#por-que-carely">¿Por qué Carely?</a>
-                </li>
-                {% if user.is_authenticated %}
-                    {% if user.is_staff or user.is_superuser %}
-                <li class="nav-item">
-                    <a class="btn btn-carely-primary ms-lg-2" href="{% url 'dashboard:home' %}">
-                        <i class="bi bi-grid me-1"></i>Mi Panel
-                    </a>
-                </li>
-                    {% else %}
-                <li class="nav-item">
-                    <a class="btn btn-carely-primary ms-lg-2" href="{% url 'landing:catalog' %}">
-                        <i class="bi bi-shop me-1"></i>Catálogo
-                    </a>
-                </li>
-                    {% endif %}
+
+        <input type="checkbox" id="navToggle" class="c-nav__toggle-input" hidden>
+        <label for="navToggle" class="c-nav__hamburger" aria-label="Menu">
+            <span></span><span></span><span></span>
+        </label>
+
+        <ul class="c-nav__links">
+            <li><a href="#beneficios">Beneficios</a></li>
+            <li><a href="#categorias">Categorias</a></li>
+            <li><a href="#por-que-carely">Por que Carely</a></li>
+            {% if user.is_authenticated %}
+                {% if user.is_staff or user.is_superuser %}
+            <li><a href="{% url 'dashboard:home' %}" class="c-nav__btn c-nav__btn--fill"><i class="bi bi-grid"></i> Mi Panel</a></li>
                 {% else %}
-                <li class="nav-item">
-                    <a class="btn btn-carely-outline ms-lg-2" href="{% url 'accounts:login' %}">
-                        <i class="bi bi-box-arrow-in-right me-1"></i>Iniciar Sesión
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="btn btn-carely-primary ms-lg-2" href="{% url 'accounts:register' %}">
-                        <i class="bi bi-person-plus me-1"></i>Crear Cuenta
-                    </a>
-                </li>
+            <li><a href="{% url 'landing:catalog' %}" class="c-nav__btn c-nav__btn--fill"><i class="bi bi-shop"></i> Catalogo</a></li>
                 {% endif %}
-            </ul>
-        </div>
+            {% else %}
+            <li><a href="{% url 'accounts:login' %}" class="c-nav__btn c-nav__btn--outline"><i class="bi bi-box-arrow-in-right"></i> Iniciar Sesion</a></li>
+            <li><a href="{% url 'accounts:register' %}" class="c-nav__btn c-nav__btn--fill"><i class="bi bi-person-plus"></i> Crear Cuenta</a></li>
+            {% endif %}
+        </ul>
     </div>
 </nav>
 
-<section class="hero-section">
-    <div class="container">
-        <div class="row align-items-center min-vh-85">
-            <div class="col-lg-6 hero-content" data-aos="fade-up">
-                <span class="badge-hero">Bienestar y Belleza</span>
-                <h1 class="hero-title">Tu bienestar es nuestra <span class="text-highlight">prioridad</span></h1>
-                <p class="hero-description">Descubre una selección cuidadosamente curada de productos de cuidado personal, diseñados para consentirte y realzar tu belleza natural.</p>
-                <div class="hero-cta d-flex flex-wrap gap-3">
-                    <a href="{% url 'landing:catalog' %}" class="btn btn-carely-primary btn-lg">
-                        <i class="bi bi-shop me-2"></i>Ver Catálogo
-                    </a>
-                    <a href="{% url 'accounts:register' %}" class="btn btn-carely-outline btn-lg">
-                        Crear Cuenta
-                        <i class="bi bi-arrow-right ms-2"></i>
-                    </a>
-                </div>
-            </div>
-            <div class="col-lg-6 hero-visual" data-aos="fade-left" data-aos-delay="200">
-                <div class="hero-image-wrapper">
-                    <div class="hero-bg-shape"></div>
-                    <img src="{% static 'images/hero-placeholder.svg' %}" alt="Cuidado personal" class="hero-img">
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+<main class="page-wrapper">
 
-<section id="destacados" class="section-padding featured-section">
-    <div class="container">
-        <div class="section-header text-center" data-aos="fade-up">
-            <span class="section-badge">Lo Más Vendido</span>
-            <h2 class="section-title">Productos Destacados</h2>
-            <p class="section-subtitle">Los favoritos de nuestra comunidad que no pueden faltar en tu rutina.</p>
+    <section class="hero" id="hero">
+        <div class="hero__mesh">
+            <div class="hero__blob hero__blob--sage"></div>
+            <div class="hero__blob hero__blob--rose"></div>
+            <div class="hero__blob hero__blob--amber"></div>
+            <div class="hero__blob hero__blob--cream"></div>
         </div>
-        <div class="row g-4 mt-4">
-            {% for product in featured_products %}
-            <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter0|add:'100' }}">
-                <div class="product-card card-carely h-100">
-                    <div class="product-image-wrapper">
+
+        <div class="container hero__container">
+            <div class="hero__grid">
+                <div class="hero__left">
+                    <div class="hero__pill anim-reveal" data-delay="0">
+                        <i class="bi bi-stars"></i>
+                        <span>Bienestar consciente y natural</span>
+                    </div>
+
+                    <h1 class="hero__title anim-reveal" data-delay="1">
+                        Cultiva tu<br>
+                        <em class="hero__title-accent" id="heroAccent">mejor version</em>
+                    </h1>
+
+                    <p class="hero__desc anim-reveal" data-delay="2">
+                        Productos cuidadosamente seleccionados para nutrir tu piel,
+                        tu mente y tu ritual diario de bienestar.
+                    </p>
+
+                    <div class="hero__tabs anim-reveal" data-delay="3">
+                        <div class="hero__tabs-track" id="tabsTrack">
+                            <div class="hero__tabs-indicator" id="tabsIndicator"></div>
+                            <button class="hero__tab active" data-color="#5B8DEF" data-label="mejor version" data-theme="azul">
+                                <i class="bi bi-droplet"></i> Hidratacion
+                            </button>
+                            <button class="hero__tab" data-color="#E8609B" data-label="plena paz" data-theme="rosa">
+                                <i class="bi bi-heart"></i> Calma
+                            </button>
+                            <button class="hero__tab" data-color="#F0B429" data-label="total brillo" data-theme="amber">
+                                <i class="bi bi-sun"></i> Brillo
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="hero-cta d-flex flex-wrap gap-3 mt-4 anim-reveal" data-delay="4">
+                        <a href="{% url 'landing:catalog' %}" class="c-btn c-btn--primary c-btn--lg">
+                            <i class="bi bi-shop me-2"></i>Ver Catalogo
+                        </a>
+                        <a href="{% url 'accounts:register' %}" class="c-btn c-btn--outline c-btn--lg">
+                            Crear Cuenta
+                            <i class="bi bi-arrow-right ms-2"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="hero__right anim-reveal" data-delay="2" id="heroShowcase">
+                    <div class="hero__showcase">
+                        <img src="{% static 'images/hero-placeholder.png' %}" alt="Cuidado personal Carely" class="hero__showcase-img">
+
+                        <div class="hero__float hero__float--rating">
+                            <span class="hero__float-stars">
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                            </span>
+                            <span>4.9 <small>(2k+ rituales)</small></span>
+                        </div>
+
+                        <div class="hero__float hero__float--clean">
+                            <i class="bi bi-patch-check-fill"></i>
+                            100% Ingredientes Limpios
+                        </div>
+                    </div>
+
+                    <div class="hero__orbit">
+                        <div class="hero__orb hero__orb--1">
+                            <img src="{% static 'images/serum-vitamina-c-la-roche-posay.avif' %}" alt="Serum Vitamina C">
+                            <span class="hero__orb-label">Serum Vitamina C</span>
+                        </div>
+                        <div class="hero__orb hero__orb--2">
+                            <img src="{% static 'images/crema-hidratante-cera-ve-spf-30.webp' %}" alt="Crema Hidratante">
+                            <span class="hero__orb-label">Crema Hidratante</span>
+                        </div>
+                        <div class="hero__orb hero__orb--3">
+                            <img src="{% static 'images/aceite-de-argan-100-puro-colmaroc.jpg' %}" alt="Aceite de Argan">
+                            <span class="hero__orb-label">Aceite de Argan</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="destacados" class="c-section c-section--white">
+        <div class="container">
+            <div class="c-section__header anim-scroll">
+                <h2 class="c-section__title">Productos Destacados</h2>
+                <p class="c-section__subtitle">Los favoritos de nuestra comunidad que no pueden faltar en tu rutina.</p>
+            </div>
+            <div class="products-grid">
+                {% for product in featured_products %}
+                <div class="product-card anim-scroll">
+                    <div class="product-card__img-wrap">
                         {% if product.image %}
-                        <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image">
+                        <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-card__img">
                         {% else %}
-                        <div class="product-image-placeholder">
+                        <div class="product-image-placeholder" style="margin:auto;position:relative;top:50%;transform:translateY(-50%);">
                             <i class="bi bi-box"></i>
                         </div>
                         {% endif %}
-                        <span class="product-badge">Destacado</span>
+                        <span class="product-card__badge">Destacado</span>
                     </div>
-                    <div class="product-info">
-                        <span class="product-category">{{ product.category.name }}</span>
-                        <h3 class="product-name">{{ product.name }}</h3>
+                    <div class="product-card__body">
+                        <span class="product-card__cat">{{ product.category.name }}</span>
+                        <h3 class="product-card__name">{{ product.name }}</h3>
                         {% if product.description %}
-                        <p class="product-description">{{ product.description|truncatechars:80 }}</p>
+                        <p class="product-card__desc">{{ product.description|truncatechars:80 }}</p>
                         {% endif %}
-                        <div class="product-footer">
-                            <span class="product-price">${{ product.price|floatformat:2 }}</span>
+                        <div class="product-card__footer">
+                            <span class="product-card__price">${{ product.price|floatformat:2 }}</span>
                             {% if product.stock > 0 %}
-                            <span class="product-stock in-stock">
-                                <i class="bi bi-check-circle-fill"></i>
-                                En stock
-                            </span>
+                            <span class="product-card__stock"><i class="bi bi-check-circle-fill"></i> En stock</span>
                             {% else %}
-                            <span class="product-stock out-of-stock">
-                                <i class="bi bi-x-circle-fill"></i>
-                                Agotado
-                            </span>
+                            <span class="product-card__stock" style="color:var(--clr-text-2);"><i class="bi bi-x-circle-fill"></i> Agotado</span>
                             {% endif %}
                         </div>
                     </div>
                 </div>
+                {% endfor %}
             </div>
-            {% endfor %}
+            <div class="c-section__cta anim-scroll">
+                <a href="{% url 'landing:catalog' %}" class="c-btn c-btn--primary c-btn--lg">
+                    Ver Catalogo Completo <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
         </div>
-        <div class="text-center mt-5" data-aos="fade-up">
-            <a href="{% url 'landing:catalog' %}" class="btn btn-carely-primary btn-lg">
-                Ver Catálogo Completo
-                <i class="bi bi-arrow-right ms-2"></i>
-            </a>
-        </div>
-    </div>
-</section>
+    </section>
 
-<section id="beneficios" class="section-padding benefits-section">
-    <div class="container">
-        <div class="section-header text-center" data-aos="fade-up">
-            <span class="section-badge">¿Por qué nos eligen?</span>
-            <h2 class="section-title">Beneficios de elegir Carely</h2>
-            <p class="section-subtitle">Nos preocupamos por ofrecerte la mejor experiencia de cuidado personal.</p>
+    <section id="beneficios" class="c-section c-section--soft">
+        <div class="container">
+            <div class="c-section__header anim-scroll">
+                <h2 class="c-section__title">Beneficios de elegir Carely</h2>
+                <p class="c-section__subtitle">Nos preocupamos por ofrecerte la mejor experiencia de cuidado personal.</p>
+            </div>
+            <div class="benefits-grid">
+                {% for benefit in benefits %}
+                <div class="benefit-card anim-scroll">
+                    <div class="benefit-card__icon"><i class="bi {{ benefit.icon }}"></i></div>
+                    <h3 class="benefit-card__title">{{ benefit.title }}</h3>
+                    <p class="benefit-card__desc">{{ benefit.description }}</p>
+                </div>
+                {% endfor %}
+            </div>
         </div>
-        <div class="row g-4 mt-4">
-            {% for benefit in benefits %}
-            <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="{{ forloop.counter0|add:'100' }}">
-                <div class="benefit-card card-carely h-100">
-                    <div class="benefit-icon">
-                        <i class="bi {{ benefit.icon }}"></i>
+    </section>
+
+    <section id="categorias" class="c-section c-section--white">
+        <div class="container">
+            <div class="c-section__header anim-scroll">
+                <h2 class="c-section__title">Explora por categoria</h2>
+                <p class="c-section__subtitle">Encuentra todo lo que necesitas para tu rutina de cuidado personal.</p>
+            </div>
+            <div class="categories-grid">
+                {% for category in categories %}
+                <div class="category-card anim-scroll">
+                    <div class="category-card__icon"><i class="bi {{ category.icon }}"></i></div>
+                    <h3 class="category-card__name">{{ category.name }}</h3>
+                    <p class="category-card__desc">{{ category.description }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <section id="por-que-carely" class="c-section c-section--soft">
+        <div class="container">
+            <div class="why-grid">
+                <div class="why-visual anim-scroll">
+                    <div class="why-visual__shape why-visual__shape--1"></div>
+                    <div class="why-visual__shape why-visual__shape--2"></div>
+                    <div class="why-visual__shape why-visual__shape--3"></div>
+                    <div class="why-visual__dots">
+                        <span></span><span></span><span></span>
+                        <span></span><span></span><span></span>
                     </div>
-                    <h3 class="benefit-title">{{ benefit.title }}</h3>
-                    <p class="benefit-description">{{ benefit.description }}</p>
+                    <div class="why-visual__center"><i class="bi bi-heart"></i></div>
                 </div>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-</section>
-
-<section id="categorias" class="section-padding categories-section">
-    <div class="container">
-        <div class="section-header text-center" data-aos="fade-up">
-            <span class="section-badge">Nuestras Categorías</span>
-            <h2 class="section-title">Explora por categoría</h2>
-            <p class="section-subtitle">Encuentra todo lo que necesitas para tu rutina de cuidado personal.</p>
-        </div>
-        <div class="row g-4 mt-4">
-            {% for category in categories %}
-            <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter0|add:'100' }}">
-                <div class="category-card card-carely h-100">
-                    <div class="category-icon">
-                        <i class="bi {{ category.icon }}"></i>
-                    </div>
-                    <h3 class="category-name">{{ category.name }}</h3>
-                    <p class="category-description">{{ category.description }}</p>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-</section>
-
-<section id="por-que-carely" class="section-padding why-section">
-    <div class="container">
-        <div class="row align-items-center">
-            <div class="col-lg-6 mb-5 mb-lg-0" data-aos="fade-right">
-                <div class="why-image-wrapper">
-                    <div class="why-bg-shape"></div>
-                    <img src="{% static 'images/about-placeholder.svg' %}" alt="Sobre Carely" class="why-img">
-                </div>
-            </div>
-            <div class="col-lg-5 offset-lg-1" data-aos="fade-left">
-                <span class="section-badge">Sobre Carely</span>
-                <h2 class="section-title text-start">¿Por qué elegir Carely?</h2>
-                <p class="section-subtitle text-start mb-5">En Carely creemos que el cuidado personal es una forma de amor propio. Por eso seleccionamos los mejores productos para ti.</p>
-                <div class="why-list">
-                    {% for item in why_us %}
-                    <div class="why-item d-flex gap-3 mb-4">
-                        <div class="why-item-icon flex-shrink-0">
-                            <i class="bi {{ item.icon }}"></i>
+                <div class="why-content anim-scroll">
+                    <h2 class="c-section__title c-section__title--left">Por que elegir Carely?</h2>
+                    <p class="c-section__subtitle c-section__subtitle--left">En Carely creemos que el cuidado personal es una forma de amor propio. Por eso seleccionamos los mejores productos para ti.</p>
+                    <div class="why-list">
+                        {% for item in why_us %}
+                        <div class="why-item anim-scroll">
+                            <div class="why-item__icon"><i class="bi {{ item.icon }}"></i></div>
+                            <div class="why-item__text">
+                                <h4>{{ item.title }}</h4>
+                                <p>{{ item.description }}</p>
+                            </div>
                         </div>
-                        <div>
-                            <h4 class="why-item-title">{{ item.title }}</h4>
-                            <p class="why-item-description mb-0">{{ item.description }}</p>
-                        </div>
+                        {% endfor %}
                     </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="c-section c-section--white">
+        <div class="container">
+            <div class="cta-card anim-scroll">
+                <h2 class="cta-card__title">Comienza tu experiencia Carely</h2>
+                <p class="cta-card__desc">Unete a nuestra comunidad y descubre una nueva forma de consentirte.</p>
+                <a href="{% url 'accounts:register' %}" class="c-btn c-btn--primary c-btn--lg">
+                    Crear mi Cuenta Gratis <i class="bi bi-heart"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<footer class="c-footer">
+    <div class="container">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <div class="c-nav__brand" style="margin-bottom:16px">
+                    <span class="c-nav__brand-icon"><i class="bi bi-droplet"></i></span>
+                    <span class="brand-text" style="color:#fff">Carely</span>
+                </div>
+                <p>Tu tienda de cuidado personal de confianza. Productos originales, asesoria personalizada y envios rapidos.</p>
+                <div class="footer-social">
+                    <a href="#" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+                    <a href="#" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+                    <a href="#" aria-label="TikTok"><i class="bi bi-music-note-beamed"></i></a>
+                    <a href="#" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>
+                </div>
+            </div>
+            <div class="footer-col">
+                <h5>Categorias</h5>
+                <ul>
+                    {% for category in categories %}
+                    <li><a href="#">{{ category.name }}</a></li>
                     {% endfor %}
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<section class="cta-section section-padding">
-    <div class="container">
-        <div class="cta-card text-center" data-aos="zoom-in">
-            <h2 class="cta-title">Comienza tu experiencia Carely</h2>
-            <p class="cta-description">Únete a nuestra comunidad y descubre una nueva forma de consentirte.</p>
-            <a href="{% url 'accounts:register' %}" class="btn btn-carely-primary btn-lg">
-                Crear mi Cuenta Gratis
-                <i class="bi bi-heart ms-2"></i>
-            </a>
-        </div>
-    </div>
-</section>
-
-<footer class="carely-footer">
-    <div class="container">
-        <div class="row g-4">
-            <div class="col-lg-4">
-                <div class="footer-brand d-flex align-items-center gap-2 mb-3">
-                    <div class="brand-icon">
-                        <i class="bi bi-droplet"></i>
-                    </div>
-                    <span class="brand-text">Carely</span>
-                </div>
-                <p class="footer-description">Tu tienda de cuidado personal de confianza. Productos originales, asesoría personalizada y envíos rápidos.</p>
-                <div class="social-links d-flex gap-3">
-                    <a href="#" class="social-link" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
-                    <a href="#" class="social-link" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
-                    <a href="#" class="social-link" aria-label="TikTok"><i class="bi bi-music-note-beamed"></i></a>
-                    <a href="#" class="social-link" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>
-                </div>
-            </div>
-            <div class="col-lg-2 offset-lg-1 col-md-4">
-                <h5 class="footer-title">Categorías</h5>
-                <ul class="footer-links">
-                    <li><a href="#">Cuidado Facial</a></li>
-                    <li><a href="#">Cuidado Corporal</a></li>
-                    <li><a href="#">Cuidado Capilar</a></li>
-                    <li><a href="#">Maquillaje</a></li>
-                    <li><a href="#">Fragancias</a></li>
                 </ul>
             </div>
-            <div class="col-lg-2 col-md-4">
-                <h5 class="footer-title">Ayuda</h5>
-                <ul class="footer-links">
+            <div class="footer-col">
+                <h5>Ayuda</h5>
+                <ul>
                     <li><a href="#">Contacto</a></li>
-                    <li><a href="#">Envíos</a></li>
+                    <li><a href="#">Envios</a></li>
                     <li><a href="#">Devoluciones</a></li>
                     <li><a href="#">FAQ</a></li>
-                    <li><a href="#">Términos</a></li>
+                    <li><a href="#">Terminos</a></li>
                 </ul>
             </div>
-            <div class="col-lg-3 col-md-4">
-                <h5 class="footer-title">Contacto</h5>
-                <ul class="footer-links contact-links">
-                    <li><i class="bi bi-envelope me-2"></i>hola@carely.com</li>
-                    <li><i class="bi bi-telephone me-2"></i>+52 55 1234 5678</li>
-                    <li><i class="bi bi-geo-alt me-2"></i>Ciudad de México, MX</li>
+            <div class="footer-col">
+                <h5>Contacto</h5>
+                <ul class="footer-contact">
+                    <li><i class="bi bi-envelope"></i> hola@carely.com</li>
+                    <li><i class="bi bi-telephone"></i> +52 55 1234 5678</li>
+                    <li><i class="bi bi-geo-alt"></i> Ciudad de Mexico, MX</li>
                 </ul>
             </div>
         </div>
         <div class="footer-bottom">
-            <p class="mb-0">&copy; {% now "Y" %} Carely. Todos los derechos reservados.</p>
+            <p>&copy; {% now "Y" %} Carely. Todos los derechos reservados.</p>
         </div>
     </div>
 </footer>
