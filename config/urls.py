@@ -13,14 +13,15 @@ urlpatterns = [
     path('catalogo/', include('apps.catalog.urls')),
 
     # API
-
-    # Endpoint base
     
+    # Auth endpoints (login/logout de DRF)
+    path('api/v1/auth/', include('rest_framework.urls')),
+
     # Catalog endpoints
     path('api/v1/catalogo/', include('apps.catalog.urls_api')),
 
     # Users endpoints
-    path('api/v1/usuarios/', include('apps.users.urls_api')),
+    path('api/v1/usuarios/', include('apps.users.urls_api'))
 ]
 
 
