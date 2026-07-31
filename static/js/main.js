@@ -1,6 +1,4 @@
-/* ═══════════════════════════════════════════════════════
-   THEME SYSTEM — persists accent color in localStorage
-   ═══════════════════════════════════════════════════════ */
+// THEME SYSTEM — persists accent color in localStorage
 const THEME_STORAGE_KEY = 'carely_theme';
 
 const themes = {
@@ -14,6 +12,8 @@ const themes = {
     '--clr-secondary': '#5B8DEF',
     '--clr-secondary-soft': '#DCEEFF',
     '--color-button-hover': '#4A7BE0',
+    '--clr-bg': '#FBFDFF',
+    '--clr-bg-2': '#F0F5FC',
   },
   rosa: {
     label: 'Rosa',
@@ -25,6 +25,8 @@ const themes = {
     '--clr-secondary': '#E8609B',
     '--clr-secondary-soft': '#F8D7E6',
     '--color-button-hover': '#D4538A',
+    '--clr-bg': '#FFFBFD',
+    '--clr-bg-2': '#FAF0F5',
   },
   amber: {
     label: 'Ámbar',
@@ -36,8 +38,13 @@ const themes = {
     '--clr-secondary': '#5B8DEF',
     '--clr-secondary-soft': '#DCEEFF',
     '--color-button-hover': '#D4A020',
+    '--clr-bg': '#FFFDF6',
+    '--clr-bg-2': '#FAF5E9',
   },
 };
+
+const themeKeyByColor = {};
+Object.keys(themes).forEach(k => { themeKeyByColor[themes[k]['--accent']] = k; });
 
 function applyTheme(name) {
   const theme = themes[name];
@@ -50,12 +57,15 @@ function applyTheme(name) {
   root.style.setProperty('--clr-secondary', theme['--clr-secondary']);
   root.style.setProperty('--clr-secondary-soft', theme['--clr-secondary-soft']);
   root.style.setProperty('--color-button-hover', theme['--color-button-hover']);
+  root.style.setProperty('--clr-bg', theme['--clr-bg']);
+  root.style.setProperty('--clr-bg-2', theme['--clr-bg-2']);
   try {
     localStorage.setItem(THEME_STORAGE_KEY, name);
   } catch (_) {}
   document.querySelectorAll('.theme-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.theme === name);
   });
+  syncHeroTabsToTheme(name);
 }
 
 function loadTheme() {
@@ -68,9 +78,33 @@ function loadTheme() {
   }
 }
 
-/* ═══════════════════════════════════════════════════════
-   THEME PICKER — floating UI injected on all pages
-   ═══════════════════════════════════════════════════════ */
+// HERO TABS — indicator + sync con el theme picker
+function moveHeroIndicator(tab) {
+  const indicator = document.getElementById('tabsIndicator');
+  if (!indicator || !tab) return;
+  const track = tab.parentElement;
+  const trackRect = track.getBoundingClientRect();
+  const tabRect = tab.getBoundingClientRect();
+  indicator.style.width = tabRect.width + 'px';
+  indicator.style.transform = `translateX(${tabRect.left - trackRect.left - 5}px)`;
+}
+
+function activateHeroTab(tab) {
+  if (!tab) return;
+  document.querySelectorAll('.hero__tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  document.documentElement.style.setProperty('--accent', tab.dataset.color);
+  const heroAccent = document.getElementById('heroAccent');
+  if (heroAccent) heroAccent.textContent = tab.dataset.label;
+  moveHeroIndicator(tab);
+}
+
+function syncHeroTabsToTheme(name) {
+  const tab = document.querySelector(`.hero__tab[data-theme="${name}"]`);
+  if (tab) activateHeroTab(tab);
+}
+
+// THEME PICKER — floating UI injected on all pages
 function buildThemePicker() {
   const container = document.createElement('div');
   container.className = 'theme-picker';
@@ -114,94 +148,35 @@ function buildThemePicker() {
 
 document.addEventListener('DOMContentLoaded', () => {
 
-  /* ── Bootstrap Toasts ── */
-  document.querySelectorAll('.toast').forEach(el => {
-    new bootstrap.Toast(el, { autohide: true, delay: 4000 }).show();
-  });
-
-  /* ── Theme system ── */
-  loadTheme();
+  // Theme system
   buildThemePicker();
+  loadTheme();
 
-  /* ── Navbar scroll shadow ── */
-  const nav = document.querySelector('.c-nav, .carely-navbar');
-  if (nav) {
-    const onScroll = () => {
-      nav.classList.toggle('c-nav--scrolled', window.scrollY > 40);
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-  }
+  // Hero Tabs — click wiring
+  const tabs = document.querySelectorAll('.hero__tab');
 
-  /* ── Smooth anchor links ── */
-  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', e => {
-      const id = anchor.getAttribute('href');
-      if (id === '#') return;
-      const target = document.querySelector(id);
-      if (target) {
-        e.preventDefault();
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        const toggle = document.getElementById('navToggle');
-        if (toggle) toggle.checked = false;
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      activateHeroTab(tab);
+      const themeKey = tab.dataset.theme || themeKeyByColor[tab.dataset.color];
+      if (themeKey) {
+        applyTheme(themeKey);
       }
     });
   });
 
-  /* ── Hero Tabs — Interactive Color Change ── */
-  const tabs = document.querySelectorAll('.hero__tab');
-  const indicator = document.getElementById('tabsIndicator');
-  const heroAccent = document.getElementById('heroAccent');
-  const root = document.documentElement;
-
-  function moveIndicator(tab) {
-    if (!indicator || !tab) return;
-    const track = tab.parentElement;
-    const trackRect = track.getBoundingClientRect();
-    const tabRect = tab.getBoundingClientRect();
-    indicator.style.width = tabRect.width + 'px';
-    indicator.style.transform = `translateX(${tabRect.left - trackRect.left - 5}px)`;
-  }
-
-  const themeKeyByColor = {};
-  Object.keys(themes).forEach(k => { themeKeyByColor[themes[k]['--accent']] = k; });
-
-  function activateTab(tab) {
-    tabs.forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    const color = tab.dataset.color;
-    const label = tab.dataset.label;
-    root.style.setProperty('--accent', color);
-    if (heroAccent) heroAccent.textContent = label;
-    moveIndicator(tab);
-    const themeKey = tab.dataset.theme || themeKeyByColor[color];
-    if (themeKey) {
-      applyTheme(themeKey);
-    }
-  }
-
-  tabs.forEach(tab => {
-    tab.addEventListener('click', () => activateTab(tab));
-  });
-
-  (function syncHeroTabs() {
-    let savedTheme;
-    try { savedTheme = localStorage.getItem(THEME_STORAGE_KEY); } catch (_) {}
-    const match = savedTheme && tabs.length && Array.from(tabs).find(t => t.dataset.theme === savedTheme);
-    if (match) {
-      activateTab(match);
-    } else {
-      const activeTab = document.querySelector('.hero__tab.active');
-      if (activeTab) moveIndicator(activeTab);
-    }
+  // Posiciona el indicador en la tab activa inicial
+  (function initHeroIndicator() {
+    const activeTab = document.querySelector('.hero__tab.active');
+    if (activeTab) moveHeroIndicator(activeTab);
   })();
 
   window.addEventListener('resize', () => {
     const activeTab = document.querySelector('.hero__tab.active');
-    if (activeTab) moveIndicator(activeTab);
+    if (activeTab) moveHeroIndicator(activeTab);
   });
 
-  /* ── Hero Parallax / Mouse Tilt ── */
+  // Hero Parallax / Mouse Tilt
   const showcase = document.getElementById('heroShowcase');
 
   if (showcase) {
@@ -227,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  /* ── Scroll Reveal — IntersectionObserver ── */
+  // Scroll Reveal — IntersectionObserver
   const revealElements = document.querySelectorAll('.anim-reveal, .anim-scroll');
 
   const revealObserver = new IntersectionObserver((entries) => {
@@ -247,7 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   revealElements.forEach(el => revealObserver.observe(el));
 
-  /* ── Hero entrance animation ── */
+  // Hero entrance animation
   const heroRevealEls = document.querySelectorAll('.hero .anim-reveal');
   heroRevealEls.forEach(el => {
     const delay = el.dataset.delay || 0;

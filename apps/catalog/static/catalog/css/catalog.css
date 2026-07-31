@@ -1,0 +1,126 @@
+/* CATALOG */
+.catalog-hero {
+    padding-top: 120px;
+    padding-bottom: 40px;
+    background: linear-gradient(135deg, #FFF5F9 0%, #F0F6FF 50%, #FFF5F9 100%);
+}
+
+.catalog-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+}
+
+@media (max-width: 768px) {
+    .catalog-title { font-size: 1.75rem; }
+}
+
+.catalog-subtitle {
+    font-size: 1.1rem;
+    color: var(--clr-text-2);
+    max-width: 560px;
+    margin: 0 auto;
+}
+
+.badge.bg-soft-primary {
+    background: rgba(91, 141, 239, 0.1);
+    color: var(--accent);
+    font-weight: 500;
+    padding: 6px 16px;
+    border-radius: var(--r-pill);
+    font-size: .8rem;
+}
+
+.catalog-section {
+    background: var(--clr-bg-2);
+    transition: background-color .6s var(--ease);
+    padding: 120px 0 80px;
+}
+
+.catalog-section .category-pills { padding-bottom: 40px; }
+
+.cta-card-mini {
+    background: var(--clr-card);
+    border-radius: var(--r-md);
+    padding: 48px 32px;
+    max-width: 600px;
+    margin: 0 auto;
+    box-shadow: var(--sh-sm);
+}
+
+.cta-card-mini h4 {
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.featured-section { background: var(--clr-card); }
+
+.category-pills .nav-link {
+    color: var(--clr-text-2);
+    border: 1px solid var(--clr-border);
+    border-radius: var(--r-pill);
+    padding: 8px 20px;
+    font-size: .9rem;
+    font-weight: 500;
+    transition: all .3s var(--ease);
+    cursor: pointer;
+    background: var(--clr-card);
+}
+
+.category-pills .nav-link:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.category-pills .nav-link.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+}
+
+.category-icon-sm {
+    width: 48px;
+    height: 48px;
+    background: var(--clr-bg-2);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: var(--accent);
+    flex-shrink: 0;
+}
+
+.category-section { margin-bottom: 48px; }
+.category-section:last-child { margin-bottom: 0; }
+
+.category-section-title {
+    font-size: 1.4rem;
+    font-weight: 600;
+}
+
+.category-section-desc {
+    font-size: .9rem;
+    color: var(--clr-text-2);
+}
+
+.pagination .page-link {
+    border: 1px solid var(--clr-border);
+    border-radius: var(--r-sm);
+    color: var(--clr-text);
+    font-weight: 500;
+    padding: 8px 16px;
+    transition: all .3s var(--ease);
+}
+
+.pagination .page-link:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: transparent;
+}
+
+.pagination .page-item.active .page-link {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+}

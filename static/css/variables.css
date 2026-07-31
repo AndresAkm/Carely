@@ -1,0 +1,47 @@
+:root {
+    --clr-primary:     #E8609B;
+    --clr-primary-soft:#F8D7E6;
+    --clr-secondary:   #5B8DEF;
+    --clr-secondary-soft:#DCEEFF;
+    --clr-bg:          #FEFCFD;
+    --clr-bg-2:        #F5F0F8;
+    --clr-text:        #1A1A1A;
+    --clr-text-2:      #6B6B76;
+    --clr-border:      #E8E3EE;
+    --clr-card:        #FFFFFF;
+
+    --accent:          #5B8DEF;
+    --accent-soft:     #DCEEFF;
+
+    --ff-serif:  'Poppins', system-ui, sans-serif;
+    --ff-sans:   'Poppins', system-ui, sans-serif;
+
+    --section-py: clamp(60px, 8vw, 120px);
+
+    --sh-sm:  0 2px 8px rgba(0,0,0,.04);
+    --sh-md:  0 8px 30px rgba(0,0,0,.07);
+    --sh-lg:  0 16px 60px rgba(0,0,0,.09);
+    --sh-xl:  0 24px 80px rgba(0,0,0,.11);
+
+    --r-sm: 8px;
+    --r-md: 14px;
+    --r-lg: 22px;
+    --r-xl: 32px;
+    --r-pill: 100px;
+
+    --ease: cubic-bezier(.4, 0, .2, 1);
+    --ease-bounce: cubic-bezier(.34, 1.56, .64, 1);
+
+    --color-primary: var(--clr-card);
+    --color-secondary: var(--clr-primary-soft);
+    --color-accent: var(--clr-secondary-soft);
+    --color-button: var(--clr-secondary);
+    --color-button-hover: #4A7BE0;
+    --color-text: var(--clr-text);
+    --color-text-secondary: var(--clr-text-2);
+    --color-bg-soft: var(--clr-bg-2);
+    --color-border: var(--clr-border);
+    --color-success: #4CAF50;
+    --font-primary: var(--ff-sans);
+    --transition: all .3s var(--ease);
+}

@@ -1,0 +1,122 @@
+/* THEME TRANSITIONS — cambio suave de fondo al cambiar de tema */
+body,
+.hero,
+.c-section--white,
+.c-section--soft,
+.benefits-section,
+.why-section,
+.catalog-section,
+.dashboard-page {
+    transition: background-color .6s var(--ease);
+}
+
+/* THEME PICKER — Floating */
+.theme-picker {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.theme-picker__toggle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: none;
+    background: var(--clr-card);
+    color: var(--clr-text);
+    box-shadow: var(--sh-lg);
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all .3s var(--ease);
+    position: relative;
+    z-index: 2;
+}
+
+.theme-picker__toggle:hover {
+    transform: scale(1.08);
+    box-shadow: var(--sh-xl);
+}
+
+.theme-picker__toggle.is-open {
+    background: var(--accent);
+    color: #fff;
+}
+
+.theme-picker__menu {
+    display: flex;
+    gap: 6px;
+    padding: 8px 12px;
+    background: var(--clr-card);
+    border-radius: var(--r-pill);
+    box-shadow: var(--sh-md);
+    border: 1px solid var(--clr-border);
+    opacity: 0;
+    transform: translateY(8px) scale(.92);
+    pointer-events: none;
+    transition: all .25s var(--ease);
+    position: absolute;
+    bottom: 56px;
+    right: 0;
+    white-space: nowrap;
+}
+
+.theme-picker__toggle.is-open + .theme-picker__menu {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+.theme-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all .25s var(--ease);
+    background: var(--clr-bg-2);
+    color: var(--clr-text-2);
+}
+
+.theme-btn:hover {
+    transform: scale(1.12);
+}
+
+.theme-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-soft);
+    transform: scale(1.1);
+}
+
+@media (max-width: 575.98px) {
+    .theme-picker {
+        bottom: 16px;
+        right: 16px;
+    }
+    .theme-picker__toggle {
+        width: 42px;
+        height: 42px;
+        font-size: 1.1rem;
+    }
+    .theme-picker__menu {
+        padding: 6px 10px;
+        bottom: 48px;
+    }
+    .theme-btn {
+        width: 34px;
+        height: 34px;
+        font-size: .85rem;
+    }
+}

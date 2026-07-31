@@ -1,0 +1,35 @@
+<nav class="c-nav" id="mainNav">
+    <div class="c-nav__inner container">
+        <a class="c-nav__brand" href="{% url 'core:home' %}">
+            <span class="c-nav__brand-icon"><i class="bi bi-droplet"></i></span>
+            <span class="brand-text">Carely</span>
+        </a>
+
+        <input type="checkbox" id="navToggle" class="c-nav__toggle-input" hidden>
+        <label for="navToggle" class="c-nav__hamburger" aria-label="Menu">
+            <span></span><span></span><span></span>
+        </label>
+
+        <ul class="c-nav__links">
+            {% if request.resolver_match.namespace == 'core' %}
+            <li><a href="#beneficios">Beneficios</a></li>
+            <li><a href="#categorias">Categorias</a></li>
+            <li><a href="#por-que-carely">Por que Carely</a></li>
+            {% else %}
+            <li><a href="{% url 'core:home' %}">Inicio</a></li>
+            <li><a href="{% url 'catalog:home' %}" style="color:var(--clr-text)">Catalogo</a></li>
+            {% endif %}
+            {% if user.is_authenticated %}
+                {% if user.is_staff or user.is_superuser %}
+            <li><a href="{% url 'core:dashboard' %}" class="c-nav__btn c-nav__btn--fill"><i class="bi bi-grid"></i> Mi Panel</a></li>
+                {% else %}
+            <li><a href="{% url 'catalog:home' %}" class="c-nav__btn c-nav__btn--fill"><i class="bi bi-shop"></i> Catalogo</a></li>
+                {% endif %}
+            <li><a href="{% url 'users:logout' %}" class="c-nav__btn c-nav__btn--outline"><i class="bi bi-box-arrow-right"></i> Cerrar Sesion</a></li>
+            {% else %}
+            <li><a href="{% url 'users:login' %}" class="c-nav__btn c-nav__btn--outline"><i class="bi bi-box-arrow-in-right"></i> Iniciar Sesion</a></li>
+            <li><a href="{% url 'users:register' %}" class="c-nav__btn c-nav__btn--fill"><i class="bi bi-person-plus"></i> Crear Cuenta</a></li>
+            {% endif %}
+        </ul>
+    </div>
+</nav>

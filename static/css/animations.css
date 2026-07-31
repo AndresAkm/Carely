@@ -1,0 +1,72 @@
+.anim-reveal {
+    opacity: 0;
+    transform: translateY(28px);
+}
+
+.anim-reveal.revealed {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity .65s var(--ease), transform .65s var(--ease);
+}
+
+.anim-scroll {
+    opacity: 0;
+    transform: translateY(24px);
+}
+
+.anim-scroll.revealed {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity .55s var(--ease), transform .55s var(--ease);
+}
+
+@keyframes meshDrift1 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(40px, 30px) scale(1.06); }
+    66% { transform: translate(-20px, 50px) scale(.96); }
+}
+@keyframes meshDrift2 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(-50px, 40px) scale(1.08); }
+}
+@keyframes meshDrift3 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    40% { transform: translate(30px, -30px) scale(1.05); }
+    80% { transform: translate(-20px, 20px) scale(.95); }
+}
+@keyframes meshDrift4 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(25px, -20px) scale(1.1); }
+}
+
+@keyframes orbFloat1 {
+    0%, 100% { transform: rotate(-6deg) translateY(0); }
+    50% { transform: rotate(-6deg) translateY(-10px); }
+}
+@keyframes orbFloat2 {
+    0%, 100% { transform: rotate(5deg) translateY(0); }
+    50% { transform: rotate(5deg) translateY(-12px); }
+}
+@keyframes orbFloat3 {
+    0%, 100% { transform: rotate(3deg) translateY(0); }
+    50% { transform: rotate(3deg) translateY(-8px); }
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: .4; }
+    50% { transform: scale(1.05); opacity: .6; }
+}
+
+@keyframes whyFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+}
+
+.animate-slide-in {
+    animation: slideIn .3s ease-out;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(100%); }
+    to { opacity: 1; transform: translateX(0); }
+}

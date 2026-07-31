@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Carely - Cuidado Personal Consciente{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'core/css/home.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+{% include 'navbar.html' %}
+
+<main class="page-wrapper">
+
+    <section class="hero" id="hero">
+        <div class="hero__mesh">
+            <div class="hero__blob hero__blob--sage"></div>
+            <div class="hero__blob hero__blob--rose"></div>
+            <div class="hero__blob hero__blob--amber"></div>
+            <div class="hero__blob hero__blob--cream"></div>
+        </div>
+
+        <div class="container hero__container">
+            <div class="hero__grid">
+                <div class="hero__left">
+                    <div class="hero__pill anim-reveal" data-delay="0">
+                        <i class="bi bi-stars"></i>
+                        <span>Bienestar consciente y natural</span>
+                    </div>
+
+                    <h1 class="hero__title anim-reveal" data-delay="1">
+                        Cultiva tu<br>
+                        <em class="hero__title-accent" id="heroAccent">mejor version</em>
+                    </h1>
+
+                    <p class="hero__desc anim-reveal" data-delay="2">
+                        Productos cuidadosamente seleccionados para nutrir tu piel,
+                        tu mente y tu ritual diario de bienestar.
+                    </p>
+
+                    <div class="hero__tabs anim-reveal" data-delay="3">
+                        <div class="hero__tabs-track" id="tabsTrack">
+                            <div class="hero__tabs-indicator" id="tabsIndicator"></div>
+                            <button class="hero__tab active" data-color="#5B8DEF" data-label="mejor version" data-theme="azul">
+                                <i class="bi bi-droplet"></i> Hidratacion
+                            </button>
+                            <button class="hero__tab" data-color="#E8609B" data-label="plena paz" data-theme="rosa">
+                                <i class="bi bi-heart"></i> Calma
+                            </button>
+                            <button class="hero__tab" data-color="#F0B429" data-label="total brillo" data-theme="amber">
+                                <i class="bi bi-sun"></i> Brillo
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="hero-cta d-flex flex-wrap gap-3 mt-4 anim-reveal" data-delay="4">
+                        <a href="{% url 'catalog:home' %}" class="c-btn c-btn--primary c-btn--lg">
+                            <i class="bi bi-shop me-2"></i>Ver Catalogo
+                        </a>
+                        <a href="{% url 'users:register' %}" class="c-btn c-btn--outline c-btn--lg">
+                            Crear Cuenta
+                            <i class="bi bi-arrow-right ms-2"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="hero__right anim-reveal" data-delay="2" id="heroShowcase">
+                    <div class="hero__showcase">
+                        <img src="{% static 'core/images/hero-placeholder.png' %}" alt="Cuidado personal Carely" class="hero__showcase-img">
+
+                        <div class="hero__float hero__float--rating">
+                            <span class="hero__float-stars">
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                            </span>
+                            <span>4.9 <small>(2k+ rituales)</small></span>
+                        </div>
+
+                        <div class="hero__float hero__float--clean">
+                            <i class="bi bi-patch-check-fill"></i>
+                            100% Ingredientes Limpios
+                        </div>
+                    </div>
+
+                    <div class="hero__orbit">
+                        <div class="hero__orb hero__orb--1">
+                            <img src="{% static 'core/images/serum-vitamina-c-la-roche-posay.avif' %}" alt="Serum Vitamina C">
+                            <span class="hero__orb-label">Serum Vitamina C</span>
+                        </div>
+                        <div class="hero__orb hero__orb--2">
+                            <img src="{% static 'core/images/crema-hidratante-cera-ve-spf-30.webp' %}" alt="Crema Hidratante">
+                            <span class="hero__orb-label">Crema Hidratante</span>
+                        </div>
+                        <div class="hero__orb hero__orb--3">
+                            <img src="{% static 'core/images/aceite-de-argan-100-puro-colmaroc.jpg' %}" alt="Aceite de Argan">
+                            <span class="hero__orb-label">Aceite de Argan</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="destacados" class="c-section c-section--white">
+        <div class="container">
+            <div class="c-section__header anim-scroll">
+                <h2 class="c-section__title">Productos Destacados</h2>
+                <p class="c-section__subtitle">Los favoritos de nuestra comunidad que no pueden faltar en tu rutina.</p>
+            </div>
+            <div class="products-grid">
+                {% for product in featured_products %}
+                {% include 'components/card.html' with product=product card_class='anim-scroll' %}
+                {% endfor %}
+            </div>
+            <div class="c-section__cta anim-scroll">
+                <a href="{% url 'catalog:home' %}" class="c-btn c-btn--primary c-btn--lg">
+                    Ver Catalogo Completo <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section id="beneficios" class="c-section c-section--soft">
+        <div class="container">
+            <div class="c-section__header anim-scroll">
+                <h2 class="c-section__title">Beneficios de elegir Carely</h2>
+                <p class="c-section__subtitle">Nos preocupamos por ofrecerte la mejor experiencia de cuidado personal.</p>
+            </div>
+            <div class="benefits-grid">
+                {% for benefit in benefits %}
+                <div class="benefit-card anim-scroll">
+                    <div class="benefit-card__icon"><i class="bi {{ benefit.icon }}"></i></div>
+                    <h3 class="benefit-card__title">{{ benefit.title }}</h3>
+                    <p class="benefit-card__desc">{{ benefit.description }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <section id="categorias" class="c-section c-section--white">
+        <div class="container">
+            <div class="c-section__header anim-scroll">
+                <h2 class="c-section__title">Explora por categoria</h2>
+                <p class="c-section__subtitle">Encuentra todo lo que necesitas para tu rutina de cuidado personal.</p>
+            </div>
+            <div class="categories-grid">
+                {% for category in categories %}
+                <div class="category-card anim-scroll">
+                    <div class="category-card__icon"><i class="bi {{ category.icon }}"></i></div>
+                    <h3 class="category-card__name">{{ category.name }}</h3>
+                    <p class="category-card__desc">{{ category.description }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <section id="por-que-carely" class="c-section c-section--soft">
+        <div class="container">
+            <div class="why-grid">
+                <div class="why-visual anim-scroll">
+                    <div class="why-visual__shape why-visual__shape--1"></div>
+                    <div class="why-visual__shape why-visual__shape--2"></div>
+                    <div class="why-visual__shape why-visual__shape--3"></div>
+                    <div class="why-visual__dots">
+                        <span></span><span></span><span></span>
+                        <span></span><span></span><span></span>
+                    </div>
+                    <div class="why-visual__center"><i class="bi bi-heart"></i></div>
+                </div>
+                <div class="why-content anim-scroll">
+                    <h2 class="c-section__title c-section__title--left">Por que elegir Carely?</h2>
+                    <p class="c-section__subtitle c-section__subtitle--left">En Carely creemos que el cuidado personal es una forma de amor propio. Por eso seleccionamos los mejores productos para ti.</p>
+                    <div class="why-list">
+                        {% for item in why_us %}
+                        <div class="why-item anim-scroll">
+                            <div class="why-item__icon"><i class="bi {{ item.icon }}"></i></div>
+                            <div class="why-item__text">
+                                <h4>{{ item.title }}</h4>
+                                <p>{{ item.description }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="c-section c-section--white">
+        <div class="container">
+            <div class="cta-card anim-scroll">
+                <h2 class="cta-card__title">Comienza tu experiencia Carely</h2>
+                <p class="cta-card__desc">Unete a nuestra comunidad y descubre una nueva forma de consentirte.</p>
+                <a href="{% url 'users:register' %}" class="c-btn c-btn--primary c-btn--lg">
+                    Crear mi Cuenta Gratis <i class="bi bi-heart"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+{% include 'footer.html' %}
+{% endblock %}

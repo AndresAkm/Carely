@@ -1,0 +1,4 @@
+<a href="{{ href }}" class="c-btn c-btn--{{ style|default:'primary' }}{% if size %} c-btn--{{ size }}{% endif %}">
+    {% if icon %}<i class="bi {{ icon }} {% if icon_position == 'right' %}ms-2{% else %}me-2{% endif %}"></i>{% endif %}
+    {% if icon_position == 'right' %}{{ label }}{% else %}{{ label }}{% endif %}
+</a>

@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Panel de Control - Carely{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'core/css/dashboard.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block body_class %}dashboard-page{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+    <aside class="dashboard-sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="{% url 'core:home' %}" class="sidebar-logo d-flex align-items-center gap-2 text-decoration-none">
+                <div class="brand-icon"><i class="bi bi-droplet"></i></div>
+                <span class="brand-text">Carely</span>
+            </a>
+            <button class="sidebar-close d-lg-none btn btn-link text-white" onclick="toggleSidebar()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <nav class="sidebar-nav">
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link active" href="{% url 'core:dashboard' %}">
+                        <i class="bi bi-grid"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">
+                        <i class="bi bi-box"></i>
+                        <span>Productos</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">
+                        <i class="bi bi-tags"></i>
+                        <span>Categorías</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">
+                        <i class="bi bi-cart"></i>
+                        <span>Pedidos</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">
+                        <i class="bi bi-people"></i>
+                        <span>Usuarios</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">
+                        <i class="bi bi-bar-chart"></i>
+                        <span>Reportes</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">
+                        <i class="bi bi-gear"></i>
+                        <span>Configuración</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="d-flex align-items-center gap-2 px-3 py-2">
+                <div class="sidebar-user-avatar">
+                    {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+                </div>
+                <div class="sidebar-user-info">
+                    <span class="sidebar-user-name">{{ user.first_name }} {{ user.last_name }}</span>
+                    <span class="sidebar-user-role">Administrador</span>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <div class="dashboard-main">
+        <header class="dashboard-topbar">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-link sidebar-toggle d-lg-none" onclick="toggleSidebar()">
+                    <i class="bi bi-list fs-4"></i>
+                </button>
+                <h2 class="topbar-title mb-0">Dashboard</h2>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <a href="{% url 'core:home' %}" class="btn btn-sm btn-carely-outline">
+                    <i class="bi bi-globe me-1"></i>Ver Sitio
+                </a>
+                <a href="{% url 'users:logout' %}" class="btn btn-sm btn-carely-outline text-danger border-danger">
+                    <i class="bi bi-box-arrow-right me-1"></i>Cerrar Sesión
+                </a>
+            </div>
+        </header>
+
+        <div class="dashboard-content">
+            <div class="container-fluid">
+                <div class="row g-4 mb-4">
+                    <div class="col-xl-3 col-md-6">
+                        <div class="stat-card">
+                            <div class="stat-icon stat-icon-products">
+                                <i class="bi bi-box"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-number">{{ total_products }}</span>
+                                <span class="stat-label">Productos</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="stat-card">
+                            <div class="stat-icon stat-icon-users">
+                                <i class="bi bi-people"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-number">{{ total_users }}</span>
+                                <span class="stat-label">Usuarios</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="stat-card">
+                            <div class="stat-icon stat-icon-categories">
+                                <i class="bi bi-tags"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-number">{{ total_categories }}</span>
+                                <span class="stat-label">Categorías</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="stat-card">
+                            <div class="stat-icon stat-icon-orders">
+                                <i class="bi bi-cart"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-number">{{ total_orders }}</span>
+                                <span class="stat-label">Pedidos</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-lg-8">
+                        <div class="dashboard-card">
+                            <div class="dashboard-card-header">
+                                <h5 class="dashboard-card-title">Bienvenida, {{ user.first_name }}</h5>
+                                <p class="dashboard-card-subtitle mb-0">Este es tu panel de administración. Desde aquí podrás gestionar tu tienda Carely.</p>
+                            </div>
+                            <div class="dashboard-card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="feature-card">
+                                            <i class="bi bi-box"></i>
+                                            <h6>Productos</h6>
+                                            <p class="small text-secondary mb-0">Gestiona tu catálogo de productos.</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="feature-card">
+                                            <i class="bi bi-tags"></i>
+                                            <h6>Categorías</h6>
+                                            <p class="small text-secondary mb-0">Organiza tus productos por categorías.</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="feature-card">
+                                            <i class="bi bi-cart"></i>
+                                            <h6>Pedidos</h6>
+                                            <p class="small text-secondary mb-0">Administra los pedidos de tus clientes.</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="feature-card">
+                                            <i class="bi bi-bar-chart"></i>
+                                            <h6>Reportes</h6>
+                                            <p class="small text-secondary mb-0">Visualiza estadísticas de tu tienda.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="dashboard-card">
+                            <div class="dashboard-card-header">
+                                <h5 class="dashboard-card-title">Usuarios Recientes</h5>
+                            </div>
+                            <div class="dashboard-card-body p-0">
+                                <ul class="list-group list-group-flush">
+                                    {% for u in recent_users %}
+                                    <li class="list-group-item d-flex align-items-center gap-3 px-4 py-3">
+                                        <div class="user-avatar-sm">
+                                            {{ u.first_name|first|default:'?'|upper }}
+                                        </div>
+                                        <div>
+                                            <span class="d-block fw-medium">{{ u.first_name }} {{ u.last_name }}</span>
+                                            <small class="text-secondary">{{ u.email }}</small>
+                                        </div>
+                                    </li>
+                                    {% empty %}
+                                    <li class="list-group-item text-center py-4 text-secondary">
+                                        No hay usuarios registrados.
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('show');
+    document.getElementById('sidebarOverlay').classList.toggle('show');
+}
+</script>
+{% endblock %}

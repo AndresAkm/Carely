@@ -1,0 +1,48 @@
+<footer class="c-footer">
+    <div class="container">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <div class="c-nav__brand" style="margin-bottom:16px">
+                    <span class="c-nav__brand-icon"><i class="bi bi-droplet"></i></span>
+                    <span class="brand-text" style="color:#fff">Carely</span>
+                </div>
+                <p>Tu tienda de cuidado personal de confianza. Productos originales, asesoria personalizada y envios rapidos.</p>
+                <div class="footer-social">
+                    <a href="#" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+                    <a href="#" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+                    <a href="#" aria-label="TikTok"><i class="bi bi-music-note-beamed"></i></a>
+                    <a href="#" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>
+                </div>
+            </div>
+            <div class="footer-col">
+                <h5>Categorias</h5>
+                <ul>
+                    {% for category in categories %}
+                    <li><a href="#">{{ category.name }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h5>Ayuda</h5>
+                <ul>
+                    <li><a href="#">Contacto</a></li>
+                    <li><a href="#">Envios</a></li>
+                    <li><a href="#">Devoluciones</a></li>
+                    <li><a href="#">FAQ</a></li>
+                    <li><a href="#">Terminos</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h5>Contacto</h5>
+                <ul class="footer-contact">
+                    <li><i class="bi bi-envelope"></i> hola@carely.com</li>
+                    <li><i class="bi bi-telephone"></i> +52 55 1234 5678</li>
+                    <li><i class="bi bi-geo-alt"></i> Ciudad de Mexico, MX</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; {% now "Y" %} Carely. Todos los derechos reservados.</p>
+        </div>
+    </div>
+</footer>

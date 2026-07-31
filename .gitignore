@@ -1,3 +1,21 @@
+# Entorno virtual
 env/
+
+# Python
 __pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+
+# Django
+staticfiles/
 db.sqlite3
+db.sqlite3-journal
+media/
+
+# Secretos
+.env
+
+# Entorno
+.DS_Store
+Thumbs.db
