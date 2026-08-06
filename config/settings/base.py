@@ -34,14 +34,15 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admindocs',
+    'rest_framework',
+    'drf_spectacular',
     'apps.core',
     'apps.catalog',
     'apps.users',
     'apps.inventory',
     'apps.cart',
     'apps.orders',
-    'apps.payments',
-    'rest_framework'
+    'apps.payments'
 ]
 
 MIDDLEWARE = [
@@ -98,10 +99,12 @@ AUTH_PASSWORD_VALIDATORS = [
 
 REST_FRAMEWORK = {
 
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+
     "DEFAULT_AUTHENTICATION_CLASSES": (
 
         "rest_framework.authentication.SessionAuthentication",
-
+        
         "rest_framework.authentication.BasicAuthentication",
 
     ),
@@ -136,3 +139,44 @@ LOGOUT_REDIRECT_URL = 'core:home'
 AUTH_USER_MODEL = 'users.User'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Carely API',
+    'DESCRIPTION': (
+        'API REST del e-commerce Carely. '
+        'Catálogo de productos de cuidado personal, carrito de compras, '
+        'pedidos, pagos y gestión de inventario.'
+    ),
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'CONTACT': {
+        'name': 'Carely Soporte',
+        'email': 'soporte@carely.com',
+        'url': 'https://carely.com',
+    },
+    'LICENSE': {
+        'name': 'MIT',
+        'url': 'https://opensource.org/licenses/MIT',
+    },
+    'TAGS': [
+        {'name': 'Catálogo', 'description': 'Productos y categorías'},
+        {'name': 'Carrito', 'description': 'Carrito de compras'},
+        {'name': 'Pedidos', 'description': 'Gestión de pedidos'},
+        {'name': 'Pagos', 'description': 'Procesamiento de pagos'},
+        {'name': 'Inventario', 'description': 'Control de inventario'},
+        {'name': 'Usuarios', 'description': 'Gestión de usuarios'},
+    ],
+    'EXTERNAL_DOCS': {
+        'description': 'Repositorio del proyecto',
+        'url': 'https://github.com/carely/carely-django',
+    },
+    'SORT_OPERATIONS': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'ENUM_NAME_OVERRIDES': {
+        'RoleEnum': 'apps.users.models.User.Role',
+        'MovementTypeEnum': 'apps.inventory.models.InventoryMovement.MovementType',
+        'OrderStatusEnum': 'apps.orders.models.Order.Status',
+        'PaymentMethodEnum': 'apps.payments.models.Payment.PaymentMethod',
+        'PaymentStatusEnum': 'apps.payments.models.Payment.Status',
+    },
+}
