@@ -13,7 +13,7 @@ class IsAdminOrReadOnly(BasePermission):
             and request.user.role == User.Role.ADMIN
         )
 
-
+ 
 class IsAdmin(BasePermission):
     def has_permission(self, request, view):
         return (
