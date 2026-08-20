@@ -1,11 +1,12 @@
+{% load static %}
+
 <footer class="c-footer">
     <div class="container">
         <div class="footer-grid">
             <div class="footer-brand">
-                <div class="c-nav__brand" style="margin-bottom:16px">
-                    <span class="c-nav__brand-icon"><i class="bi bi-droplet"></i></span>
-                    <span class="brand-text" style="color:#fff">Carely</span>
-                </div>
+                <a href="{% url 'core:home' %}" class="c-nav__brand footer-brand__logo" aria-label="Carely">
+                    <img src="{% static 'core/images/carely-logo.svg' %}" alt="Carely" class="c-footer__logo">
+                </a>
                 <p>Tu tienda de cuidado personal de confianza. Productos originales, asesoria personalizada y envios rapidos.</p>
                 <div class="footer-social">
                     <a href="#" aria-label="Facebook"><i class="bi bi-facebook"></i></a>

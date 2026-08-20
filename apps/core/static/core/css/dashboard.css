@@ -37,10 +37,13 @@
     justify-content: space-between;
 }
 
-.sidebar-logo .brand-text { color: #fff; }
-
-.sidebar-logo .brand-icon {
-    background: linear-gradient(135deg, rgba(248, 215, 230, 0.2), rgba(220, 238, 255, 0.2));
+.sidebar-logo__image {
+    display: block;
+    width: 104px;
+    max-height: 44px;
+    height: auto;
+    object-fit: contain;
+    filter: brightness(0) invert(1);
 }
 
 .sidebar-nav {

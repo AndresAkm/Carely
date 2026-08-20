@@ -4,19 +4,34 @@
 {% block title %}Iniciar Sesión - Carely{% endblock %}
 
 {% block extra_css %}
-<link href="{% static 'users/css/auth.css' %}" rel="stylesheet">
+<link href="{% static 'users/css/auth.css' %}?v=2" rel="stylesheet">
 {% endblock %}
 
 {% block body_class %}auth-page{% endblock %}
 
 {% block content %}
+<div class="auth-background" aria-hidden="true">
+    <span class="auth-bg__blob auth-bg__blob--primary"></span>
+    <span class="auth-bg__blob auth-bg__blob--secondary"></span>
+    <span class="auth-bg__blob auth-bg__blob--tertiary"></span>
+    <span class="auth-bg__ring auth-bg__ring--one"></span>
+    <span class="auth-bg__dot auth-bg__dot--one"></span>
+    <span class="auth-bg__ring auth-bg__ring--two"></span>
+    <span class="auth-bg__dot auth-bg__dot--two"></span>
+    <span class="auth-bg__dot auth-bg__dot--three"></span>
+    <span class="auth-bg__dot auth-bg__dot--four"></span>
+    <span class="auth-bg__orb auth-bg__orb--primary"></span>
+    <span class="auth-bg__orb auth-bg__orb--secondary"></span>
+</div>
 <div class="auth-wrapper">
     <div class="auth-container">
         <div class="auth-card">
+            <a href="{% url 'core:home' %}" class="auth-exit" aria-label="Volver al inicio" title="Volver al inicio">
+                <i class="bi bi-arrow-left"></i>
+            </a>
             <div class="auth-header text-center">
-                <a href="{% url 'core:home' %}" class="auth-logo d-inline-flex align-items-center gap-2 mb-4 text-decoration-none">
-                    <div class="brand-icon"><i class="bi bi-droplet"></i></div>
-                    <span class="brand-text">Carely</span>
+                <a href="{% url 'core:home' %}" class="auth-logo d-inline-flex align-items-center mb-4 text-decoration-none" aria-label="Carely">
+                    <img src="{% static 'core/images/carely-logo.svg' %}" alt="Carely" class="auth-logo__image">
                 </a>
                 <h1 class="auth-title">Bienvenida de nuevo</h1>
                 <p class="auth-subtitle">Inicia sesión para acceder a tu panel.</p>

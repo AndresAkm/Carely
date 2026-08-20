@@ -1,8 +1,9 @@
+{% load static %}
+
 <nav class="c-nav" id="mainNav">
     <div class="c-nav__inner container">
-        <a class="c-nav__brand" href="{% url 'core:home' %}">
-            <span class="c-nav__brand-icon"><i class="bi bi-droplet"></i></span>
-            <span class="brand-text">Carely</span>
+        <a class="c-nav__brand" href="{% url 'core:home' %}" aria-label="Carely">
+            <img src="{% static 'core/images/carely-logo.svg' %}" alt="Carely" class="c-nav__brand-logo">
         </a>
 
         <input type="checkbox" id="navToggle" class="c-nav__toggle-input" hidden>
