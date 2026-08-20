@@ -1,9 +1,11 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.shortcuts import redirect
 from django.views.generic import TemplateView
 
 from apps.catalog.models import Category, Product
+
+User = get_user_model()
 
 
 class LandingView(TemplateView):
