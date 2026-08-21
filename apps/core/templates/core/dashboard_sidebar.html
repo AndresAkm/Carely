@@ -1,0 +1,68 @@
+{% load static %}
+<aside class="dashboard-sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <a href="{% url 'core:home' %}" class="sidebar-logo d-flex align-items-center text-decoration-none" aria-label="Carely">
+            <img src="{% static 'core/images/carely-logo.svg' %}" alt="Carely" class="sidebar-logo__image">
+        </a>
+        <button class="sidebar-close d-lg-none btn btn-link text-white" onclick="toggleSidebar()">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+    <nav class="sidebar-nav">
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'core:dashboard' %}">
+                    <i class="bi bi-grid"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name|slice:':4' == 'user' %}active{% endif %}" href="{% url 'dashboard:user_list' %}">
+                    <i class="bi bi-people"></i>
+                    <span>Usuarios</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name|slice:':7' == 'product' %}active{% endif %}" href="{% url 'dashboard:product_list' %}">
+                    <i class="bi bi-box"></i>
+                    <span>Productos</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name|slice:':8' == 'category' %}active{% endif %}" href="{% url 'dashboard:category_list' %}">
+                    <i class="bi bi-tags"></i>
+                    <span>Categorías</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="bi bi-cart"></i>
+                    <span>Pedidos</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="bi bi-bar-chart"></i>
+                    <span>Reportes</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="bi bi-gear"></i>
+                    <span>Configuración</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <div class="sidebar-footer">
+        <div class="d-flex align-items-center gap-2 px-3 py-2">
+            <div class="sidebar-user-avatar">
+                {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+            </div>
+            <div class="sidebar-user-info">
+                <span class="sidebar-user-name">{{ user.first_name }} {{ user.last_name }}</span>
+                <span class="sidebar-user-role">Administrador</span>
+            </div>
+        </div>
+    </div>
+</aside>

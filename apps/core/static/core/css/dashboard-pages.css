@@ -1,0 +1,105 @@
+/* Page-level dashboard composition. Component primitives live in dashboard-components.css. */
+
+.dashboard-filter-card {
+    margin-bottom: 20px;
+}
+
+.dashboard-filter-card .dashboard-card-body {
+    padding: 16px 20px;
+}
+
+.dashboard-filter-card .form-control {
+    min-height: 38px;
+}
+
+.dashboard-filter-card .btn-carely-outline {
+    min-height: 38px;
+    padding: 8px 12px;
+    border-width: 1px;
+}
+
+.dashboard-table td.text-end form {
+    margin-left: .35rem;
+}
+
+.dashboard-form-card form p {
+    margin-bottom: 16px;
+}
+
+.dashboard-form-card form p label {
+    display: block;
+    color: var(--clr-text);
+    font-size: .88rem;
+    font-weight: 600;
+    margin-bottom: 7px;
+}
+
+.dashboard-form-card form p input[type='password'],
+.dashboard-form-card form p input[type='text'],
+.dashboard-form-card form p input[type='email'] {
+    display: block;
+    width: 100%;
+    border: 1px solid var(--clr-border);
+    border-radius: var(--r-sm);
+    padding: 10px 13px;
+    color: var(--clr-text);
+    background: var(--clr-card);
+    transition: border-color .2s var(--ease), box-shadow .2s var(--ease);
+}
+
+.dashboard-form-card form p input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(91, 141, 239, .12);
+    outline: none;
+}
+
+.dashboard-form-card form p helptext,
+.dashboard-form-card form p .helptext {
+    display: block;
+    color: var(--clr-text-2);
+    font-size: .78rem;
+    line-height: 1.5;
+    margin-top: 5px;
+}
+
+.dashboard-form-card form ul.errorlist {
+    color: #c0395d;
+    font-size: .8rem;
+    margin: 5px 0 0;
+    padding-left: 18px;
+}
+
+.dashboard-user-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 24px;
+}
+
+.dashboard-user-form .dashboard-field {
+    margin-bottom: 12px;
+}
+
+.dashboard-user-form .dashboard-user-form__error,
+.dashboard-user-form .form-actions {
+    grid-column: 1 / -1;
+}
+
+.dashboard-user-form .form-actions {
+    margin-top: 4px;
+}
+
+@media (max-width: 700px) {
+    .dashboard-filter-card .row > * {
+        width: 100%;
+    }
+
+    .dashboard-user-form {
+        grid-template-columns: 1fr;
+        column-gap: 0;
+    }
+
+    .dashboard-user-form .dashboard-user-form__error,
+    .dashboard-user-form .form-actions {
+        grid-column: auto;
+    }
+}

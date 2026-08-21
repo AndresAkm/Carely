@@ -70,10 +70,10 @@
                         <a href="{% url 'catalog:home' %}" class="c-btn c-btn--primary c-btn--lg">
                             <i class="bi bi-shop me-2"></i>Ver Catalogo
                         </a>
-                        <a href="{% url 'users:register' %}" class="c-btn c-btn--outline c-btn--lg">
+                        {% if not user.is_authenticated %}<a href="{% url 'users:register' %}" class="c-btn c-btn--outline c-btn--lg">
                             Crear Cuenta
                             <i class="bi bi-arrow-right ms-2"></i>
-                        </a>
+                        </a>{% endif %}
                     </div>
                 </div>
 
@@ -198,9 +198,9 @@
             <div class="cta-card anim-scroll">
                 <h2 class="cta-card__title">Comienza tu experiencia Carely</h2>
                 <p class="cta-card__desc">Unete a nuestra comunidad y descubre una nueva forma de consentirte.</p>
-                <a href="{% url 'users:register' %}" class="c-btn c-btn--primary c-btn--lg">
+                {% if not user.is_authenticated %}<a href="{% url 'users:register' %}" class="c-btn c-btn--primary c-btn--lg">
                     Crear mi Cuenta Gratis <i class="bi bi-heart"></i>
-                </a>
+                </a>{% endif %}
             </div>
         </div>
     </section>

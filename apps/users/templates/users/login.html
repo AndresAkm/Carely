@@ -71,10 +71,12 @@
                     <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar Sesión
                 </button>
 
+                {% if not user.is_authenticated %}
                 <p class="text-center mb-0 text-secondary">
                     ¿No tienes cuenta?
                     <a href="{% url 'users:register' %}" class="auth-link">Crear cuenta</a>
                 </p>
+                {% endif %}
             </form>
         </div>
     </div>

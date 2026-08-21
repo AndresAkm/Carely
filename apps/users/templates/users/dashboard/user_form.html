@@ -1,0 +1,38 @@
+{% extends 'core/dashboard_base.html' %}
+{% block dashboard_title %}{% if object %}Editar usuario{% else %}Nuevo usuario{% endif %}{% endblock %}
+{% block dashboard_content %}
+<div class="dashboard-page-header">
+    <div>
+        <h1 class="dashboard-heading">{% if object %}Editar usuario{% else %}Nuevo usuario{% endif %}</h1>
+        <p class="dashboard-muted">Gestiona los datos y permisos de la cuenta.</p>
+    </div>
+    <a href="{% url 'dashboard:user_list' %}" class="btn btn-carely-outline">Volver</a>
+</div>
+
+<div class="dashboard-card dashboard-form-card">
+    <div class="dashboard-card-body">
+        <form method="post" novalidate class="dashboard-user-form">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger dashboard-user-form__error">{{ form.non_field_errors }}</div>
+            {% endif %}
+            {% for field in form %}
+            <div class="dashboard-field field-{{ field.name }} {% if field.name == 'is_active' %}form-check{% endif %}">
+                {% if field.name == 'is_active' %}
+                    {{ field }}
+                    <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {% else %}
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                {% endif %}
+                {% for error in field.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
+            {% endfor %}
+            <div class="d-flex gap-2 justify-content-end form-actions">
+                <a href="{% url 'dashboard:user_list' %}" class="btn btn-carely-outline">Cancelar</a>
+                <button class="btn btn-carely-primary">Guardar usuario</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.contrib.auth.forms import SetPasswordForm
 import re
 
 User = get_user_model()
@@ -107,6 +108,55 @@ class RegisterForm(forms.ModelForm):
         user = super().save(commit=False)
         user.username = self.cleaned_data['email']
         user.email = self.cleaned_data['email']
+        user.set_password(self.cleaned_data['password1'])
+        if commit:
+            user.save()
+        return user
+
+
+class DashboardUserForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email', 'phone', 'role', 'is_active']
+        widgets = {
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control'}),
+            'role': forms.Select(attrs={'class': 'form-control'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+    def clean_email(self):
+        email = self.cleaned_data['email']
+        if User.objects.filter(email=email).exclude(pk=self.instance.pk).exists():
+            raise ValidationError('Ya existe un usuario con este correo electrónico.')
+        return email
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.username = user.email
+        user.is_staff = user.role == User.Role.ADMIN or user.is_superuser
+        if commit:
+            user.save()
+        return user
+
+
+class DashboardUserCreateForm(DashboardUserForm):
+    password1 = forms.CharField(label='Contraseña', widget=forms.PasswordInput(attrs={'class': 'form-control'}))
+    password2 = forms.CharField(label='Confirmar contraseña', widget=forms.PasswordInput(attrs={'class': 'form-control'}))
+
+    class Meta(DashboardUserForm.Meta):
+        fields = DashboardUserForm.Meta.fields + ['password1', 'password2']
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get('password1') != cleaned.get('password2'):
+            raise ValidationError('Las contraseñas no coinciden.')
+        return cleaned
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
         user.set_password(self.cleaned_data['password1'])
         if commit:
             user.save()

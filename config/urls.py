@@ -16,6 +16,7 @@ urlpatterns = [
 
     # Web
     path('', include('apps.core.urls')),
+    path('dashboard/', include('apps.core.dashboard_urls')),
     path('accounts/', include('apps.users.urls')),
     path('catalogo/', include('apps.catalog.urls')),
 
