@@ -1,6 +1,6 @@
 # API
 
-El proyecto usa las vistas de Django (sin DRF por ahora). La API se expone vía URL patterns y formularios tradicionales.
+La API usa Django REST Framework y JWT. La web mantiene autenticación mediante sesión.
 
 ## Rutas principales
 
@@ -15,6 +15,14 @@ El proyecto usa las vistas de Django (sin DRF por ahora). La API se expone vía 
 | GET | `/admin/` | Django Admin | `django.contrib.admin` |
 
 ## Convenciones
+
+## Autenticación API
+
+- `POST /api/v1/auth/token/` obtiene tokens JWT usando `username` y `password`.
+- `POST /api/v1/auth/token/refresh/` renueva el token de acceso.
+- Las peticiones protegidas deben enviar `Authorization: Bearer <access>`.
+
+La recuperación web está disponible en `/accounts/password-reset/` y usa SMTP mediante las variables `EMAIL_*`. Solo se envían instrucciones a usuarios activos con contraseña utilizable.
 
 - Namespaces de URL: `core`, `catalog`, `users`.
 - Autenticación: `login_required` y `staff_member_required` en vistas protegidas.

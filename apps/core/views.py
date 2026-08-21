@@ -4,6 +4,7 @@ from django.shortcuts import redirect
 from django.views.generic import TemplateView
 
 from apps.catalog.models import Category, Product
+from apps.core.permissions import is_admin
 
 User = get_user_model()
 
@@ -63,7 +64,7 @@ class DashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     template_name = 'core/dashboard.html'
 
     def test_func(self):
-        return self.request.user.is_staff or self.request.user.is_superuser
+        return is_admin(self.request.user)
 
     def handle_no_permission(self):
         return redirect('catalog:home')

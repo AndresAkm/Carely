@@ -23,6 +23,7 @@ urlpatterns = [
 
     # Auth endpoints (login/logout de DRF)
     path('api/v1/auth/', include('rest_framework.urls')),
+    path('api/v1/auth/', include('apps.users.urls_api')),
 
     # API Root — todos los endpoints unificados
     path('api/v1/', include('config.api_router')),

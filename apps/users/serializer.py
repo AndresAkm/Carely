@@ -1,9 +1,10 @@
 from rest_framework import serializers
 
-from .models import *
+from .models import User
 
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = '__all__'
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'phone', 'role', 'is_active', 'date_joined']
+        read_only_fields = ['id', 'username', 'date_joined']
