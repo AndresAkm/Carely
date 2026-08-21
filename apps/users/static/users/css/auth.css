@@ -380,6 +380,56 @@
     line-height: 1.6;
 }
 
+.auth-card form label {
+    display: block;
+    font-weight: 500;
+    font-size: .9rem;
+    color: var(--clr-text);
+    margin-bottom: 6px;
+}
+
+.auth-card form input[type='password'],
+.auth-card form input[type='text'],
+.auth-card form input[type='email'] {
+    display: block;
+    width: 100%;
+    border: 2px solid var(--clr-border);
+    border-radius: var(--r-sm);
+    padding: 12px 16px;
+    font-size: .95rem;
+    font-family: var(--ff-sans);
+    transition: all .3s var(--ease);
+}
+
+.auth-card form input[type='password']:focus,
+.auth-card form input[type='text']:focus,
+.auth-card form input[type='email']:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(91, 141, 239, .1);
+    outline: none;
+}
+
+.auth-card form .helptext,
+.auth-card form ul {
+    display: block;
+    color: var(--clr-text-2);
+    font-size: .8rem;
+    line-height: 1.5;
+    margin-top: 8px;
+    padding-left: 1.1rem;
+}
+
+.auth-card form ul.errorlist {
+    color: #c0395d;
+    margin: 6px 0 0;
+}
+
+.register-page .auth-card form input[type='password'] {
+    padding-top: 8px;
+    padding-bottom: 8px;
+    font-size: .88rem;
+}
+
 @media (max-width: 480px) {
     .register-page .auth-card { padding: 18px 20px; }
     .register-page .password-requirements ul { grid-template-columns: 1fr; column-gap: 0; line-height: 1.4; }

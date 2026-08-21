@@ -13,20 +13,32 @@
 <main class="page-wrapper">
 
     <section class="hero" id="hero">
-        <div class="hero__mesh">
-            <div class="hero__blob hero__blob--sage"></div>
-            <div class="hero__blob hero__blob--rose"></div>
-            <div class="hero__blob hero__blob--amber"></div>
-            <div class="hero__blob hero__blob--cream"></div>
+        <div class="hero__background" aria-hidden="true">
+            <!-- Blobs ambientales grandes -->
+            <span class="hero-bg__blob hero-bg__blob--1"></span>
+            <span class="hero-bg__blob hero-bg__blob--2"></span>
+            <span class="hero-bg__blob hero-bg__blob--3"></span>
+            <!-- Anillos -->
+            <span class="hero-bg__ring hero-bg__ring--1"></span>
+            <span class="hero-bg__ring hero-bg__ring--2"></span>
+            <span class="hero-bg__ring hero-bg__ring--3"></span>
+            <!-- Puntos de acento -->
+            <span class="hero-bg__dot hero-bg__dot--1"></span>
+            <span class="hero-bg__dot hero-bg__dot--2"></span>
+            <span class="hero-bg__dot hero-bg__dot--3"></span>
+            <span class="hero-bg__dot hero-bg__dot--4"></span>
+            <!-- Orbs de cristal -->
+            <span class="hero-bg__orb hero-bg__orb--1"></span>
+            <span class="hero-bg__orb hero-bg__orb--2"></span>
+            <!-- Pétalos / formas orgánicas -->
+            <span class="hero-bg__petal hero-bg__petal--1"></span>
+            <span class="hero-bg__petal hero-bg__petal--2"></span>
+            <span class="hero-bg__petal hero-bg__petal--3"></span>
         </div>
 
         <div class="container hero__container">
             <div class="hero__grid">
                 <div class="hero__left">
-                    <div class="hero__pill anim-reveal" data-delay="0">
-                        <i class="bi bi-stars"></i>
-                        <span>Bienestar consciente y natural</span>
-                    </div>
 
                     <h1 class="hero__title anim-reveal" data-delay="1">
                         Cultiva tu<br>
@@ -41,7 +53,8 @@
                     <div class="hero__tabs anim-reveal" data-delay="3">
                         <div class="hero__tabs-track" id="tabsTrack">
                             <div class="hero__tabs-indicator" id="tabsIndicator"></div>
-                            <button class="hero__tab active" data-color="#5B8DEF" data-label="mejor version" data-theme="azul">
+                            <button class="hero__tab active" data-color="#5B8DEF" data-label="mejor version"
+                                data-theme="azul">
                                 Hidratacion
                             </button>
                             <button class="hero__tab" data-color="#E8609B" data-label="plena paz" data-theme="rosa">
@@ -66,7 +79,8 @@
 
                 <div class="hero__right anim-reveal" data-delay="2" id="heroShowcase">
                     <div class="hero__showcase">
-                        <img src="{% static 'core/images/hero-placeholder.png' %}" alt="Cuidado personal Carely" class="hero__showcase-img">
+                        <img src="{% static 'core/images/hero-placeholder.png' %}" alt="Cuidado personal Carely"
+                            class="hero__showcase-img">
 
                         <div class="hero__float hero__float--rating">
                             <span class="hero__float-stars">
@@ -85,20 +99,6 @@
                         </div>
                     </div>
 
-                    <div class="hero__orbit">
-                        <div class="hero__orb hero__orb--1">
-                            <img src="{% static 'core/images/serum-vitamina-c-la-roche-posay.avif' %}" alt="Serum Vitamina C">
-                            <span class="hero__orb-label">Serum Vitamina C</span>
-                        </div>
-                        <div class="hero__orb hero__orb--2">
-                            <img src="{% static 'core/images/crema-hidratante-cera-ve-spf-30.webp' %}" alt="Crema Hidratante">
-                            <span class="hero__orb-label">Crema Hidratante</span>
-                        </div>
-                        <div class="hero__orb hero__orb--3">
-                            <img src="{% static 'core/images/aceite-de-argan-100-puro-colmaroc.jpg' %}" alt="Aceite de Argan">
-                            <span class="hero__orb-label">Aceite de Argan</span>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -127,7 +127,8 @@
         <div class="container">
             <div class="c-section__header anim-scroll">
                 <h2 class="c-section__title">Beneficios de elegir Carely</h2>
-                <p class="c-section__subtitle">Nos preocupamos por ofrecerte la mejor experiencia de cuidado personal.</p>
+                <p class="c-section__subtitle">Nos preocupamos por ofrecerte la mejor experiencia de cuidado personal.
+                </p>
             </div>
             <div class="benefits-grid">
                 {% for benefit in benefits %}
@@ -174,7 +175,8 @@
                 </div>
                 <div class="why-content anim-scroll">
                     <h2 class="c-section__title c-section__title--left">Por que elegir Carely?</h2>
-                    <p class="c-section__subtitle c-section__subtitle--left">En Carely creemos que el cuidado personal es una forma de amor propio. Por eso seleccionamos los mejores productos para ti.</p>
+                    <p class="c-section__subtitle c-section__subtitle--left">En Carely creemos que el cuidado personal
+                        es una forma de amor propio. Por eso seleccionamos los mejores productos para ti.</p>
                     <div class="why-list">
                         {% for item in why_us %}
                         <div class="why-item anim-scroll">
