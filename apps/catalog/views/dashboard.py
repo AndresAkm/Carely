@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.db.models import Q
 from django.db.models.deletion import ProtectedError
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
@@ -7,8 +8,9 @@ from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 
 from apps.core.permissions import is_admin
 
-from ..forms import CategoryForm, ProductForm
+from ..forms import CategoryForm, ProductFilterForm, ProductForm
 from ..models import Category, Product
+
 
 
 class DashboardAdminMixin(LoginRequiredMixin, UserPassesTestMixin):
@@ -72,7 +74,29 @@ class ProductListView(DashboardAdminMixin, ListView):
     paginate_by = 8
 
     def get_queryset(self):
-        return Product.objects.select_related('category')
+        queryset = Product.objects.select_related('category').order_by('-created_at')
+        self.filter_form = ProductFilterForm(self.request.GET or None)
+        if not self.filter_form.is_valid():
+            return queryset
+
+        filters = self.filter_form.cleaned_data
+        search = filters.get('q')
+        if search:
+            queryset = queryset.filter(Q(name__icontains=search) | Q(description__icontains=search))
+        if filters.get('category'):
+            queryset = queryset.filter(category=filters['category'])
+        if filters.get('is_active'):
+            queryset = queryset.filter(is_active=filters['is_active'] == 'True')
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['filter_form'] = getattr(self, 'filter_form', ProductFilterForm(self.request.GET or None))
+        query = self.request.GET.copy()
+        query.pop('page', None)
+        context['filter_query'] = query.urlencode()
+        return context
+
 
 
 class ProductCreateView(DashboardAdminMixin, CreateView):

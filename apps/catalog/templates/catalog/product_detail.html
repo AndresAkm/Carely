@@ -33,7 +33,7 @@
                 <div class="product-detail-info">
                     <span class="product-detail-category">{{ product.category.name }}</span>
                     <h1 class="product-detail-title">{{ product.name }}</h1>
-                    <p class="product-detail-price">${{ product.price|floatformat:2 }}</p>
+                    <p class="product-detail-price">COP {{ product.price|floatformat:2 }}</p>
                     {% if product.stock > 0 %}
                     <span class="product-detail-stock"><i class="bi bi-check-circle-fill"></i> Disponible · {{ product.stock }} unidades</span>
                     {% else %}

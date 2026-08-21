@@ -31,3 +31,14 @@ class ProductForm(DashboardFormMixin, forms.ModelForm):
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'featured': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
+
+
+class ProductFilterForm(forms.Form):
+    q = forms.CharField(label='Buscar', required=False, widget=forms.TextInput(attrs={'placeholder': 'Nombre o descripción...'}))
+    category = forms.ModelChoiceField(label='Categoría', queryset=Category.objects.all(), required=False)
+    is_active = forms.ChoiceField(label='Estado', choices=[('', 'Todos'), ('True', 'Activo'), ('False', 'Inactivo')], required=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs.setdefault('class', 'form-control')

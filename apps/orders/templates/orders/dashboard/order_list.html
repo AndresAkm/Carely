@@ -52,7 +52,7 @@
                         <td><strong>#{{ order.pk }}</strong></td>
                         <td><strong>{{ order.user.get_full_name|default:order.user.email }}</strong><small class="d-block text-secondary">{{ order.user.email }}</small></td>
                         <td>{{ order.item_count }}</td>
-                        <td>${{ order.total|floatformat:2 }}</td>
+                        <td>COP {{ order.total|floatformat:2 }}</td>
                         <td><span class="status-badge status-badge--{{ order.status }}">{{ order.get_status_display }}</span></td>
                         <td>{{ order.created_at|date:'d/m/Y H:i' }}</td>
                         <td class="text-end"><a href="{% url 'dashboard:order_detail' order.pk %}" class="btn btn-sm btn-carely-outline" title="Ver pedido"><i class="bi bi-eye"></i></a><a href="{% url 'dashboard:order_status' order.pk %}" class="btn btn-sm btn-carely-outline" title="Actualizar estado"><i class="bi bi-pencil"></i></a></td>

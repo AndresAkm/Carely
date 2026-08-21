@@ -19,7 +19,7 @@
         <p class="product-card__desc">{{ product.description|truncatechars:80 }}</p>
         {% endif %}
         <div class="product-card__footer">
-            <span class="product-card__price">${{ product.price|floatformat:2 }}</span>
+            <span class="product-card__price">COP {{ product.price|floatformat:2 }}</span>
             {% if product.stock > 0 %}
             <span class="product-card__stock"><i class="bi bi-check-circle-fill"></i> En stock</span>
             {% else %}
