@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ product.name }} - Carely{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'catalog/css/catalog.css' %}?v=3" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+{% include 'navbar.html' %}
+
+<main class="product-detail-section">
+    <div class="container">
+        <nav class="product-detail-breadcrumb" aria-label="Navegación de producto">
+            <a href="{% url 'core:home' %}">Inicio</a><span>/</span>
+            <a href="{% url 'catalog:home' %}">Catálogo</a><span>/</span>
+            <a href="{% url 'catalog:home' %}?category={{ product.category.slug }}">{{ product.category.name }}</a><span>/</span>
+            <span>{{ product.name }}</span>
+        </nav>
+
+        <div class="row g-4 g-lg-5 align-items-center">
+            <div class="col-lg-6">
+                <div class="product-detail-media">
+                    {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                    {% else %}
+                    <i class="bi bi-box product-detail-placeholder" aria-hidden="true"></i>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="product-detail-info">
+                    <span class="product-detail-category">{{ product.category.name }}</span>
+                    <h1 class="product-detail-title">{{ product.name }}</h1>
+                    <p class="product-detail-price">${{ product.price|floatformat:2 }}</p>
+                    {% if product.stock > 0 %}
+                    <span class="product-detail-stock"><i class="bi bi-check-circle-fill"></i> Disponible · {{ product.stock }} unidades</span>
+                    {% else %}
+                    <span class="product-detail-stock product-detail-stock--empty"><i class="bi bi-x-circle-fill"></i> Agotado</span>
+                    {% endif %}
+                    <p class="product-detail-description">{{ product.description|default:'Descubre este producto seleccionado por Carely para acompañar tu rutina de cuidado personal.' }}</p>
+                    <div class="product-detail-actions">
+                        <a href="{% url 'catalog:home' %}" class="c-btn c-btn--primary c-btn--lg"><i class="bi bi-arrow-left me-2"></i>Seguir explorando</a>
+                        {% if product.stock > 0 %}<a href="{% url 'catalog:home' %}" class="c-btn c-btn--outline c-btn--lg">Ver catálogo</a>{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+{% if related_products %}
+<section class="related-products-section">
+    <div class="container">
+        <h2 class="related-products-title">También te puede interesar</h2>
+        <div class="row g-4">
+            {% for related_product in related_products %}
+            <div class="col-md-6 col-lg-3">
+                {% include 'components/card.html' with product=related_product card_class='h-100' %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% include 'footer.html' %}
+{% endblock %}

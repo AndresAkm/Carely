@@ -3,6 +3,42 @@
 {% block dashboard_content %}
 <div class="dashboard-page-header"><div><h1 class="dashboard-heading">Usuarios</h1><p class="dashboard-muted">Administra las cuentas y accesos de Carely.</p></div><a href="{% url 'dashboard:user_create' %}" class="btn btn-carely-primary"><i class="bi bi-plus-lg me-1"></i>Nuevo usuario</a></div>
 <div class="dashboard-card dashboard-filter-card"><div class="dashboard-card-body"><form method="get" class="row g-2"><div class="col-md-6"><input class="form-control" type="search" name="q" value="{{ request.GET.q }}" placeholder="Buscar por nombre o correo"></div><div class="col-md-2"><select class="form-control" name="role"><option value="">Todos los roles</option><option value="client" {% if request.GET.role == 'client' %}selected{% endif %}>Cliente</option><option value="admin" {% if request.GET.role == 'admin' %}selected{% endif %}>Administrador</option></select></div><div class="col-md-2"><select class="form-control" name="status"><option value="">Todos los estados</option><option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Activos</option><option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>Inactivos</option></select></div><div class="col-md-2"><button class="btn btn-carely-outline w-100" type="submit"><i class="bi bi-search"></i> Filtrar</button></div></form></div></div>
-<div class="dashboard-card"><div class="dashboard-card-body p-0"><div class="table-responsive"><table class="table dashboard-table align-middle mb-0"><thead><tr><th>Usuario</th><th>Teléfono</th><th>Rol</th><th>Estado</th><th>Registro</th><th class="text-end">Acciones</th></tr></thead><tbody>{% for account in users %}<tr><td><strong>{{ account.first_name }} {{ account.last_name }}</strong><small class="d-block text-secondary">{{ account.email }}</small></td><td>{{ account.phone|default:'-' }}</td><td>{% if account.role == 'admin' %}<span class="status-badge status-badge--active">Administrador</span>{% else %}<span class="status-badge status-badge--inactive">Cliente</span>{% endif %}</td><td>{% if account.is_active %}<span class="status-badge status-badge--active">Activo</span>{% else %}<span class="status-badge status-badge--inactive">Inactivo</span>{% endif %}</td><td>{{ account.created_at|date:'d/m/Y' }}</td><td class="text-end"><a href="{% url 'dashboard:user_update' account.pk %}" class="btn btn-sm btn-carely-outline" title="Editar"><i class="bi bi-pencil"></i></a><a href="{% url 'dashboard:user_password' account.pk %}" class="btn btn-sm btn-carely-outline" title="Cambiar contraseña"><i class="bi bi-key"></i></a>{% if account.is_active %}<form method="post" action="{% url 'dashboard:user_toggle_active' account.pk %}" class="d-inline">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" title="Desactivar"><i class="bi bi-person-dash"></i></button></form>{% else %}<form method="post" action="{% url 'dashboard:user_toggle_active' account.pk %}" class="d-inline">{% csrf_token %}<button class="btn btn-sm btn-outline-success" title="Activar"><i class="bi bi-person-check"></i></button></form>{% endif %}</td></tr>{% empty %}<tr><td colspan="6" class="text-center py-5 text-secondary">No hay usuarios que coincidan con los filtros.</td></tr>{% endfor %}</tbody></table></div></div></div>
+<div class="dashboard-card"><div class="dashboard-card-body p-0"><div class="table-responsive"><table class="table dashboard-table align-middle mb-0"><thead><tr><th>Usuario</th><th>Teléfono</th><th>Rol</th><th>Estado</th><th>Registro</th><th class="text-end">Acciones</th></tr></thead><tbody>{% for account in users %}<tr><td><strong>{{ account.first_name }} {{ account.last_name }}</strong><small class="d-block text-secondary">{{ account.email }}</small></td><td>{{ account.phone|default:'-' }}</td><td>{% if account.role == 'admin' %}<span class="status-badge status-badge--active">Administrador</span>{% else %}<span class="status-badge status-badge--inactive">Cliente</span>{% endif %}</td><td>{% if account.is_active %}<span class="status-badge status-badge--active">Activo</span>{% else %}<span class="status-badge status-badge--inactive">Inactivo</span>{% endif %}</td><td>{{ account.created_at|date:'d/m/Y' }}</td><td class="text-end"><a href="{% url 'dashboard:user_update' account.pk %}" class="btn btn-sm btn-carely-outline" title="Editar"><i class="bi bi-pencil"></i></a><a href="{% url 'dashboard:user_password' account.pk %}" class="btn btn-sm btn-carely-outline" title="Cambiar contraseña"><i class="bi bi-key"></i></a>{% if account.is_active %}<form method="post" action="{% url 'dashboard:user_toggle_active' account.pk %}" class="d-inline">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" title="Desactivar"><i class="bi bi-person-dash"></i></button></form>{% else %}<form method="post" action="{% url 'dashboard:user_toggle_active' account.pk %}" class="d-inline">{% csrf_token %}<button class="btn btn-sm btn-outline-success" title="Activar"><i class="bi bi-person-check"></i></button></form>{% endif %}</td></tr>{% empty %}<tr><td colspan="6" class="text-center py-5 text-secondary">No hay usuarios que coincidan con los filtros.</td></tr>{% endfor %}</tbody></table></div><div class="dashboard-force-delete"><div><strong>Eliminación permanente</strong><small>Escribe el correo del usuario para eliminar sus pedidos y pagos.</small></div><form id="forceDeleteForm" method="post" action="{% url 'dashboard:user_force_delete' %}" class="dashboard-force-delete__form">{% csrf_token %}{{ force_delete_form.email }}<button type="button" class="btn btn-sm btn-outline-danger dashboard-force-delete__trigger" onclick="openForceDeleteModal()"><i class="bi bi-trash3 me-1"></i>FORZAR ELIMINACIÓN</button></form></div></div></div>
+
+<div class="modal fade" id="forceDeleteModal" tabindex="-1" aria-labelledby="forceDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content dashboard-confirm-modal">
+            <div class="modal-header">
+                <div class="dashboard-confirm-modal__icon"><i class="bi bi-trash3"></i></div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <h5 id="forceDeleteModalLabel">¿Eliminar este usuario?</h5>
+                <p>Se eliminará permanentemente la cuenta indicada y sus pedidos, pagos y datos relacionados.</p>
+                <strong id="forceDeleteEmail" class="dashboard-confirm-modal__email"></strong>
+                <p class="dashboard-confirm-modal__warning"><i class="bi bi-exclamation-triangle me-1"></i>Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-carely-outline" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" form="forceDeleteForm" class="btn btn-danger">Eliminar definitivamente</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% if is_paginated %}<nav class="dashboard-pagination" aria-label="Paginación de usuarios"><ul class="pagination justify-content-center mb-0">{% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?q={{ request.GET.q }}&role={{ request.GET.role }}&status={{ request.GET.status }}&page={{ page_obj.previous_page_number }}">‹</a></li>{% endif %}{% for number in page_obj.paginator.page_range %}<li class="page-item {% if page_obj.number == number %}active{% endif %}"><a class="page-link" href="?q={{ request.GET.q }}&role={{ request.GET.role }}&status={{ request.GET.status }}&page={{ number }}">{{ number }}</a></li>{% endfor %}{% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?q={{ request.GET.q }}&role={{ request.GET.role }}&status={{ request.GET.status }}&page={{ page_obj.next_page_number }}">›</a></li>{% endif %}</ul></nav>{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+function openForceDeleteModal() {
+    const emailInput = document.getElementById('id_email');
+    if (!emailInput.checkValidity()) {
+        emailInput.reportValidity();
+        return;
+    }
+    document.getElementById('forceDeleteEmail').textContent = emailInput.value;
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('forceDeleteModal')).show();
+}
+</script>
 {% endblock %}

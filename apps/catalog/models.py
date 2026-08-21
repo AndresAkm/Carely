@@ -28,7 +28,7 @@ class Category(models.Model):
 
 
 class Product(models.Model):
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products', verbose_name='categoría')
+    category = models.ForeignKey(Category, on_delete=models.PROTECT, related_name='products', verbose_name='categoría')
     name = models.CharField('nombre', max_length=200)
     description = models.TextField('descripción', blank=True)
     price = models.DecimalField('precio', max_digits=10, decimal_places=2)

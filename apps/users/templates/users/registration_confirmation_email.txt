@@ -1,0 +1,7 @@
+Hola {{ user.first_name|default:user.email }},
+
+Tu cuenta Carely se creó correctamente.
+Ya puedes explorar nuestros productos de cuidado personal:
+{{ site_url }}
+
+Si no reconoces esta cuenta, contacta a nuestro equipo de soporte.

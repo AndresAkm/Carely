@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import MinValueValidator
 
 
 class Payment(models.Model):
@@ -15,11 +16,16 @@ class Payment(models.Model):
 
     order = models.ForeignKey(
         'orders.Order',
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name='payments',
         verbose_name='pedido',
     )
-    amount = models.DecimalField('monto', max_digits=12, decimal_places=2)
+    amount = models.DecimalField(
+        'monto',
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+    )
     payment_method = models.CharField(
         'método de pago',
         max_length=20,

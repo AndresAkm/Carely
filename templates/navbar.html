@@ -24,7 +24,7 @@
                 {% if user.is_staff or user.is_superuser %}
             <li><a href="{% url 'core:dashboard' %}" class="c-nav__btn c-nav__btn--fill"><i class="bi bi-grid"></i> Mi Panel</a></li>
                 {% else %}
-            <li><a href="{% url 'catalog:home' %}" class="c-nav__btn c-nav__btn--fill"><i class="bi bi-shop"></i> Catalogo</a></li>
+            <li><a href="{% url 'users:profile' %}" class="c-nav__btn c-nav__btn--outline"><i class="bi bi-person-circle"></i> Mi Perfil</a></li>
                 {% endif %}
             <li><a href="{% url 'users:logout' %}" class="c-nav__btn c-nav__btn--outline"><i class="bi bi-box-arrow-right"></i> Cerrar Sesion</a></li>
             {% else %}

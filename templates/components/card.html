@@ -1,3 +1,4 @@
+<a href="{% url 'catalog:product_detail' product.slug %}" class="product-card-link" aria-label="Ver {{ product.name }}">
 <div class="product-card{% if card_class %} {{ card_class }}{% endif %}">
     <div class="product-card__img-wrap">
         {% if product.image %}
@@ -27,3 +28,4 @@
         </div>
     </div>
 </div>
+</a>

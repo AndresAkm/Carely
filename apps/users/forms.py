@@ -114,6 +114,69 @@ class RegisterForm(forms.ModelForm):
         return user
 
 
+class ProfileForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email', 'phone']
+        widgets = {
+            'first_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Tu nombre',
+                'autocomplete': 'given-name',
+            }),
+            'last_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Tus apellidos',
+                'autocomplete': 'family-name',
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'tu@correo.com',
+                'autocomplete': 'email',
+            }),
+            'phone': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Número de teléfono',
+                'autocomplete': 'tel',
+            }),
+        }
+
+    def clean_email(self):
+        email = self.cleaned_data['email']
+        if User.objects.filter(email=email).exclude(pk=self.instance.pk).exists():
+            raise ValidationError('Ya existe un usuario con este correo electrónico.')
+        return email
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.username = user.email
+        if commit:
+            user.save()
+        return user
+
+
+class ForceDeleteUserForm(forms.Form):
+    email = forms.EmailField(
+        label='Correo del usuario',
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'usuario@gmail.com',
+            'autocomplete': 'off',
+        }),
+    )
+
+    def clean_email(self):
+        email = self.cleaned_data['email']
+        user = User.objects.filter(email__iexact=email).first()
+        if user is None:
+            raise ValidationError('No existe un usuario con ese correo electrónico.')
+        self.target_user = user
+        return email
+
+    def get_target_user(self):
+        return self.target_user
+
+
 class DashboardUserForm(forms.ModelForm):
     class Meta:
         model = User

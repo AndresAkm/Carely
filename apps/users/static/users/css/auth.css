@@ -424,6 +424,106 @@
     margin: 6px 0 0;
 }
 
+.password-change-page .auth-wrapper {
+    max-width: 520px;
+    padding: clamp(24px, 5vh, 40px) 20px;
+}
+
+.password-change-page .auth-card {
+    width: 100%;
+    padding: clamp(22px, 4vh, 36px);
+}
+
+.password-change-page .auth-logo__image {
+    width: clamp(84px, 10vh, 112px);
+    margin-bottom: clamp(10px, 2vh, 16px) !important;
+}
+
+.password-change-page .auth-title {
+    font-size: clamp(1.25rem, 3vh, 1.5rem);
+    margin-bottom: 6px;
+}
+
+.password-change-page .auth-subtitle {
+    margin-bottom: clamp(14px, 3vh, 22px);
+    font-size: .92rem;
+}
+
+.password-change-page .auth-card form label {
+    margin-bottom: 4px;
+    font-size: .86rem;
+}
+
+.password-change-page .auth-card form p {
+    margin-bottom: clamp(8px, 1.6vh, 13px);
+}
+
+.password-change-page .auth-card form input[type='password'] {
+    padding-top: 9px;
+    padding-bottom: 9px;
+    font-size: .92rem;
+}
+
+.password-change-page .auth-card form .helptext,
+.password-change-page .auth-card form ul {
+    margin-top: 4px;
+    line-height: 1.35;
+    font-size: .76rem;
+}
+
+.password-change-page .auth-card form .btn-carely-primary {
+    margin-top: 2px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+@media (max-height: 560px) {
+    .password-change-page .auth-wrapper { padding-top: 12px; padding-bottom: 12px; }
+    .password-change-page .auth-card { padding: 16px 22px; }
+    .password-change-page .auth-logo__image { width: 76px; margin-bottom: 8px !important; }
+    .password-change-page .auth-title { font-size: 1.15rem; }
+    .password-change-page .auth-subtitle { margin-bottom: 8px; font-size: .82rem; }
+    .password-change-page .auth-card form input[type='password'] { padding-top: 7px; padding-bottom: 7px; }
+    .password-change-page .auth-card form p { margin-bottom: 7px; }
+}
+
+.confirmation-card { max-width: 520px; }
+
+.confirmation-icon {
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    border-radius: 50%;
+    font-size: 1.6rem;
+}
+
+.confirmation-icon--success { background: rgba(25, 135, 84, .12); color: #157347; }
+.confirmation-icon--warning { background: rgba(255, 193, 7, .16); color: #9a7200; }
+
+.confirmation-notice {
+    margin: 0 auto 28px;
+    padding: 13px 16px;
+    border-radius: var(--r-sm);
+    background: rgba(91, 141, 239, .08);
+    color: var(--clr-text-2);
+    font-size: .84rem;
+    line-height: 1.5;
+}
+
+.confirmation-notice--warning { background: rgba(255, 193, 7, .1); }
+
+.confirmation-back-link {
+    display: inline-block;
+    margin-top: 18px;
+    color: var(--clr-text-2);
+    font-size: .88rem;
+}
+
+.confirmation-back-link:hover { color: var(--accent); }
+
 .register-page .auth-card form input[type='password'] {
     padding-top: 8px;
     padding-bottom: 8px;

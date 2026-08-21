@@ -9,13 +9,13 @@ Carely_Django/
 ├── config/                # Configuración del proyecto (settings por entorno)
 │   └── settings/          # base, development, production
 ├── apps/
-│   ├── core/              # Página de inicio y dashboard (+ static/core/)
+│   ├── core/              # Página de inicio, dashboard y reportes (+ static/core/)
 │   ├── catalog/           # Categorías y productos (+ static/catalog/)
 │   ├── users/             # Login, registro y logout (+ static/users/)
-│   ├── inventory/         # (por implementar)
-│   ├── cart/              # (por implementar)
-│   ├── orders/            # (por implementar)
-│   └── payments/          # (por implementar)
+│   ├── inventory/         # Movimientos de inventario y API
+│   ├── cart/              # Carrito y API
+│   ├── orders/            # Pedidos y gestión en dashboard
+│   └── payments/          # Pagos y API
 ├── templates/             # Templates compartidos
 ├── static/                # Recursos globales (css, js, icons, vendors)
 │   ├── css/               # variables, base, layout, theme, animations
@@ -65,7 +65,10 @@ python manage.py runserver
 - `/` — Página de inicio
 - `/catalogo/` — Catálogo de productos
 - `/accounts/login/` y `/accounts/register/` — Autenticación
+- `/accounts/register/confirmation/` — Confirmación de creación de cuenta
 - `/dashboard/` — Dashboard (solo staff)
+- `/dashboard/pedidos/` — Gestión de pedidos (solo administradores)
+- `/dashboard/reportes/` — Reportes de ventas y pedidos (solo administradores)
 - `/admin/` — Panel de administración
 
 ## Documentación

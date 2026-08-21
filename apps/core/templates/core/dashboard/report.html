@@ -1,0 +1,41 @@
+{% extends 'core/dashboard_base.html' %}
+
+{% block dashboard_title %}Reportes{% endblock %}
+
+{% block dashboard_content %}
+<div class="dashboard-page-header">
+    <div><h1 class="dashboard-heading">Reportes</h1><p class="dashboard-muted">Analiza las ventas y el comportamiento de tus pedidos.</p></div>
+    <a href="{% url 'dashboard:report_export' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-carely-outline"><i class="bi bi-file-earmark-pdf me-1"></i>Exportar PDF</a>
+</div>
+
+<div class="dashboard-card dashboard-filter-card">
+    <div class="dashboard-card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-lg-3 col-md-4"><label class="dashboard-filter-label" for="id_created_from">Desde</label>{{ report_form.created_from }}</div>
+            <div class="col-lg-3 col-md-4"><label class="dashboard-filter-label" for="id_created_to">Hasta</label>{{ report_form.created_to }}</div>
+            <div class="col-lg-3 col-md-4"><label class="dashboard-filter-label" for="id_status">Estado</label>{{ report_form.status }}</div>
+            <div class="col-lg-3"><button class="btn btn-carely-outline w-100" type="submit"><i class="bi bi-search me-1"></i>Filtrar</button></div>
+            {% if report_form.non_field_errors or report_form.created_to.errors %}<div class="col-12 field-error">{{ report_form.non_field_errors }}{{ report_form.created_to.errors }}</div>{% endif %}
+        </form>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-3 col-md-6"><div class="stat-card"><div class="stat-icon stat-icon-orders"><i class="bi bi-receipt"></i></div><div class="stat-info"><span class="stat-number">{{ report_total_orders }}</span><span class="stat-label">Pedidos</span></div></div></div>
+    <div class="col-xl-3 col-md-6"><div class="stat-card"><div class="stat-icon stat-icon-products"><i class="bi bi-cash-stack"></i></div><div class="stat-info"><span class="stat-number">${{ report_revenue|floatformat:2 }}</span><span class="stat-label">Ventas no canceladas</span></div></div></div>
+    <div class="col-xl-3 col-md-6"><div class="stat-card"><div class="stat-icon stat-icon-users"><i class="bi bi-graph-up"></i></div><div class="stat-info"><span class="stat-number">${{ report_average_order|floatformat:2 }}</span><span class="stat-label">Ticket promedio</span></div></div></div>
+    <div class="col-xl-3 col-md-6"><div class="stat-card"><div class="stat-icon stat-icon-categories"><i class="bi bi-hourglass-split"></i></div><div class="stat-info"><span class="stat-number">{{ report_pending_orders }}</span><span class="stat-label">Pedidos pendientes</span></div></div></div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="dashboard-card h-100"><div class="dashboard-card-header"><h5 class="dashboard-card-title">Ventas por día</h5><p class="dashboard-card-subtitle mb-0">Máximo 30 días recientes del período seleccionado.</p></div><div class="dashboard-card-body p-0"><div class="table-responsive"><table class="table dashboard-table align-middle mb-0"><thead><tr><th>Fecha</th><th>Pedidos</th><th class="text-end">Ventas</th></tr></thead><tbody>{% for row in daily_sales %}<tr><td>{{ row.day|date:'d/m/Y' }}</td><td>{{ row.orders }}</td><td class="text-end">${{ row.revenue|floatformat:2 }}</td></tr>{% empty %}<tr><td colspan="3" class="text-center py-4 text-secondary">No hay ventas en este período.</td></tr>{% endfor %}</tbody></table></div></div></div>
+    </div>
+    <div class="col-lg-6">
+        <div class="dashboard-card h-100"><div class="dashboard-card-header"><h5 class="dashboard-card-title">Productos más vendidos</h5><p class="dashboard-card-subtitle mb-0">Ordenados por ingresos generados.</p></div><div class="dashboard-card-body p-0"><div class="table-responsive"><table class="table dashboard-table align-middle mb-0"><thead><tr><th>Producto</th><th>Cantidad</th><th class="text-end">Ingresos</th></tr></thead><tbody>{% for product in top_products %}<tr><td><strong>{{ product.product__name }}</strong></td><td>{{ product.quantity }}</td><td class="text-end">${{ product.revenue|floatformat:2 }}</td></tr>{% empty %}<tr><td colspan="3" class="text-center py-4 text-secondary">No hay productos vendidos en este período.</td></tr>{% endfor %}</tbody></table></div></div></div>
+    </div>
+    <div class="col-12">
+        <div class="dashboard-card"><div class="dashboard-card-header"><h5 class="dashboard-card-title">Pedidos por estado</h5></div><div class="dashboard-card-body p-0"><div class="table-responsive"><table class="table dashboard-table align-middle mb-0"><thead><tr><th>Estado</th><th>Pedidos</th><th class="text-end">Valor acumulado</th></tr></thead><tbody>{% for row in status_summary %}<tr><td><span class="status-badge status-badge--{{ row.status }}">{{ row.label }}</span></td><td>{{ row.count }}</td><td class="text-end">${{ row.total|floatformat:2 }}</td></tr>{% empty %}<tr><td colspan="3" class="text-center py-4 text-secondary">No hay pedidos en este período.</td></tr>{% endfor %}</tbody></table></div></div></div>
+    </div>
+</div>
+{% endblock %}

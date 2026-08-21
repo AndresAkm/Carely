@@ -1,0 +1,8 @@
+{% extends 'core/dashboard_base.html' %}
+
+{% block dashboard_title %}Actualizar pedido #{{ order.pk }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="dashboard-page-header"><div><h1 class="dashboard-heading">Actualizar pedido #{{ order.pk }}</h1><p class="dashboard-muted">Cambia el estado y agrega una nota interna.</p></div><a href="{% url 'dashboard:order_detail' order.pk %}" class="btn btn-carely-outline">Volver</a></div>
+<div class="dashboard-card dashboard-form-card"><div class="dashboard-card-body"><form method="post" novalidate>{% csrf_token %}{% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}{% for field in form %}<div class="dashboard-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% for error in field.errors %}<div class="field-error">{{ error }}</div>{% endfor %}</div>{% endfor %}<div class="d-flex gap-2 justify-content-end"><a href="{% url 'dashboard:order_detail' order.pk %}" class="btn btn-carely-outline">Cancelar</a><button type="submit" class="btn btn-carely-primary">Guardar cambios</button></div></form></div></div>
+{% endblock %}

@@ -16,3 +16,7 @@ class CarelyUserAdmin(UserAdmin):
     add_fieldsets = UserAdmin.add_fieldsets + (
         ('Información adicional', {'fields': ('phone', 'role')}),
     )
+
+    def has_delete_permission(self, request, obj=None):
+        # User deletion is intentionally centralized in the dashboard force-delete flow.
+        return False

@@ -1,0 +1,181 @@
+.profile-page {
+    min-height: calc(100vh - 80px);
+    padding: 148px 0 88px;
+    background: var(--clr-bg-2);
+}
+
+.profile-header {
+    max-width: 650px;
+    margin-bottom: 40px;
+}
+
+.profile-eyebrow {
+    display: inline-block;
+    margin-bottom: 12px;
+    color: var(--accent);
+    font-size: .82rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.profile-title {
+    margin-bottom: 10px;
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 700;
+    line-height: 1.15;
+}
+
+.profile-subtitle {
+    margin: 0;
+    color: var(--clr-text-2);
+    font-size: 1rem;
+}
+
+.profile-summary,
+.profile-card {
+    border-radius: var(--r-lg);
+    background: var(--clr-card);
+    box-shadow: var(--sh-sm);
+}
+
+.profile-summary {
+    padding: 32px;
+    text-align: center;
+}
+
+.profile-avatar {
+    width: 84px;
+    height: 84px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 18px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--clr-primary-soft), var(--clr-secondary-soft));
+    color: var(--accent);
+    font-size: 1.45rem;
+    font-weight: 700;
+}
+
+.profile-summary h2 {
+    margin-bottom: 4px;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.profile-summary-email {
+    margin-bottom: 14px;
+    color: var(--clr-text-2);
+    font-size: .88rem;
+    overflow-wrap: anywhere;
+}
+
+.profile-role {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: var(--r-pill);
+    background: rgba(91, 141, 239, .1);
+    color: var(--accent);
+    font-size: .78rem;
+    font-weight: 600;
+}
+
+.profile-summary-details {
+    margin: 28px 0;
+    border-top: 1px solid var(--clr-border);
+    border-bottom: 1px solid var(--clr-border);
+}
+
+.profile-summary-details div {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 0;
+    text-align: left;
+}
+
+.profile-summary-details dt,
+.profile-summary-details dd {
+    margin: 0;
+    font-size: .84rem;
+}
+
+.profile-summary-details dt { color: var(--clr-text-2); }
+.profile-summary-details dd { color: var(--clr-text); font-weight: 600; text-align: right; }
+
+.profile-password-link {
+    color: var(--accent);
+    font-size: .88rem;
+    font-weight: 600;
+}
+
+.profile-password-link:hover { color: var(--clr-primary); }
+
+.profile-card-header {
+    padding: 30px 34px 22px;
+    border-bottom: 1px solid var(--clr-border);
+}
+
+.profile-card-header h2 {
+    margin-bottom: 5px;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.profile-card-header p { margin: 0; color: var(--clr-text-2); font-size: .88rem; }
+
+.profile-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px 24px;
+    padding: 30px 34px 34px;
+}
+
+.profile-field--full,
+.profile-form-actions,
+.profile-form-error { grid-column: 1 / -1; }
+
+.profile-field label {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--clr-text);
+    font-size: .88rem;
+    font-weight: 600;
+}
+
+.profile-field .form-control {
+    width: 100%;
+    border: 1px solid var(--clr-border);
+    border-radius: var(--r-sm);
+    padding: 11px 13px;
+    color: var(--clr-text);
+    background: var(--clr-card);
+}
+
+.profile-field .form-control:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(91, 141, 239, .12);
+    outline: none;
+}
+
+.profile-field-error,
+.profile-form-error { color: #c0395d; font-size: .8rem; margin-top: 5px; }
+
+.profile-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 4px;
+}
+
+@media (max-width: 767px) {
+    .profile-page { padding-top: 120px; }
+    .profile-form { grid-template-columns: 1fr; padding: 24px; }
+    .profile-field--full,
+    .profile-form-actions,
+    .profile-form-error { grid-column: auto; }
+    .profile-card-header { padding: 24px; }
+    .profile-form-actions { flex-direction: column-reverse; }
+    .profile-form-actions .c-btn { justify-content: center; }
+}

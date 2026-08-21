@@ -8,10 +8,19 @@ La API usa Django REST Framework y JWT. La web mantiene autenticación mediante 
 |--------|-----|-------|-----|
 | GET | `/` | `LandingView` | `apps.core` |
 | GET | `/dashboard/` | `DashboardView` | `apps.core` |
+| GET | `/dashboard/pedidos/` | `OrderListView` | `apps.orders` |
+| GET | `/dashboard/pedidos/<id>/` | `OrderDetailView` | `apps.orders` |
+| POST | `/dashboard/pedidos/<id>/estado/` | `OrderStatusUpdateView` | `apps.orders` |
+| POST | `/dashboard/usuarios/forzar-eliminacion/` | `UserForceDeleteView` | `apps.users` |
+| GET | `/dashboard/reportes/` | `ReportView` | `apps.core` |
+| GET | `/dashboard/reportes/exportar/` | `ReportExportView` (PDF) | `apps.core` |
 | GET | `/catalogo/` | `CatalogView` | `apps.catalog` |
+| GET | `/catalogo/productos/<slug>/` | `ProductDetailView` | `apps.catalog` |
 | GET/POST | `/accounts/login/` | `LoginView` | `apps.users` |
 | GET/POST | `/accounts/register/` | `RegisterView` | `apps.users` |
+| GET | `/accounts/register/confirmation/` | `RegistrationConfirmationView` | `apps.users` |
 | POST | `/accounts/logout/` | `LogoutView` | `apps.users` |
+| GET/POST | `/accounts/perfil/` | `ProfileView` | `apps.users` |
 | GET | `/admin/` | Django Admin | `django.contrib.admin` |
 
 ## Convenciones

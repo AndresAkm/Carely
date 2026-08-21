@@ -4,7 +4,7 @@
 {% block title %}Panel de Control - Carely{% endblock %}
 
 {% block extra_css %}
-    <link href="{% static 'core/css/dashboard.css' %}?v=4" rel="stylesheet">
+    <link href="{% static 'core/css/dashboard.css' %}?v=5" rel="stylesheet">
 {% endblock %}
 
 {% block body_class %}dashboard-page{% endblock %}
@@ -90,30 +90,22 @@
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <div class="feature-card">
-                                            <i class="bi bi-box"></i>
-                                            <h6>Productos</h6>
-                                            <p class="small text-secondary mb-0">Gestiona tu catálogo de productos.</p>
+                                             <a href="{% url 'dashboard:product_list' %}" class="dashboard-feature-link"><i class="bi bi-box"></i><h6>Productos</h6><p class="small text-secondary mb-0">Gestiona tu catálogo de productos.</p></a>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="feature-card">
-                                            <i class="bi bi-tags"></i>
-                                            <h6>Categorías</h6>
-                                            <p class="small text-secondary mb-0">Organiza tus productos por categorías.</p>
+                                             <a href="{% url 'dashboard:category_list' %}" class="dashboard-feature-link"><i class="bi bi-tags"></i><h6>Categorías</h6><p class="small text-secondary mb-0">Organiza tus productos por categorías.</p></a>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="feature-card">
-                                            <i class="bi bi-cart"></i>
-                                            <h6>Pedidos</h6>
-                                            <p class="small text-secondary mb-0">Administra los pedidos de tus clientes.</p>
+                                             <a href="{% url 'dashboard:order_list' %}" class="dashboard-feature-link"><i class="bi bi-cart"></i><h6>Pedidos</h6><p class="small text-secondary mb-0">Administra los pedidos de tus clientes.</p></a>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="feature-card">
-                                            <i class="bi bi-bar-chart"></i>
-                                            <h6>Reportes</h6>
-                                            <p class="small text-secondary mb-0">Visualiza estadísticas de tu tienda.</p>
+                                             <a href="{% url 'dashboard:report_list' %}" class="dashboard-feature-link"><i class="bi bi-bar-chart"></i><h6>Reportes</h6><p class="small text-secondary mb-0">Visualiza estadísticas de tu tienda.</p></a>
                                         </div>
                                     </div>
                                 </div>
@@ -144,6 +136,17 @@
                                     {% endfor %}
                                 </ul>
                             </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row g-4 mt-1">
+                    <div class="col-12">
+                        <div class="dashboard-card">
+                            <div class="dashboard-card-header d-flex justify-content-between align-items-center">
+                                <div><h5 class="dashboard-card-title">Pedidos recientes</h5><p class="dashboard-card-subtitle mb-0">Últimas órdenes recibidas en la tienda.</p></div>
+                                <a href="{% url 'dashboard:order_list' %}" class="btn btn-sm btn-carely-outline">Ver todos</a>
+                            </div>
+                            <div class="dashboard-card-body p-0"><div class="table-responsive"><table class="table dashboard-table align-middle mb-0"><thead><tr><th>Pedido</th><th>Cliente</th><th>Total</th><th>Estado</th><th>Fecha</th><th></th></tr></thead><tbody>{% for order in recent_orders %}<tr><td><strong>#{{ order.pk }}</strong></td><td>{{ order.user.get_full_name|default:order.user.email }}</td><td>${{ order.total|floatformat:2 }}</td><td><span class="status-badge status-badge--{{ order.status }}">{{ order.get_status_display }}</span></td><td>{{ order.created_at|date:'d/m/Y H:i' }}</td><td class="text-end"><a href="{% url 'dashboard:order_detail' order.pk %}" class="btn btn-sm btn-carely-outline" aria-label="Ver pedido"><i class="bi bi-eye"></i></a></td></tr>{% empty %}<tr><td colspan="6" class="text-center py-4 text-secondary">No hay pedidos registrados.</td></tr>{% endfor %}</tbody></table></div></div>
                         </div>
                     </div>
                 </div>

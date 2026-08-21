@@ -1,13 +1,16 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.views import PasswordChangeView
+from django.db import transaction
 from django.shortcuts import redirect
+from django.views import View
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, ListView, UpdateView
 
 from apps.core.permissions import is_admin
+from apps.payments.models import Payment
 
-from ..forms import DashboardUserCreateForm, DashboardUserForm
+from ..forms import DashboardUserCreateForm, DashboardUserForm, ForceDeleteUserForm
 from ..models import User
 
 
@@ -39,6 +42,11 @@ class UserListView(DashboardUserMixin, ListView):
         elif status == 'inactive':
             queryset = queryset.filter(is_active=False)
         return queryset.order_by('-created_at')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['force_delete_form'] = ForceDeleteUserForm()
+        return context
 
 
 class UserCreateView(DashboardUserMixin, CreateView):
@@ -113,3 +121,30 @@ class UserToggleActiveView(DashboardUserMixin, UpdateView):
             action = 'activó' if self.object.is_active else 'desactivó'
             messages.success(request, f'Se {action} el usuario correctamente.')
         return redirect(self.success_url)
+
+
+class UserForceDeleteView(DashboardUserMixin, View):
+    def post(self, request, *args, **kwargs):
+        form = ForceDeleteUserForm(request.POST)
+        if not form.is_valid():
+            messages.error(request, 'Selecciona un usuario válido para eliminar.')
+            return redirect('dashboard:user_list')
+
+        user = form.get_target_user()
+        if user == request.user:
+            messages.error(request, 'No puedes eliminar la cuenta con la que estás usando el dashboard.')
+            return redirect('dashboard:user_list')
+        if (
+            user.role == User.Role.ADMIN
+            and user.is_active
+            and User.objects.filter(is_active=True, role=User.Role.ADMIN).count() <= 1
+        ):
+            messages.error(request, 'No puedes eliminar al último administrador activo.')
+            return redirect('dashboard:user_list')
+
+        with transaction.atomic():
+            # Payments protect their order, so remove the payment records first.
+            Payment.objects.filter(order__user=user).delete()
+            user.delete()
+        messages.success(request, 'El usuario y sus datos relacionados se eliminaron correctamente.')
+        return redirect('dashboard:user_list')

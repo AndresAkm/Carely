@@ -5,6 +5,7 @@ from django.views.generic import TemplateView
 
 from apps.catalog.models import Category, Product
 from apps.core.permissions import is_admin
+from apps.orders.models import Order
 
 User = get_user_model()
 
@@ -74,7 +75,8 @@ class DashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         context['total_users'] = User.objects.count()
         context['total_products'] = Product.objects.count()
         context['total_categories'] = Category.objects.count()
-        context['total_orders'] = 0
+        context['total_orders'] = Order.objects.count()
 
         context['recent_users'] = User.objects.order_by('-date_joined')[:5]
+        context['recent_orders'] = Order.objects.select_related('user')[:5]
         return context

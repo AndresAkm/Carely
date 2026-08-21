@@ -35,13 +35,13 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#">
+                <a class="nav-link {% if request.resolver_match.url_name|slice:':5' == 'order' %}active{% endif %}" href="{% url 'dashboard:order_list' %}">
                     <i class="bi bi-cart"></i>
                     <span>Pedidos</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#">
+                <a class="nav-link {% if request.resolver_match.url_name|slice:':6' == 'report' %}active{% endif %}" href="{% url 'dashboard:report_list' %}">
                     <i class="bi bi-bar-chart"></i>
                     <span>Reportes</span>
                 </a>

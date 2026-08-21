@@ -1,5 +1,6 @@
 // THEME SYSTEM — persists accent color in localStorage
 const THEME_STORAGE_KEY = 'carely_theme';
+const THEME_PICKER_HIDDEN_KEY = 'carely_theme_picker_hidden';
 
 const themes = {
   azul: {
@@ -110,6 +111,11 @@ function buildThemePicker() {
   container.className = 'theme-picker';
   container.setAttribute('aria-label', 'Selector de color');
 
+  const dismiss = document.createElement('button');
+  dismiss.className = 'theme-picker__dismiss';
+  dismiss.setAttribute('aria-label', 'Ocultar selector de color');
+  dismiss.innerHTML = '<i class="bi bi-x-lg"></i>';
+
   const toggle = document.createElement('button');
   toggle.className = 'theme-picker__toggle';
   toggle.setAttribute('aria-label', 'Cambiar color');
@@ -117,6 +123,19 @@ function buildThemePicker() {
 
   const menu = document.createElement('div');
   menu.className = 'theme-picker__menu';
+
+  const restore = document.createElement('button');
+  restore.className = 'theme-picker__restore';
+  restore.setAttribute('aria-label', 'Mostrar selector de color');
+  restore.innerHTML = '<i class="bi bi-palette"></i>';
+
+  const setPickerVisibility = hidden => {
+    container.classList.toggle('is-dismissed', hidden);
+    restore.classList.toggle('is-visible', hidden);
+    try {
+      localStorage.setItem(THEME_PICKER_HIDDEN_KEY, hidden ? 'true' : 'false');
+    } catch (_) {}
+  };
 
   Object.keys(themes).forEach(key => {
     const btn = document.createElement('button');
@@ -137,13 +156,29 @@ function buildThemePicker() {
     toggle.classList.toggle('is-open');
   });
 
+  dismiss.addEventListener('click', e => {
+    e.stopPropagation();
+    setPickerVisibility(true);
+  });
+
+  restore.addEventListener('click', e => {
+    e.stopPropagation();
+    setPickerVisibility(false);
+  });
+
   document.addEventListener('click', () => {
     toggle.classList.remove('is-open');
   });
 
+  container.appendChild(dismiss);
   container.appendChild(toggle);
   container.appendChild(menu);
+  document.body.appendChild(restore);
   document.body.appendChild(container);
+
+  try {
+    setPickerVisibility(localStorage.getItem(THEME_PICKER_HIDDEN_KEY) === 'true');
+  } catch (_) {}
 }
 
 document.addEventListener('DOMContentLoaded', () => {

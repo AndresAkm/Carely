@@ -40,5 +40,8 @@ env\Scripts\python.exe manage.py createsuperuser
 |-----|---------|
 | `apps.catalog` | `Category`, `Product` |
 | `apps.core` | *(sin modelos)* |
-| `apps.users` | *(usa `django.contrib.auth`)* |
-| `apps.inventory`, `apps.cart`, `apps.orders`, `apps.payments` | *(por implementar)* |
+| `apps.users` | `User` |
+| `apps.inventory` | `InventoryMovement` |
+| `apps.cart` | `Cart`, `CartItem` |
+| `apps.orders` | `Order`, `OrderItem` |
+| `apps.payments` | `Payment` |

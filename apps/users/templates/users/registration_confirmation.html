@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Cuenta creada - Carely{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'users/css/auth.css' %}?v=4" rel="stylesheet">
+{% endblock %}
+
+{% block body_class %}auth-page{% endblock %}
+
+{% block content %}
+{% include 'users/_auth_background.html' %}
+
+<div class="auth-wrapper">
+    <div class="auth-card text-center confirmation-card">
+        <img src="{% static 'core/images/carely-logo.svg' %}" alt="Carely" class="auth-logo__image mx-auto mb-4">
+        {% if registration_email_sent %}
+        <div class="confirmation-icon confirmation-icon--success"><i class="bi bi-check-lg"></i></div>
+        <h1 class="auth-title">¡Tu cuenta está lista!</h1>
+        <p class="auth-subtitle">Enviamos un correo de confirmación a <strong>{{ registration_email }}</strong>.</p>
+        <div class="confirmation-notice"><i class="bi bi-envelope-check me-2"></i>Revisa tu bandeja de entrada y también la carpeta de spam.</div>
+        {% else %}
+        <div class="confirmation-icon confirmation-icon--warning"><i class="bi bi-envelope-exclamation"></i></div>
+        <h1 class="auth-title">Cuenta creada correctamente</h1>
+        <p class="auth-subtitle">Tu cuenta fue creada, pero no pudimos enviar el correo de confirmación en este momento.</p>
+        <div class="confirmation-notice confirmation-notice--warning"><i class="bi bi-info-circle me-2"></i>Puedes continuar usando Carely y solicitar ayuda si el problema persiste.</div>
+        {% endif %}
+        <a href="{% url 'catalog:home' %}" class="btn btn-carely-primary w-100">Ir al catálogo</a>
+        <a href="{% url 'core:home' %}" class="confirmation-back-link">Volver al inicio</a>
+    </div>
+</div>
+{% endblock %}

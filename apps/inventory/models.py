@@ -10,7 +10,7 @@ class InventoryMovement(models.Model):
 
     product = models.ForeignKey(
         'catalog.Product',
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name='inventory_movements',
         verbose_name='producto',
     )

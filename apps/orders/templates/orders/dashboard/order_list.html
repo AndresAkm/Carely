@@ -1,0 +1,78 @@
+{% extends 'core/dashboard_base.html' %}
+
+{% block dashboard_title %}Pedidos{% endblock %}
+
+{% block dashboard_content %}
+<div class="dashboard-page-header">
+    <div>
+        <h1 class="dashboard-heading">Pedidos</h1>
+        <p class="dashboard-muted">Consulta y actualiza los pedidos de tus clientes.</p>
+    </div>
+</div>
+
+<div class="dashboard-card dashboard-filter-card">
+    <div class="dashboard-card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-lg-4">
+                <label class="dashboard-filter-label" for="id_q">Buscar</label>
+                {{ filter_form.q }}
+            </div>
+            <div class="col-lg-2 col-md-4">
+                <label class="dashboard-filter-label" for="id_status">Estado</label>
+                {{ filter_form.status }}
+            </div>
+            <div class="col-lg-2 col-md-4">
+                <label class="dashboard-filter-label" for="id_created_from">Desde</label>
+                {{ filter_form.created_from }}
+            </div>
+            <div class="col-lg-2 col-md-4">
+                <label class="dashboard-filter-label" for="id_created_to">Hasta</label>
+                {{ filter_form.created_to }}
+            </div>
+            <div class="col-lg-2">
+                <button class="btn btn-carely-outline w-100" type="submit"><i class="bi bi-search me-1"></i>Filtrar</button>
+            </div>
+            {% if filter_form.non_field_errors or filter_form.created_to.errors %}
+            <div class="col-12 field-error">{{ filter_form.non_field_errors }}{{ filter_form.created_to.errors }}</div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<div class="dashboard-card">
+    <div class="dashboard-card-body p-0">
+        <div class="table-responsive">
+            <table class="table dashboard-table align-middle mb-0">
+                <thead>
+                    <tr><th>Pedido</th><th>Cliente</th><th>Artículos</th><th>Total</th><th>Estado</th><th>Fecha</th><th class="text-end">Acciones</th></tr>
+                </thead>
+                <tbody>
+                {% for order in orders %}
+                    <tr>
+                        <td><strong>#{{ order.pk }}</strong></td>
+                        <td><strong>{{ order.user.get_full_name|default:order.user.email }}</strong><small class="d-block text-secondary">{{ order.user.email }}</small></td>
+                        <td>{{ order.item_count }}</td>
+                        <td>${{ order.total|floatformat:2 }}</td>
+                        <td><span class="status-badge status-badge--{{ order.status }}">{{ order.get_status_display }}</span></td>
+                        <td>{{ order.created_at|date:'d/m/Y H:i' }}</td>
+                        <td class="text-end"><a href="{% url 'dashboard:order_detail' order.pk %}" class="btn btn-sm btn-carely-outline" title="Ver pedido"><i class="bi bi-eye"></i></a><a href="{% url 'dashboard:order_status' order.pk %}" class="btn btn-sm btn-carely-outline" title="Actualizar estado"><i class="bi bi-pencil"></i></a></td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="7" class="text-center py-5 text-secondary">No hay pedidos que coincidan con los filtros.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% if is_paginated %}
+<nav class="dashboard-pagination" aria-label="Paginación de pedidos">
+    <ul class="pagination justify-content-center mb-0">
+        {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?{% if filter_query %}{{ filter_query }}&{% endif %}page={{ page_obj.previous_page_number }}">‹</a></li>{% endif %}
+        {% for number in page_obj.paginator.page_range %}<li class="page-item {% if page_obj.number == number %}active{% endif %}"><a class="page-link" href="?{% if filter_query %}{{ filter_query }}&{% endif %}page={{ number }}">{{ number }}</a></li>{% endfor %}
+        {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?{% if filter_query %}{{ filter_query }}&{% endif %}page={{ page_obj.next_page_number }}">›</a></li>{% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}
