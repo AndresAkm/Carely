@@ -69,7 +69,7 @@ class RegisterView(View):
 
 
 class LogoutView(View):
-    def get(self, request):
+    def post(self, request):
         logout(request)
         messages.success(request, 'Has cerrado sesión correctamente.')
         return redirect('core:home')

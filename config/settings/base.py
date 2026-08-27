@@ -1,4 +1,5 @@
 import os
+import secrets
 from datetime import timedelta
 from pathlib import Path
 
@@ -24,7 +25,7 @@ load_env_file(BASE_DIR / '.env')
 
 SECRET_KEY = os.environ.get(
     'DJANGO_SECRET_KEY',
-    'django-insecure-u9a#z#5k4!)f*merr!civ8*_jv%8tp42x6o2(7w31i$p8w*1+j',
+    secrets.token_urlsafe(50),
 )
 
 INSTALLED_APPS = [
