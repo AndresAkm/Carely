@@ -19,6 +19,8 @@ urlpatterns = [
     path('dashboard/', include('apps.core.dashboard_urls')),
     path('accounts/', include('apps.users.urls')),
     path('catalogo/', include('apps.catalog.urls')),
+    path('carrito/', include('apps.cart.urls')),
+    path('pedidos/', include('apps.orders.urls')),
 
     # API
 

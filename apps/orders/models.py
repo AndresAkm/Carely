@@ -68,6 +68,12 @@ class OrderItem(models.Model):
         related_name='order_items',
         verbose_name='producto',
     )
+    product_name = models.CharField(
+        'nombre del producto',
+        max_length=200,
+        default='',
+        help_text='Snapshot del nombre del producto al momento de la compra'
+    )
     quantity = models.PositiveIntegerField(
         'cantidad',
         default=1,

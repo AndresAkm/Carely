@@ -21,16 +21,45 @@
             <li><a href="{% url 'catalog:home' %}" style="color:var(--clr-text)">Catalogo</a></li>
             {% endif %}
             {% if user.is_authenticated %}
-                {% if user.is_staff or user.is_superuser %}
-            <li><a href="{% url 'core:dashboard' %}" class="c-nav__btn c-nav__btn--fill"><i class="bi bi-grid"></i> Mi Panel</a></li>
-                {% else %}
-            <li><a href="{% url 'users:profile' %}" class="c-nav__btn c-nav__btn--outline"><i class="bi bi-person-circle"></i> Mi Perfil</a></li>
-                {% endif %}
-            <li><form method="post" action="{% url 'users:logout' %}"><button type="submit" class="c-nav__btn c-nav__btn--outline"><i class="bi bi-box-arrow-right"></i> Cerrar Sesion</button>{% csrf_token %}</form></li>
+            {% if user.is_staff or user.is_superuser %}
+            <li><a href="{% url 'core:dashboard' %}" class="c-nav__btn c-nav__btn--fill"><i class="bi bi-grid"></i> Mi
+                    Panel</a></li>
             {% else %}
-            <li><a href="{% url 'users:login' %}" class="c-nav__btn c-nav__btn--outline"><i class="bi bi-box-arrow-in-right"></i> Iniciar Sesion</a></li>
+            <li>
+                <a href="{% url 'cart:cart' %}" class="c-nav__btn c-nav__btn--outline" id="nav-cart-link"
+                    aria-label="Mi carrito" style="position:relative">
+                    <i class="bi bi-bag"></i> Carrito
+                    {% if cart_count > 0 %}
+                    <span id="nav-cart-badge" style="
+                  position:absolute;top:-6px;right:-6px;
+                  background:var(--accent);color:#fff;
+                  border-radius:50%;width:18px;height:18px;
+                  font-size:.65rem;font-weight:700;
+                  display:inline-flex;align-items:center;justify-content:center;
+                  line-height:1;
+                ">{{ cart_count }}</span>
+                    {% else %}
+                    <span id="nav-cart-badge"
+                        style="display:none;position:absolute;top:-6px;right:-6px;background:var(--accent);color:#fff;border-radius:50%;width:18px;height:18px;font-size:.65rem;font-weight:700;display:none;align-items:center;justify-content:center;line-height:1;">0</span>
+                    {% endif %}
+                </a>
+            </li>
+            <li><a href="{% url 'orders:order_list' %}" class="c-nav__btn c-nav__btn--outline"><i
+                        class="bi bi-box-seam"></i> Mis Pedidos</a></li>
+            <li><a href="{% url 'users:profile' %}" class="c-nav__btn c-nav__btn--outline"><i
+                        class="bi bi-person-circle"></i> Mi Perfil</a></li>
+            {% endif %}
+            <li>
+                <form method="post" action="{% url 'users:logout' %}"><button type="submit"
+                        class="c-nav__btn c-nav__btn--outline"><i class="bi bi-box-arrow-right"></i> Cerrar
+                        Sesion</button>{% csrf_token %}</form>
+            </li>
+            {% else %}
+            <li><a href="{% url 'users:login' %}" class="c-nav__btn c-nav__btn--outline"><i
+                        class="bi bi-box-arrow-in-right"></i> Iniciar Sesion</a></li>
             {% if not user.is_authenticated %}
-            <li><a href="{% url 'users:register' %}" class="c-nav__btn c-nav__btn--fill"><i class="bi bi-person-plus"></i> Crear Cuenta</a></li>
+            <li><a href="{% url 'users:register' %}" class="c-nav__btn c-nav__btn--fill"><i
+                        class="bi bi-person-plus"></i> Crear Cuenta</a></li>
             {% endif %}
             {% endif %}
         </ul>
