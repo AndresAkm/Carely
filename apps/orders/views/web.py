@@ -25,23 +25,58 @@ def checkout_view(request):
     
     if request.method == 'POST':
         address_id = request.POST.get('address_id')
-        try:
-            order = checkout_cart(request.user, int(address_id), notes=request.POST.get('notes', ''))
-            messages.success(request, f'¡Pedido #{order.id} confirmado con éxito!')
-            return redirect('orders:success', order_id=order.id)
-            
-        except InvalidAddressError as e:
-            messages.error(request, str(e))
-        except InsufficientStockError as e:
-            messages.error(request, f'No pudimos procesar el pedido. {str(e)}')
-            return redirect('cart:cart')
-        except EmptyCartError as e:
-            messages.error(request, str(e))
-            return redirect('cart:cart')
-        except ValueError:
-            messages.error(request, 'Selecciona una dirección de envío válida.')
-        except Exception as e:
-            messages.error(request, 'Ocurrió un error inesperado al procesar el pedido.')
+        notes = request.POST.get('notes', '').strip()
+
+        if not address_id:
+            messages.error(
+                request,
+                'Debes seleccionar una dirección de envío.'
+            )
+        else:
+            try:
+                address_id = int(address_id)
+
+                order = checkout_cart(
+                    request.user,
+                    address_id,
+                    notes=notes,
+                )
+
+                messages.success(
+                    request,
+                    f'¡Pedido #{order.id} confirmado con éxito!'
+                )
+
+                return redirect(
+                    'orders:success',
+                    order_id=order.id
+                )
+
+            except InvalidAddressError as e:
+                messages.error(request, str(e))
+
+            except InsufficientStockError as e:
+                messages.error(
+                    request,
+                    f'No pudimos procesar el pedido. {str(e)}'
+                )
+                return redirect('cart:cart')
+
+            except EmptyCartError as e:
+                messages.error(request, str(e))
+                return redirect('cart:cart')
+
+            except ValueError:
+                messages.error(
+                    request,
+                    'Selecciona una dirección de envío válida.'
+                )
+
+            except Exception:
+                messages.error(
+                    request,
+                    'Ocurrió un error inesperado al procesar el pedido.'
+                )
             
     context['addresses'] = addresses
     return render(request, 'orders/checkout.html', context)
@@ -73,7 +108,7 @@ def order_detail_view(request, order_id):
     """
     from apps.orders.models import Order
     order = get_object_or_404(
-        Order.objects.select_related('user').prefetch_related('items__product', 'items__product__category'),
+        Order.objects.select_related('user').prefetch_related('items__product', 'items__product__category', 'status_history'),
         id=order_id, 
         user=request.user
     )

@@ -1,122 +1,612 @@
 {% extends 'base.html' %}
+
 {% load static %}
 
-{% block title %}Pedido #{{order.id}} - Carely{% endblock %}
+{% block title %}Pedido #{{ order.id }} - Carely{% endblock %}
+
+{% block extra_css %}
+
+<style>
+    .order-timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+
+    .order-timeline::before {
+        content: "";
+        position: absolute;
+        left: 9px;
+        top: 10px;
+        bottom: 10px;
+        width: 2px;
+        background: var(--clr-border);
+    }
+
+    .timeline-item {
+        position: relative;
+        padding-bottom: 1.5rem;
+    }
+
+    .timeline-item:last-child {
+        padding-bottom: 0;
+    }
+
+    .timeline-marker {
+        position: absolute;
+        left: -2rem;
+        top: 0;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: .7rem;
+        z-index: 1;
+    }
+
+    .timeline-status {
+        font-weight: 600;
+        font-size: .95rem;
+        line-height: 1.2;
+    }
+
+    .timeline-date {
+        color: var(--clr-text-2);
+        font-size: .8rem;
+        margin-top: .25rem;
+    }
+
+    .timeline-comment {
+        margin-top: .5rem;
+        padding: .65rem .75rem;
+        background: var(--clr-bg-2);
+        border-radius: var(--r-sm);
+        font-size: .85rem;
+        color: var(--clr-text-2);
+    }
+</style>
+
+{% endblock %}
+
 
 {% block content %}
+
 {% include 'navbar.html' %}
 
 <section style="padding: 4rem 0; min-height: 80vh; background: var(--clr-bg-2);">
-    <div class="container">
+
+    <div class="container my-5">
+
+        <!-- Volver -->
         <div class="mb-4">
+
             <a href="{% url 'orders:order_list' %}"
-                style="text-decoration: none; font-weight: 500; font-size: .9rem;"><i class="bi bi-arrow-left"></i>
-                Volver a Mis Pedidos</a>
+               style="text-decoration: none; font-weight: 500; font-size: .9rem;">
+
+                <i class="bi bi-arrow-left"></i>
+                Volver a Mis Pedidos
+
+            </a>
+
         </div>
+
 
         <div class="row g-4">
-            <!-- Detalles Generales -->
+
+            <!-- ========================= -->
+            <!-- COLUMNA INFORMACIÓN -->
+            <!-- ========================= -->
+
             <div class="col-lg-4">
+
+                <!-- Información general -->
                 <div
-                    style="background: #fff; padding: 1.5rem; border-radius: var(--r-md); box-shadow: var(--sh-sm); border: 1px solid var(--clr-border); margin-bottom: 2rem;">
+                    style="
+                        background: #fff;
+                        padding: 1.5rem;
+                        border-radius: var(--r-md);
+                        box-shadow: var(--sh-sm);
+                        border: 1px solid var(--clr-border);
+                        margin-bottom: 2rem;
+                    "
+                >
+
                     <h2
-                        style="font-family: var(--ff-serif); font-size: 1.3rem; border-bottom: 1px solid var(--clr-border); padding-bottom: 1rem; margin-bottom: 1rem;">
-                        Pedido #{{order.id}}</h2>
-                    <p class="mb-2"><strong>F. Compra:</strong><br>{{order.created_at|date:"d M Y, h:i a"}}</p>
-                    <p class="mb-2"><strong>Estado:</strong><br>
-                        <span class="badge rounded-pill" style="
-                            {% if order.status == 'pendiente' %}background:#ffc107;color:#000;
-                            {% elif order.status == 'cancelado' %}background:#dc3545;color:#fff;
-                            {% else %}background:#198754;color:#fff;{% endif %}
-                        ">{{order.get_status_display}}</span>
+                        style="
+                            font-family: var(--ff-serif);
+                            font-size: 1.3rem;
+                            border-bottom: 1px solid var(--clr-border);
+                            padding-bottom: 1rem;
+                            margin-bottom: 1rem;
+                        "
+                    >
+                        Pedido #{{ order.id }}
+                    </h2>
+
+
+                    <!-- Fecha -->
+                    <p class="mb-2">
+
+                        <strong>Fecha Compra:</strong>
+                        <br>
+
+                        {{ order.created_at|date:"d M Y, h:i a" }}
+
                     </p>
+
+
+                    <!-- Estado actual -->
+                    <p class="mb-2">
+
+                        <strong>Estado:</strong>
+                        <br>
+
+                        <span
+                            class="badge rounded-pill"
+                            style="
+                                {% if order.status == 'pendiente' %}
+                                    background: #ffc107;
+                                    color: #000;
+                                {% elif order.status == 'cancelado' %}
+                                    background: #dc3545;
+                                    color: #fff;
+                                {% else %}
+                                    background: #198754;
+                                    color: #fff;
+                                {% endif %}
+                            "
+                        >
+                            {{ order.get_status_display }}
+                        </span>
+
+                    </p>
+
+
+                    <!-- Notas ingresadas durante checkout -->
                     {% if order.notes %}
-                    <p class="mb-2"><strong>Notas del Cliente:</strong><br>{{order.notes}}</p>
+
+                        <p class="mb-2">
+
+                            <strong>Notas del pedido:</strong>
+                            <br>
+
+                            {{ order.notes }}
+
+                        </p>
+
                     {% endif %}
+
                 </div>
 
+
+                <!-- ========================= -->
+                <!-- SEGUIMIENTO DEL PEDIDO -->
+                <!-- ========================= -->
+
                 <div
-                    style="background: #fff; padding: 1.5rem; border-radius: var(--r-md); box-shadow: var(--sh-sm); border: 1px solid var(--clr-border);">
+                    style="
+                        background: #fff;
+                        padding: 1.5rem;
+                        border-radius: var(--r-md);
+                        box-shadow: var(--sh-sm);
+                        border: 1px solid var(--clr-border);
+                        margin-bottom: 2rem;
+                    "
+                >
+
                     <h3
-                        style="font-family: var(--ff-serif); font-size: 1.1rem; border-bottom: 1px solid var(--clr-border); padding-bottom: 1rem; margin-bottom: 1rem;">
-                        Destino (Snapshot)</h3>
-                    <p style="font-size: .9rem; line-height: 1.5;" class="mb-0">{{order.shipping_address|linebreaksbr}}</p>
+                        style="
+                            font-family: var(--ff-serif);
+                            font-size: 1.1rem;
+                            border-bottom: 1px solid var(--clr-border);
+                            padding-bottom: 1rem;
+                            margin-bottom: 1.5rem;
+                        "
+                    >
+                        Seguimiento del pedido
+                    </h3>
+
+
+                    <div class="order-timeline">
+
+                        {% for history in order.status_history.all %}
+
+                            <div class="timeline-item">
+
+                                <div class="timeline-marker">
+
+                                    <i class="bi bi-check-lg"></i>
+
+                                </div>
+
+
+                                <div class="timeline-content">
+
+                                    <div class="timeline-status">
+                                        {{ history.get_status_display }}
+                                    </div>
+
+
+                                    <div class="timeline-date">
+
+                                        {{ history.created_at|date:"d M Y, h:i a" }}
+
+                                    </div>
+
+
+                                    {% if history.comment %}
+
+                                        <div class="timeline-comment">
+
+                                            {{ history.comment }}
+
+                                        </div>
+
+                                    {% endif %}
+
+                                </div>
+
+                            </div>
+
+                        {% empty %}
+
+                            <p class="text-muted mb-0">
+                                No hay información de seguimiento disponible.
+                            </p>
+
+                        {% endfor %}
+
+                    </div>
+
                 </div>
+
+
+                <!-- ========================= -->
+                <!-- DIRECCIÓN DE ENVÍO -->
+                <!-- ========================= -->
+
+                <div
+                    style="
+                        background: #fff;
+                        padding: 1.5rem;
+                        border-radius: var(--r-md);
+                        box-shadow: var(--sh-sm);
+                        border: 1px solid var(--clr-border);
+                    "
+                >
+
+                    <h3
+                        style="
+                            font-family: var(--ff-serif);
+                            font-size: 1.1rem;
+                            border-bottom: 1px solid var(--clr-border);
+                            padding-bottom: 1rem;
+                            margin-bottom: 1rem;
+                        "
+                    >
+                        Destino
+                    </h3>
+
+
+                    <p
+                        style="font-size: .9rem; line-height: 1.5;"
+                        class="mb-0"
+                    >
+                        {{ order.shipping_address|linebreaksbr }}
+                    </p>
+
+                </div>
+
             </div>
 
-            <!-- Artículos Comprados -->
+
+            <!-- ========================= -->
+            <!-- COLUMNA PRODUCTOS -->
+            <!-- ========================= -->
+
             <div class="col-lg-8">
+
                 <div
-                    style="background: #fff; padding: 1.5rem; border-radius: var(--r-md); box-shadow: var(--sh-sm); border: 1px solid var(--clr-border);">
+                    style="
+                        background: #fff;
+                        padding: 1.5rem;
+                        border-radius: var(--r-md);
+                        box-shadow: var(--sh-sm);
+                        border: 1px solid var(--clr-border);
+                    "
+                >
+
                     <h3
-                        style="font-family: var(--ff-serif); font-size: 1.25rem; border-bottom: 1px solid var(--clr-border); padding-bottom: 1rem; margin-bottom: 1rem;">
-                        Productos</h3>
+                        style="
+                            font-family: var(--ff-serif);
+                            font-size: 1.25rem;
+                            border-bottom: 1px solid var(--clr-border);
+                            padding-bottom: 1rem;
+                            margin-bottom: 1rem;
+                        "
+                    >
+                        Productos
+                    </h3>
+
 
                     <div style="overflow-x: auto;">
-                        <table style="width: 100%; min-width: 500px; border-collapse: collapse;">
+
+                        <table
+                            style="
+                                width: 100%;
+                                min-width: 500px;
+                                border-collapse: collapse;
+                            "
+                        >
+
                             <thead>
+
                                 <tr
-                                    style="border-bottom: 2px solid var(--clr-border); text-align: left; font-size: .85rem; color: var(--clr-text-2);">
-                                    <th style="padding: .5rem 1rem;">PRODUCTO</th>
-                                    <th style="padding: .5rem 1rem; text-align: center;">CANT</th>
-                                    <th style="padding: .5rem 1rem; text-align: right;">PRECIO U.</th>
-                                    <th style="padding: .5rem 1rem; text-align: right;">SUBTOTAL</th>
+                                    style="
+                                        border-bottom: 2px solid var(--clr-border);
+                                        text-align: left;
+                                        font-size: .85rem;
+                                        color: var(--clr-text-2);
+                                    "
+                                >
+
+                                    <th style="padding: .5rem 1rem;">
+                                        PRODUCTO
+                                    </th>
+
+                                    <th
+                                        style="
+                                            padding: .5rem 1rem;
+                                            text-align: center;
+                                        "
+                                    >
+                                        CANT
+                                    </th>
+
+                                    <th
+                                        style="
+                                            padding: .5rem 1rem;
+                                            text-align: right;
+                                        "
+                                    >
+                                        PRECIO U.
+                                    </th>
+
+                                    <th
+                                        style="
+                                            padding: .5rem 1rem;
+                                            text-align: right;
+                                        "
+                                    >
+                                        SUBTOTAL
+                                    </th>
+
                                 </tr>
+
                             </thead>
+
+
                             <tbody>
+
                                 {% for item in order.items.all %}
-                                <tr style="border-bottom: 1px solid var(--clr-border);">
-                                    <td style="padding: 1rem;">
-                                        <div style="display: flex; align-items: center; gap: 1rem;">
-                                            {% if item.product.image %}
-                                            <img src="{{item.product.image.url}}" alt="Imagen"
-                                                style="width: 50px; height: 50px; border-radius: 4px; object-fit: cover;">
-                                            {% else %}
+
+                                    <tr
+                                        style="
+                                            border-bottom: 1px solid var(--clr-border);
+                                        "
+                                    >
+
+                                        <!-- Producto -->
+                                        <td style="padding: 1rem;">
+
                                             <div
-                                                style="width: 50px; height: 50px; background: #eee; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
-                                                <i class="bi bi-box text-muted"></i></div>
-                                            {% endif %}
-                                            <div>
-                                                <div style="font-weight: 600;">{{item.product_name}}</div>
-                                                <div style="font-size: .75rem; color: var(--accent);">{{item.product.category.name|default:'Categoría'}}</div>
+                                                style="
+                                                    display: flex;
+                                                    align-items: center;
+                                                    gap: 1rem;
+                                                "
+                                            >
+
+                                                {% if item.product.image %}
+
+                                                    <img
+                                                        src="{{ item.product.image.url }}"
+                                                        alt="{{ item.product_name }}"
+                                                        style="
+                                                            width: 50px;
+                                                            height: 50px;
+                                                            border-radius: 4px;
+                                                            object-fit: cover;
+                                                        "
+                                                    >
+
+                                                {% else %}
+
+                                                    <div
+                                                        style="
+                                                            width: 50px;
+                                                            height: 50px;
+                                                            background: #eee;
+                                                            border-radius: 4px;
+                                                            display: flex;
+                                                            align-items: center;
+                                                            justify-content: center;
+                                                        "
+                                                    >
+
+                                                        <i class="bi bi-box text-muted"></i>
+
+                                                    </div>
+
+                                                {% endif %}
+
+
+                                                <div>
+
+                                                    <div style="font-weight: 600;">
+                                                        {{ item.product_name }}
+                                                    </div>
+
+
+                                                    <div
+                                                        style="
+                                                            font-size: .75rem;
+                                                            color: var(--accent);
+                                                        "
+                                                    >
+                                                        {{ item.product.category.name|default:'Categoría' }}
+                                                    </div>
+
+                                                </div>
+
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td style="padding: 1rem; text-align: center;">x{{item.quantity}}</td>
-                                    <td style="padding: 1rem; text-align: right;">COP {{item.unit_price|floatformat:2}}</td>
-                                    <td
-                                        style="padding: 1rem; text-align: right; font-weight: 600; color: var(--accent);">
-                                        COP {{item.subtotal|floatformat:2}}</td>
-                                </tr>
+
+                                        </td>
+
+
+                                        <!-- Cantidad -->
+                                        <td
+                                            style="
+                                                padding: 1rem;
+                                                text-align: center;
+                                            "
+                                        >
+                                            x{{ item.quantity }}
+                                        </td>
+
+
+                                        <!-- Precio -->
+                                        <td
+                                            style="
+                                                padding: 1rem;
+                                                text-align: right;
+                                            "
+                                        >
+                                            COP {{ item.unit_price|floatformat:2 }}
+                                        </td>
+
+
+                                        <!-- Subtotal -->
+                                        <td
+                                            style="
+                                                padding: 1rem;
+                                                text-align: right;
+                                                font-weight: 600;
+                                                color: var(--accent);
+                                            "
+                                        >
+                                            COP {{ item.subtotal|floatformat:2 }}
+                                        </td>
+
+                                    </tr>
+
                                 {% endfor %}
+
                             </tbody>
+
                         </table>
+
                     </div>
 
-                    <div style="margin-top: 2rem; display: flex; justify-content: flex-end;">
-                        <div style="text-align: right; min-width: 200px;">
+
+                    <!-- ========================= -->
+                    <!-- TOTALES -->
+                    <!-- ========================= -->
+
+                    <div
+                        style="
+                            margin-top: 2rem;
+                            display: flex;
+                            justify-content: flex-end;
+                        "
+                    >
+
+                        <div
+                            style="
+                                text-align: right;
+                                min-width: 200px;
+                            "
+                        >
+
                             <div
-                                style="display: flex; justify-content: space-between; margin-bottom: .5rem; font-size: .95rem;">
-                                <span class="text-muted">Subtotal:</span>
-                                <span>COP {{order.total|floatformat:2}}</span>
+                                style="
+                                    display: flex;
+                                    justify-content: space-between;
+                                    margin-bottom: .5rem;
+                                    font-size: .95rem;
+                                "
+                            >
+
+                                <span class="text-muted">
+                                    Subtotal:
+                                </span>
+
+                                <span>
+                                    COP {{ order.total|floatformat:2 }}
+                                </span>
+
                             </div>
+
+
                             <div
-                                style="display: flex; justify-content: space-between; margin-bottom: 1rem; font-size: .95rem;">
-                                <span class="text-muted">Descuentos/Envíos:</span>
-                                <span>A calcular</span>
+                                style="
+                                    display: flex;
+                                    justify-content: space-between;
+                                    margin-bottom: 1rem;
+                                    font-size: .95rem;
+                                "
+                            >
+
+                                <span class="text-muted">
+                                    Descuentos/Envíos:
+                                </span>
+
+                                <span>
+                                    A calcular
+                                </span>
+
                             </div>
+
+
                             <div
-                                style="display: flex; justify-content: space-between; border-top: 2px dashed var(--clr-border); padding-top: 1rem; font-weight: 700; font-size: 1.25rem;">
-                                <span>Total:</span>
-                                <span>COP {{order.total|floatformat:2}}</span>
+                                style="
+                                    display: flex;
+                                    justify-content: space-between;
+                                    border-top: 2px dashed var(--clr-border);
+                                    padding-top: 1rem;
+                                    font-weight: 700;
+                                    font-size: 1.25rem;
+                                "
+                            >
+
+                                <span>
+                                    Total:
+                                </span>
+
+                                <span>
+                                    COP {{ order.total|floatformat:2 }}
+                                </span>
+
                             </div>
+
                         </div>
+
                     </div>
+
                 </div>
+
             </div>
+
         </div>
+
     </div>
+
 </section>
 
+
 {% include 'footer.html' %}
+
 {% endblock %}

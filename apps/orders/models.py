@@ -97,3 +97,47 @@ class OrderItem(models.Model):
     @property
     def subtotal(self):
         return self.unit_price * self.quantity
+
+class OrderStatusHistory(models.Model):
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name='status_history',
+        verbose_name='pedido',
+    )
+
+    status = models.CharField(
+        'estado',
+        max_length=20,
+        choices=Order.Status.choices,
+    )
+
+    comment = models.TextField(
+        'comentario',
+        blank=True,
+    )
+
+    changed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='order_status_changes',
+        verbose_name='modificado por',
+    )
+
+    created_at = models.DateTimeField(
+        'fecha',
+        auto_now_add=True,
+    )
+
+    class Meta:
+        verbose_name = 'historial de estado'
+        verbose_name_plural = 'historial de estados'
+        ordering = ['created_at']
+
+    def __str__(self):
+        return (
+            f'Pedido #{self.order.id} - '
+            f'{self.get_status_display()}'
+        )

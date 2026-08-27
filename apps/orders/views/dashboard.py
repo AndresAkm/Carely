@@ -8,7 +8,7 @@ from django.views.generic import DetailView, ListView, UpdateView
 from apps.core.permissions import is_admin
 
 from ..forms import OrderFilterForm, OrderStatusForm
-from ..models import Order
+from ..models import Order, OrderStatusHistory
 
 
 class DashboardOrderMixin(LoginRequiredMixin, UserPassesTestMixin):
@@ -73,8 +73,30 @@ class OrderStatusUpdateView(DashboardOrderMixin, UpdateView):
     context_object_name = 'order'
 
     def get_success_url(self):
-        return reverse('dashboard:order_detail', kwargs={'pk': self.object.pk})
+        return reverse(
+            'dashboard:order_detail',
+            kwargs={'pk': self.object.pk}
+        )
 
     def form_valid(self, form):
-        messages.success(self.request, f'El pedido #{self.object.pk} se actualizó correctamente.')
-        return super().form_valid(form)
+        old_status = self.object.status
+
+        response = super().form_valid(form)
+
+        new_status = self.object.status
+        comment = form.cleaned_data.get('notes', '').strip()
+
+        if old_status != new_status or comment:
+            OrderStatusHistory.objects.create(
+                order=self.object,
+                status=new_status,
+                comment=comment,
+                changed_by=self.request.user,
+            )
+
+        messages.success(
+            self.request,
+            f'El pedido #{self.object.pk} se actualizó correctamente.'
+        )
+
+        return response
