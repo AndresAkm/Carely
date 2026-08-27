@@ -39,13 +39,3 @@ CSRF_TRUSTED_ORIGINS = [
     if origin.strip()
 ]
 
-DATABASES = {
-    'default': {
-        'ENGINE': os.environ.get('DJANGO_DB_ENGINE', 'django.db.backends.postgresql'),
-        'NAME': os.environ.get('DJANGO_DB_NAME', 'carely'),
-        'USER': os.environ.get('DJANGO_DB_USER', 'carely'),
-        'PASSWORD': os.environ.get('DJANGO_DB_PASSWORD', ''),
-        'HOST': os.environ.get('DJANGO_DB_HOST', 'localhost'),
-        'PORT': os.environ.get('DJANGO_DB_PORT', '5432'),
-    }
-}

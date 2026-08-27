@@ -3,6 +3,12 @@ import secrets
 from datetime import timedelta
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
+
+import pymysql
+
+pymysql.install_as_MySQLdb()
+
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 
@@ -77,10 +83,21 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
+DB_HOST = os.environ.get('DJANGO_DB_HOST', '').strip()
+if not DB_HOST or DB_HOST.lower() in {'localhost', '127.0.0.1', '::1'}:
+    raise ImproperlyConfigured('DJANGO_DB_HOST must point to the remote MariaDB Cloud instance.')
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.environ.get('DJANGO_DB_NAME', 'carely'),
+        'USER': os.environ.get('DJANGO_DB_USER', ''),
+        'PASSWORD': os.environ.get('DJANGO_DB_PASSWORD', ''),
+        'HOST': DB_HOST,
+        'PORT': os.environ.get('DJANGO_DB_PORT', '3306'),
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+        },
     }
 }
 

@@ -2,8 +2,11 @@
 
 ## Desarrollo
 
-- Motor: SQLite (archivo `db.sqlite3` en la raíz del proyecto).
+- Motor principal: MariaDB Cloud mediante el backend MySQL de Django.
+- Base: `carely`.
 - Configuración: `config/settings/development.py` hereda de `base.py`.
+- Las credenciales y el host se proporcionan mediante variables `DJANGO_DB_*`.
+- `db.sqlite3` se conserva como respaldo y ya no es la base principal.
 - El seed de categorías y productos se carga con una migración de datos:
   `apps/catalog/migrations/0002_seed_data.py`.
 
@@ -22,17 +25,18 @@ env\Scripts\python.exe manage.py createsuperuser
 
 ## Producción
 
-- Motor por defecto: PostgreSQL (configurable vía variables de entorno en `.env`).
+- Motor: MariaDB Cloud mediante `django.db.backends.mysql`.
+- Base: `carely` (configurable vía variables de entorno en `.env`).
 - Variables usadas por `config/settings/production.py`:
 
 | Variable | Valor por defecto |
 |----------|-------------------|
-| `DJANGO_DB_ENGINE` | `django.db.backends.postgresql` |
+| `DJANGO_DB_ENGINE` | `django.db.backends.mysql` |
 | `DJANGO_DB_NAME` | `carely` |
 | `DJANGO_DB_USER` | `carely` |
 | `DJANGO_DB_PASSWORD` | *(vacío)* |
 | `DJANGO_DB_HOST` | `localhost` |
-| `DJANGO_DB_PORT` | `5432` |
+| `DJANGO_DB_PORT` | `3306` |
 
 ## Modelos
 
