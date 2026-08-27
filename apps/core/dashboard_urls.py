@@ -11,7 +11,16 @@ from apps.catalog.views.dashboard import (
     ProductUpdateView,
 )
 from apps.core.report_views import ReportExportView, ReportView
-from apps.orders.views.dashboard import OrderDetailView, OrderListView, OrderStatusUpdateView
+from apps.orders.views.dashboard import (
+    CouponCreateView,
+    CouponDeleteView,
+    CouponListView,
+    CouponToggleActiveView,
+    CouponUpdateView,
+    OrderDetailView,
+    OrderListView,
+    OrderStatusUpdateView,
+)
 from apps.users.views.dashboard import AddressCreateView, AddressListView, AddressToggleActiveView, AddressUpdateView, UserCreateView, UserForceDeleteView, UserListView, UserPasswordChangeView, UserToggleActiveView, UserUpdateView
 
 app_name = 'dashboard'
@@ -40,4 +49,10 @@ urlpatterns = [
     path('direcciones/nueva/', AddressCreateView.as_view(), name='address_create'),
     path('direcciones/<int:pk>/editar/', AddressUpdateView.as_view(), name='address_update'),
     path('direcciones/<int:pk>/estado/', AddressToggleActiveView.as_view(), name='address_toggle_active'),
+    # ── Cupones ──────────────────────────────────────────────────────────────
+    path('cupones/', CouponListView.as_view(), name='coupon_list'),
+    path('cupones/nuevo/', CouponCreateView.as_view(), name='coupon_create'),
+    path('cupones/<int:pk>/editar/', CouponUpdateView.as_view(), name='coupon_update'),
+    path('cupones/<int:pk>/estado/', CouponToggleActiveView.as_view(), name='coupon_toggle'),
+    path('cupones/<int:pk>/eliminar/', CouponDeleteView.as_view(), name='coupon_delete'),
 ]

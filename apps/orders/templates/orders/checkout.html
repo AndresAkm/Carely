@@ -1,5 +1,4 @@
 {% extends 'base.html' %}
-
 {% load static %}
 
 {% block title %}Checkout - Carely{% endblock %}
@@ -68,6 +67,47 @@
         margin-bottom: 0.25rem;
     }
 
+    /* ── Cupón ── */
+    .coupon-card {
+        position: relative;
+    }
+
+    .coupon-input-group {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .coupon-input-group input {
+        flex: 1;
+        font-family: monospace;
+        font-size: 1rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+
+    .coupon-result {
+        margin-top: 0.75rem;
+        padding: 0.75rem 1rem;
+        border-radius: var(--r-sm);
+        font-size: 0.9rem;
+        display: none;
+    }
+
+    .coupon-result.valid {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+        display: block;
+    }
+
+    .coupon-result.invalid {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+        display: block;
+    }
+
+    /* ── Resumen ── */
     .checkout-summary .item {
         display: flex;
         justify-content: space-between;
@@ -99,13 +139,32 @@
         color: var(--accent);
     }
 
+    .price-breakdown {
+        margin-top: 1.25rem;
+        border-top: 1px solid var(--clr-border);
+        padding-top: 1rem;
+        font-size: 0.9rem;
+    }
+
+    .price-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.4rem;
+        color: var(--clr-text-2, #6f6a7d);
+    }
+
+    .price-row.discount {
+        color: #198754;
+        font-weight: 600;
+    }
+
     .checkout-total {
         display: flex;
         justify-content: space-between;
         font-size: 1.2rem;
         font-weight: 700;
-        margin-top: 1.5rem;
-        padding-top: 1.5rem;
+        margin-top: 1rem;
+        padding-top: 1rem;
         border-top: 2px dashed var(--clr-border);
     }
 
@@ -135,201 +194,327 @@
 
 
 {% block content %}
-
 {% include 'navbar.html' %}
 
 <section class="checkout-section">
     <div class="container">
 
-        <h1 class="mb-4" style="font-family: var(--ff-serif);">
-            Completar pedido
-        </h1>
+        <h1 class="mb-4" style="font-family: var(--ff-serif);">Completar pedido</h1>
 
-        <form method="post" action="{% url 'orders:checkout' %}" id="checkoutForm">
+        <!-- Mensajes Django -->
+        {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
 
-            {% csrf_token %}
+        <div class="row g-4">
 
-            <div class="row g-4">
+            <!-- Columna izquierda -->
+            <div class="col-lg-7">
 
-                <!-- Columna izquierda -->
-                <div class="col-lg-7">
+                <!-- 1. Dirección de envío -->
+                <div class="checkout-card">
+                    <h2>1. Dirección de envío</h2>
 
-                    <!-- Dirección de envío -->
-                    <div class="checkout-card">
+                    {% if addresses %}
+                    <div class="address-selector">
+                        {% for address in addresses %}
+                        <label class="address-option">
+                            <input
+                                type="radio"
+                                name="address_id"
+                                value="{{ address.id }}"
+                                form="formConfirm"
+                                {% if address.is_default or forloop.first %}checked{% endif %}
+                                required
+                            >
 
-                        <h2>1. Dirección de envío</h2>
+                            <div class="address-content">
+                                <span class="recipient">{{ address.recipient_name }}</span>
 
-                        {% if addresses %}
+                                {{ address.address_line }}{% if address.address_line2 %}, {{ address.address_line2 }}{% endif %}
 
-                        <div class="address-selector">
+                                <br>
 
-                            {% for address in addresses %}
+                                {{ address.city }}, {{ address.department }}
 
-                            <label class="address-option">
+                                <br>
 
-                                <input
-                                    type="radio"
-                                    name="address_id"
-                                    value="{{ address.id }}"
-                                    {% if address.is_default or forloop.first %}checked{% endif %}
-                                    required
+                                <small class="text-muted">
+                                    <i class="bi bi-telephone"></i>
+                                    {{ address.phone }}
+                                </small>
+                            </div>
+                        </label>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mt-3">
+                        <a
+                            href="{% url 'users:address_create' %}?next={% url 'orders:checkout' %}"
+                            class="c-btn c-btn--outline c-btn--sm"
+                        >
+                            <i class="bi bi-plus-circle"></i>
+                            Agregar nueva dirección
+                        </a>
+                    </div>
+
+                    {% else %}
+
+                    <div class="alert alert-warning">
+                        No tienes direcciones registradas. Debes agregar una para continuar.
+                    </div>
+
+                    <a
+                        href="{% url 'users:address_create' %}?next={% url 'orders:checkout' %}"
+                        class="c-btn c-btn--primary"
+                    >
+                        <i class="bi bi-plus-circle"></i>
+                        Agregar dirección
+                    </a>
+
+                    {% endif %}
+                </div>
+
+                <!-- 2. Notas del pedido -->
+                <div class="checkout-card">
+                    <h2>
+                        2. Notas del pedido
+                        <small class="text-muted" style="font-size:0.8rem;">
+                            (Opcional)
+                        </small>
+                    </h2>
+
+                    <textarea
+                        name="notes"
+                        class="form-control"
+                        rows="3"
+                        form="formConfirm"
+                        placeholder="Ej: Dejar en portería, envolver para regalo..."
+                    ></textarea>
+                </div>
+
+                <!-- 3. Cupón de descuento -->
+                <div class="checkout-card coupon-card">
+                    <h2>
+                        3. ¿Tienes un cupón?
+                        <small class="text-muted" style="font-size:0.8rem;">
+                            (Opcional)
+                        </small>
+                    </h2>
+
+                    <!-- Formulario independiente para aplicar cupón -->
+                    <form
+                        method="post"
+                        action="{% url 'orders:checkout' %}"
+                        id="formCoupon"
+                    >
+                        {% csrf_token %}
+
+                        <input
+                            type="hidden"
+                            name="action"
+                            value="apply_coupon"
+                        >
+
+                        <div class="coupon-input-group">
+                            <input
+                                type="text"
+                                name="coupon_code"
+                                id="couponInput"
+                                class="form-control"
+                                placeholder="Ej: CARELY10"
+                                value="{{ applied_coupon_code }}"
+                                autocomplete="off"
+                                maxlength="50"
+                            >
+
+                            <button
+                                type="submit"
+                                class="c-btn c-btn--outline"
+                                id="btnApplyCoupon"
+                            >
+                                <i class="bi bi-tag"></i>
+                                Aplicar
+                            </button>
+                        </div>
+
+                        <!-- Resultado inline (AJAX) -->
+                        <div
+                            id="couponResult"
+                            class="coupon-result {% if applied_coupon_code %}valid{% endif %}"
+                        >
+                            {% if applied_coupon_code %}
+                                <i class="bi bi-check-circle-fill"></i>
+
+                                Cupón
+                                <strong>{{ applied_coupon_code }}</strong>
+                                aplicado.
+
+                                Descuento:
+                                <strong>
+                                    COP {{ coupon_discount|floatformat:2 }}
+                                </strong>
+
+                                &nbsp;·&nbsp;
+
+                                <a
+                                    href="{% url 'orders:checkout' %}?clear_coupon=1"
+                                    style="color:inherit;font-size:0.85rem;"
                                 >
+                                    Quitar
+                                </a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
 
-                                <div class="address-content">
+            </div>
 
-                                    <span class="recipient">
-                                        {{ address.recipient_name }}
-                                    </span>
+            <!-- Columna derecha: resumen -->
+            <div class="col-lg-5">
 
-                                    {{ address.address_line }}
+                <div class="checkout-card checkout-summary">
 
-                                    {% if address.address_line2 %}
-                                        , {{ address.address_line2 }}
-                                    {% endif %}
+                    <h2>Resumen del pedido</h2>
 
-                                    <br>
+                    {% for item in cart_items %}
 
-                                    {{ address.city }}, {{ address.department }}
+                    <div class="item">
 
-                                    <br>
+                        {% if item.product.image %}
 
-                                    <small class="text-muted">
-                                        <i class="bi bi-telephone"></i>
-                                        {{ address.phone }}
-                                    </small>
+                        <img
+                            src="{{ item.product.image.url }}"
+                            alt="{{ item.product.name }}"
+                        >
 
-                                </div>
+                        {% else %}
 
-                            </label>
+                        <div
+                            style="
+                                width:50px;
+                                height:50px;
+                                background:#eee;
+                                border-radius:4px;
+                                display:flex;
+                                align-items:center;
+                                justify-content:center;
+                                margin-right:1rem;
+                            "
+                        >
+                            <i class="bi bi-box"></i>
+                        </div>
 
-                            {% endfor %}
+                        {% endif %}
+
+                        <div class="item-info">
+
+                            <div class="item-title">
+                                {{ item.product.name }}
+                            </div>
+
+                            <div class="text-muted">
+                                Cant: {{ item.quantity }}
+                            </div>
 
                         </div>
 
-                        <div class="mt-3">
+                        <div class="item-price">
+                            COP {{ item.subtotal|floatformat:2 }}
+                        </div>
 
-                            <a
-                                href="{% url 'users:address_create' %}?next={% url 'orders:checkout' %}"
-                                class="c-btn c-btn--outline c-btn--sm"
-                            >
-                                <i class="bi bi-plus-circle"></i>
-                                Agregar nueva dirección
-                            </a>
+                    </div>
 
+                    {% endfor %}
+
+                    <!-- Desglose de precios -->
+                    <div class="price-breakdown" id="priceBreakdown">
+
+                        <div class="price-row">
+                            <span>Subtotal</span>
+                            <span id="subtotalDisplay">
+                                COP {{ cart_total|floatformat:2 }}
+                            </span>
+                        </div>
+
+                        {% if applied_coupon_code and coupon_discount %}
+
+                        <div class="price-row discount" id="discountRow">
+                            <span>
+                                <i class="bi bi-tag-fill"></i>
+                                Cupón {{ applied_coupon_code }}
+                            </span>
+
+                            <span>
+                                - COP {{ coupon_discount|floatformat:2 }}
+                            </span>
                         </div>
 
                         {% else %}
 
-                        <div class="alert alert-warning">
-                            No tienes direcciones registradas.
-                            Debes agregar una para continuar.
-                        </div>
-
-                        <a
-                            href="{% url 'users:address_create' %}?next={% url 'orders:checkout' %}"
-                            class="c-btn c-btn--primary"
+                        <div
+                            class="price-row discount"
+                            id="discountRow"
+                            style="display:none;"
                         >
-                            <i class="bi bi-plus-circle"></i>
-                            Agregar dirección
-                        </a>
+                            <span>
+                                <i class="bi bi-tag-fill"></i>
+                                Cupón
+                            </span>
+
+                            <span id="discountAmount">
+                                - COP 0.00
+                            </span>
+                        </div>
 
                         {% endif %}
 
-                    </div>
-
-
-                    <!-- Notas del pedido -->
-                    <div class="checkout-card">
-
-                        <h2>2. Notas del pedido (Opcional)</h2>
-
-                        <textarea
-                            name="notes"
-                            class="form-control"
-                            rows="3"
-                            placeholder="Ej: Dejar en portería, envolver para regalo..."
-                        ></textarea>
+                        <div class="price-row">
+                            <span>Envío</span>
+                            <span class="text-muted">A calcular</span>
+                        </div>
 
                     </div>
 
-                </div>
+                    <!-- Total -->
+                    <div class="checkout-total">
 
+                        <span>Total a pagar</span>
 
-                <!-- Columna derecha -->
-                <div class="col-lg-5">
-
-                    <div class="checkout-card checkout-summary">
-
-                        <h2>Resumen del pedido</h2>
-
-                        {% for item in cart_items %}
-
-                        <div class="item">
-
-                            {% if item.product.image %}
-
-                            <img
-                                src="{{ item.product.image.url }}"
-                                alt="{{ item.product.name }}"
-                            >
-
+                        <span id="totalDisplay">
+                            COP
+                            {% if applied_coupon_code and coupon_discount %}
+                                {{ cart_total_with_discount|floatformat:2 }}
                             {% else %}
-
-                            <div
-                                style="
-                                    width: 50px;
-                                    height: 50px;
-                                    background: #eee;
-                                    border-radius: 4px;
-                                    display: flex;
-                                    align-items: center;
-                                    justify-content: center;
-                                    margin-right: 1rem;
-                                "
-                            >
-                                <i class="bi bi-box"></i>
-                            </div>
-
+                                {{ cart_total|floatformat:2 }}
                             {% endif %}
+                        </span>
 
+                    </div>
 
-                            <div class="item-info">
+                    <!-- Formulario de confirmación -->
+                    <form
+                        method="post"
+                        action="{% url 'orders:checkout' %}"
+                        id="formConfirm"
+                    >
+                        {% csrf_token %}
 
-                                <div class="item-title">
-                                    {{ item.product.name }}
-                                </div>
+                        <input
+                            type="hidden"
+                            name="action"
+                            value="confirm"
+                        >
 
-                                <div class="text-muted">
-                                    Cant: {{ item.quantity }}
-                                </div>
+                        <!-- address_id y notes vienen de sus propios elementos con form="formConfirm" -->
 
-                            </div>
-
-
-                            <div class="item-price">
-                                COP {{ item.subtotal|floatformat:2 }}
-                            </div>
-
-                        </div>
-
-                        {% endfor %}
-
-
-                        <!-- Total -->
-                        <div class="checkout-total">
-
-                            <span>
-                                Total a pagar
-                            </span>
-
-                            <span>
-                                COP {{ cart_total|floatformat:2 }}
-                            </span>
-
-                        </div>
-
-
-                        <!-- Confirmar pedido -->
                         <button
                             type="submit"
                             class="btn-confirm"
@@ -339,23 +524,21 @@
                             <i class="bi bi-check-circle"></i>
                             Confirmar Pedido
                         </button>
+                    </form>
 
-
-                        <p
-                            class="text-muted text-center mt-3"
-                            style="font-size: 0.8rem;"
-                        >
-                            Al confirmar, aceptas finalizar tu compra.
-                            (El pago será procesado próximamente).
-                        </p>
-
-                    </div>
+                    <p
+                        class="text-muted text-center mt-3"
+                        style="font-size:0.8rem;"
+                    >
+                        Al confirmar, aceptas finalizar tu compra.
+                        (El pago será procesado próximamente).
+                    </p>
 
                 </div>
 
             </div>
 
-        </form>
+        </div>
 
     </div>
 </section>
@@ -366,19 +549,114 @@
 
 
 {% block extra_js %}
-
 <script>
-    document
-        .getElementById('checkoutForm')
-        .addEventListener('submit', function () {
+    const CART_TOTAL = parseFloat("{{ cart_total }}");
+    const VALIDATE_URL = "{% url 'orders:validate_coupon_ajax' %}";
+    const CSRF_TOKEN = "{{ csrf_token }}";
 
-            const btn = document.getElementById('btnConfirm');
+    const couponInput = document.getElementById('couponInput');
+    const couponResult = document.getElementById('couponResult');
+    const discountRow = document.getElementById('discountRow');
+    const discountAmount = document.getElementById('discountAmount');
+    const totalDisplay = document.getElementById('totalDisplay');
 
-            btn.disabled = true;
-
-            btn.innerHTML =
-                '<i class="bi bi-hourglass-split"></i> Procesando...';
+    function formatCOP(value) {
+        return 'COP ' + parseFloat(value).toLocaleString('es-CO', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
         });
-</script>
+    }
 
+    // Validación AJAX en tiempo real (debounced)
+    let debounceTimer = null;
+
+    if (couponInput) {
+        couponInput.addEventListener('input', function () {
+            clearTimeout(debounceTimer);
+
+            const code = this.value.trim().toUpperCase();
+
+            if (!code) {
+                couponResult.className = 'coupon-result';
+                couponResult.innerHTML = '';
+
+                discountRow.style.display = 'none';
+
+                totalDisplay.textContent = formatCOP(CART_TOTAL);
+
+                return;
+            }
+
+            debounceTimer = setTimeout(
+                () => validateCouponAjax(code),
+                500
+            );
+        });
+    }
+
+    async function validateCouponAjax(code) {
+        try {
+            const resp = await fetch(VALIDATE_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': CSRF_TOKEN,
+                },
+                body: JSON.stringify({
+                    coupon_code: code,
+                    cart_total: CART_TOTAL
+                }),
+            });
+
+            const data = await resp.json();
+
+            if (data.valid) {
+
+                couponResult.className = 'coupon-result valid';
+
+                couponResult.innerHTML =
+                    `<i class="bi bi-check-circle-fill"></i>
+                    Cupón <strong>${data.code}</strong> válido.
+                    Descuento:
+                    <strong>${formatCOP(data.discount_amount)}</strong>`;
+
+                discountRow.style.display = 'flex';
+
+                if (discountAmount) {
+                    discountAmount.textContent =
+                        `- ${formatCOP(data.discount_amount)}`;
+                }
+
+                totalDisplay.textContent =
+                    formatCOP(data.total_with_discount);
+
+            } else {
+
+                couponResult.className = 'coupon-result invalid';
+
+                couponResult.innerHTML =
+                    `<i class="bi bi-x-circle-fill"></i> ${data.error}`;
+
+                discountRow.style.display = 'none';
+
+                totalDisplay.textContent =
+                    formatCOP(CART_TOTAL);
+            }
+
+        } catch (e) {
+            // Silenciar errores de red en validación en tiempo real.
+        }
+    }
+
+    // Deshabilitar botón confirmar al enviar.
+    document.getElementById('formConfirm').addEventListener('submit', function () {
+
+        const btn = document.getElementById('btnConfirm');
+
+        btn.disabled = true;
+
+        btn.innerHTML =
+            '<i class="bi bi-hourglass-split"></i> Procesando...';
+    });
+</script>
 {% endblock %}

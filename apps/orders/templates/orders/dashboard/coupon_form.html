@@ -1,0 +1,128 @@
+{% extends 'core/dashboard_base.html' %}
+{% block dashboard_title %}{% if object %}Editar cupon{% else %}Nuevo cupon{% endif %}{% endblock %}
+{% block dashboard_content %}
+
+<div class="dashboard-page-header">
+    <div>
+        <h1 class="dashboard-heading">
+            {% if object %}Editar cupon: <span style="font-family:monospace;">{{ object.code }}</span>{% else %}Nuevo cupon{% endif %}
+        </h1>
+        <p class="dashboard-muted">Completa la informacion del cupon de descuento.</p>
+    </div>
+    <a href="{% url 'dashboard:coupon_list' %}" class="btn btn-carely-outline">
+        <i class="bi bi-arrow-left me-1"></i>Volver
+    </a>
+</div>
+
+<div class="dashboard-card dashboard-form-card">
+    <div class="dashboard-card-body">
+        <form method="post" novalidate onsubmit="const btn=this.querySelector('[type=submit]'); if(btn.disabled) return false; btn.disabled=true; btn.textContent='Guardando...';">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <div class="row g-3">
+
+                <!-- Codigo -->
+                <div class="col-md-6">
+                    <div class="dashboard-field">
+                        <label for="{{ form.code.id_for_label }}">{{ form.code.label }}</label>
+                        {{ form.code }}
+                        {% for error in form.code.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                        {% if form.code.help_text %}<small>{{ form.code.help_text }}</small>{% endif %}
+                    </div>
+                </div>
+
+                <!-- Estado (is_active) -->
+                <div class="col-md-6 d-flex align-items-end">
+                    <div class="dashboard-field form-check mb-0" style="padding-top:1.75rem;">
+                        {{ form.is_active }}
+                        <label class="form-check-label ms-2" for="{{ form.is_active.id_for_label }}">
+                            {{ form.is_active.label }}
+                        </label>
+                        {% for error in form.is_active.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                    </div>
+                </div>
+
+                <!-- Tipo de descuento -->
+                <div class="col-md-6">
+                    <div class="dashboard-field">
+                        <label for="{{ form.discount_type.id_for_label }}">{{ form.discount_type.label }}</label>
+                        {{ form.discount_type }}
+                        {% for error in form.discount_type.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                    </div>
+                </div>
+
+                <!-- Valor del descuento -->
+                <div class="col-md-6">
+                    <div class="dashboard-field">
+                        <label for="{{ form.discount_value.id_for_label }}">{{ form.discount_value.label }}</label>
+                        {{ form.discount_value }}
+                        {% for error in form.discount_value.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                        {% if form.discount_value.help_text %}<small>{{ form.discount_value.help_text }}</small>{% endif %}
+                    </div>
+                </div>
+
+                <!-- Minimo de compra -->
+                <div class="col-md-6">
+                    <div class="dashboard-field">
+                        <label for="{{ form.minimum_purchase.id_for_label }}">{{ form.minimum_purchase.label }}</label>
+                        {{ form.minimum_purchase }}
+                        {% for error in form.minimum_purchase.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                        {% if form.minimum_purchase.help_text %}<small>{{ form.minimum_purchase.help_text }}</small>{% endif %}
+                    </div>
+                </div>
+
+                <!-- Limite de usos -->
+                <div class="col-md-6">
+                    <div class="dashboard-field">
+                        <label for="{{ form.usage_limit.id_for_label }}">{{ form.usage_limit.label }}</label>
+                        {{ form.usage_limit }}
+                        {% for error in form.usage_limit.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                        {% if form.usage_limit.help_text %}<small>{{ form.usage_limit.help_text }}</small>{% endif %}
+                    </div>
+                </div>
+
+                <!-- Valido desde -->
+                <div class="col-md-6">
+                    <div class="dashboard-field">
+                        <label for="{{ form.valid_from.id_for_label }}">{{ form.valid_from.label }}</label>
+                        {{ form.valid_from }}
+                        {% for error in form.valid_from.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                        {% if form.valid_from.help_text %}<small>{{ form.valid_from.help_text }}</small>{% endif %}
+                    </div>
+                </div>
+
+                <!-- Valido hasta -->
+                <div class="col-md-6">
+                    <div class="dashboard-field">
+                        <label for="{{ form.valid_until.id_for_label }}">{{ form.valid_until.label }}</label>
+                        {{ form.valid_until }}
+                        {% for error in form.valid_until.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                        {% if form.valid_until.help_text %}<small>{{ form.valid_until.help_text }}</small>{% endif %}
+                    </div>
+                </div>
+
+            </div>
+
+            {% if object %}
+            <div class="alert alert-light mt-3" style="border:1px solid var(--clr-border);">
+                <i class="bi bi-info-circle me-1"></i>
+                Este cupon ha sido utilizado <strong>{{ object.usage_count }}</strong>
+                {% if object.usage_limit %}vez/veces de un limite de {{ object.usage_limit }}.{% else %}vez/veces (sin limite configurado).{% endif %}
+            </div>
+            {% endif %}
+
+            <div class="d-flex gap-2 justify-content-end mt-4">
+                <a href="{% url 'dashboard:coupon_list' %}" class="btn btn-carely-outline">Cancelar</a>
+                <button type="submit" class="btn btn-carely-primary">
+                    <i class="bi bi-check-lg me-1"></i>Guardar cupon
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

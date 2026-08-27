@@ -1,0 +1,225 @@
+﻿{% extends 'core/dashboard_base.html' %}
+{% block dashboard_title %}Cupones{% endblock %}
+{% block dashboard_content %}
+
+<div class="dashboard-page-header">
+    <div>
+        <h1 class="dashboard-heading">Cupones</h1>
+        <p class="dashboard-muted">Gestiona los códigos de descuento para tus clientes.</p>
+    </div>
+    <a href="{% url 'dashboard:coupon_create' %}" class="btn btn-carely-primary">
+        <i class="bi bi-plus-lg me-1"></i>Nuevo cupón
+    </a>
+</div>
+
+<!-- Filtros -->
+<div class="dashboard-card dashboard-filter-card">
+    <div class="dashboard-card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-lg-5">
+                <label class="dashboard-filter-label" for="search_q">Buscar</label>
+                <input id="search_q" type="text" name="q" value="{{ search_q }}" class="form-control"
+                    placeholder="Código de cupón...">
+            </div>
+            <div class="col-lg-3">
+                <label class="dashboard-filter-label" for="filter_active">Estado</label>
+                <select id="filter_active" name="is_active" class="form-control">
+                    <option value="" {% if not filter_active %}selected{% endif %}>Todos</option>
+                    <option value="1" {% if filter_active == '1' %}selected{% endif %}>Activos</option>
+                    <option value="0" {% if filter_active == '0' %}selected{% endif %}>Inactivos</option>
+                </select>
+            </div>
+            <div class="col-lg-2">
+                <button class="btn btn-carely-outline w-100" type="submit">
+                    <i class="bi bi-search me-1"></i>Filtrar
+                </button>
+            </div>
+            {% if search_q or filter_active %}
+            <div class="col-lg-2">
+                <a href="{% url 'dashboard:coupon_list' %}" class="btn btn-carely-outline w-100">
+                    <i class="bi bi-x me-1"></i>Limpiar
+                </a>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<!-- Tabla -->
+<div class="dashboard-card">
+    <div class="dashboard-card-body p-0">
+        <div class="table-responsive">
+            <table class="table dashboard-table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Tipo</th>
+                        <th>Descuento</th>
+                        <th>Mín. compra</th>
+                        <th>Vigencia</th>
+                        <th class="text-center">Usos</th>
+                        <th>Estado</th>
+                        <th class="text-end">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for coupon in coupons %}
+                    <tr>
+
+                        <!-- Código -->
+                        <td>
+                            <strong style="font-family:monospace;letter-spacing:0.05em;">
+                                {{ coupon.code }}
+                            </strong>
+                        </td>
+
+                        <!-- Tipo -->
+                        <td>
+                            {% if coupon.discount_type == 'percentage' %}
+                            <span class="status-badge" style="background:#e8f4fd;color:#0d6efd;">
+                                <i class="bi bi-percent"></i> Porcentaje
+                            </span>
+                            {% else %}
+                            <span class="status-badge" style="background:#fff3cd;color:#856404;">
+                                <i class="bi bi-coin"></i> Fijo
+                            </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Descuento -->
+                        <td>
+                            {% if coupon.discount_type == 'percentage' %}
+                            {{ coupon.discount_value|floatformat:0 }}%
+                            {% else %}
+                            COP {{ coupon.discount_value|floatformat:2 }}
+                            {% endif %}
+                        </td>
+
+                        <!-- Mínimo de compra -->
+                        <td>
+                            {% if coupon.minimum_purchase > 0 %}
+                            COP {{ coupon.minimum_purchase|floatformat:2 }}
+                            {% else %}
+                            <span class="text-secondary">Sin mínimo</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Vigencia -->
+                        <td style="font-size:0.82rem;">
+                            {% if coupon.valid_from %}
+                            <span class="text-secondary">Desde:</span>
+                            {{ coupon.valid_from|date:'d/m/Y H:i' }}<br>
+                            {% endif %}
+                            {% if coupon.valid_until %}
+                            <span class="text-secondary">Hasta:</span>
+                            {% if coupon.valid_until < now %} <span style="color:#dc3545;">{{
+                                coupon.valid_until|date:'d/m/Y H:i' }}</span>
+                                {% else %}
+                                {{ coupon.valid_until|date:'d/m/Y H:i' }}
+                                {% endif %}
+                                {% else %}
+                                <span class="text-secondary">Sin expiración</span>
+                                {% endif %}
+                        </td>
+
+                        <!-- Usos -->
+                        <td class="text-center">
+                            {{ coupon.usage_count }}
+                            {% if coupon.usage_limit %}
+                            / {{ coupon.usage_limit }}
+                            {% else %}
+                            / <span class="text-secondary">∞</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Estado compuesto -->
+                        <td>
+                            {% if not coupon.is_active %}
+                            <span class="status-badge status-badge--cancelado">Inactivo</span>
+                            {% elif coupon.valid_until and coupon.valid_until < now %} <span
+                                class="status-badge status-badge--cancelado">Expirado</span>
+                                {% elif coupon.valid_from and coupon.valid_from > now %}
+                                <span class="status-badge status-badge--pendiente">Pendiente</span>
+                                {% elif coupon.usage_limit and coupon.usage_count >= coupon.usage_limit %}
+                                <span class="status-badge status-badge--cancelado">Agotado</span>
+                                {% else %}
+                                <span class="status-badge status-badge--activo">Activo</span>
+                                {% endif %}
+                        </td>
+
+                        <!-- Acciones -->
+                        <td class="text-end">
+                            <!-- Editar -->
+                            <a href="{% url 'dashboard:coupon_update' coupon.pk %}"
+                                class="btn btn-sm btn-carely-outline" title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+
+                            <!-- Activar / Desactivar -->
+                            <form method="post" action="{% url 'dashboard:coupon_toggle' coupon.pk %}"
+                                style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit"
+                                    class="btn btn-sm {% if coupon.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %}"
+                                    title="{% if coupon.is_active %}Desactivar{% else %}Activar{% endif %}">
+                                    <i
+                                        class="bi {% if coupon.is_active %}bi-pause-fill{% else %}bi-play-fill{% endif %}"></i>
+                                </button>
+                            </form>
+
+                            <!-- Eliminar -->
+                            <a href="{% url 'dashboard:coupon_delete' coupon.pk %}"
+                                class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </td>
+
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-secondary">
+                            No hay cupones registrados.
+                            <a href="{% url 'dashboard:coupon_create' %}">Crea el primero</a>.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% if is_paginated %}
+<nav class="dashboard-pagination" aria-label="Paginación de cupones">
+    <ul class="pagination justify-content-center mb-0">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link"
+                href="?page={{ page_obj.previous_page_number }}{% if search_q %}&q={{ search_q }}{% endif %}{% if filter_active %}&is_active={{ filter_active }}{% endif %}">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+        </li>
+        {% endif %}
+
+        {% for number in page_obj.paginator.page_range %}
+        <li class="page-item {% if page_obj.number == number %}active{% endif %}">
+            <a class="page-link"
+                href="?page={{ number }}{% if search_q %}&q={{ search_q }}{% endif %}{% if filter_active %}&is_active={{ filter_active }}{% endif %}">
+                {{ number }}
+            </a>
+        </li>
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link"
+                href="?page={{ page_obj.next_page_number }}{% if search_q %}&q={{ search_q }}{% endif %}{% if filter_active %}&is_active={{ filter_active }}{% endif %}">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% endblock %}

@@ -203,7 +203,244 @@ class OrderViewsTests(TestCase):
         
     def test_aislamiento_pedido_ajeno(self):
         order = Order.objects.create(user=self.user2, total=Decimal('10'))
-        
+
         self.client.force_login(self.user)
         res = self.client.get(reverse('orders:order_detail', args=[order.id]))
         self.assertEqual(res.status_code, 404)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TESTS DE CUPONES
+# ─────────────────────────────────────────────────────────────────────────────
+
+from django.utils import timezone
+from datetime import timedelta
+from apps.orders.models import Coupon
+from apps.orders.services import validate_coupon, InvalidCouponError
+
+
+def make_coupon(
+    code='TEST10',
+    discount_type=Coupon.DiscountType.PERCENTAGE,
+    discount_value='10.00',
+    is_active=True,
+    usage_limit=None,
+    usage_count=0,
+    minimum_purchase='0.00',
+    valid_from=None,
+    valid_until=None,
+):
+    return Coupon.objects.create(
+        code=code,
+        discount_type=discount_type,
+        discount_value=Decimal(discount_value),
+        is_active=is_active,
+        usage_limit=usage_limit,
+        usage_count=usage_count,
+        minimum_purchase=Decimal(minimum_purchase),
+        valid_from=valid_from,
+        valid_until=valid_until,
+    )
+
+
+class CouponModelTests(TestCase):
+    """Tests del modelo Coupon y su lógica de validación / cálculo."""
+
+    # 1. Crear cupón porcentual
+    def test_crear_cupon_porcentual(self):
+        c = make_coupon('PCT10', discount_type=Coupon.DiscountType.PERCENTAGE, discount_value='10.00')
+        self.assertEqual(c.code, 'PCT10')
+        self.assertEqual(c.discount_type, Coupon.DiscountType.PERCENTAGE)
+
+    # 2. Crear cupón de valor fijo
+    def test_crear_cupon_fijo(self):
+        c = make_coupon('FIJO5000', discount_type=Coupon.DiscountType.FIXED, discount_value='5000.00')
+        self.assertEqual(c.discount_type, Coupon.DiscountType.FIXED)
+
+    # 3. Aplicar cupón válido
+    def test_aplicar_cupon_valido(self):
+        c = make_coupon('VALID', discount_value='10.00')
+        coupon, discount = validate_coupon('VALID', Decimal('100.00'))
+        self.assertEqual(discount, Decimal('10.00'))
+
+    # 4. Rechazar cupón inexistente
+    def test_rechazar_cupon_inexistente(self):
+        with self.assertRaises(InvalidCouponError):
+            validate_coupon('NOEXISTE', Decimal('100.00'))
+
+    # 5. Rechazar cupón inactivo
+    def test_rechazar_cupon_inactivo(self):
+        make_coupon('INACTIVO', is_active=False)
+        with self.assertRaises(InvalidCouponError):
+            validate_coupon('INACTIVO', Decimal('100.00'))
+
+    # 6. Rechazar cupón expirado
+    def test_rechazar_cupon_expirado(self):
+        past = timezone.now() - timedelta(days=1)
+        make_coupon('EXPIRADO', valid_until=past)
+        with self.assertRaises(InvalidCouponError):
+            validate_coupon('EXPIRADO', Decimal('100.00'))
+
+    # 7. Rechazar cupón aún no vigente
+    def test_rechazar_cupon_no_vigente(self):
+        future = timezone.now() + timedelta(days=10)
+        make_coupon('FUTURO', valid_from=future)
+        with self.assertRaises(InvalidCouponError):
+            validate_coupon('FUTURO', Decimal('100.00'))
+
+    # 8. Rechazar si no se alcanza minimum_purchase
+    def test_rechazar_minimo_compra_no_alcanzado(self):
+        make_coupon('MINIMO', minimum_purchase='200.00')
+        with self.assertRaises(InvalidCouponError):
+            validate_coupon('MINIMO', Decimal('100.00'))
+
+    # 9. Rechazar porcentaje > 100
+    def test_rechazar_porcentaje_mayor_100(self):
+        c = make_coupon('PCT150', discount_value='150.00')
+        valid, reason = c.is_valid(Decimal('100.00'))
+        self.assertFalse(valid)
+
+    # 10. Impedir descuento negativo
+    def test_no_descuento_negativo(self):
+        c = make_coupon('PCT10', discount_value='10.00')
+        discount = c.calculate_discount(Decimal('100.00'))
+        self.assertGreaterEqual(discount, Decimal('0.00'))
+
+    # 11. Impedir total negativo (descuento capped al subtotal)
+    def test_no_total_negativo_descuento_fijo_mayor_subtotal(self):
+        c = make_coupon('FIJO9999', discount_type=Coupon.DiscountType.FIXED, discount_value='9999.00')
+        discount = c.calculate_discount(Decimal('50.00'))
+        # Descuento se limita al subtotal
+        self.assertEqual(discount, Decimal('50.00'))
+
+    # 12. Calcular correctamente porcentaje
+    def test_calcular_porcentaje_correcto(self):
+        c = make_coupon('PCT20', discount_value='20.00')
+        discount = c.calculate_discount(Decimal('100.00'))
+        self.assertEqual(discount, Decimal('20.00'))
+
+    # 13. Calcular correctamente descuento fijo
+    def test_calcular_fijo_correcto(self):
+        c = make_coupon('FIJO5K', discount_type=Coupon.DiscountType.FIXED, discount_value='5000.00')
+        discount = c.calculate_discount(Decimal('20000.00'))
+        self.assertEqual(discount, Decimal('5000.00'))
+
+    # Normalizar código a mayúsculas
+    def test_codigo_normalizado_mayusculas(self):
+        c = Coupon.objects.create(
+            code='carely10',
+            discount_type=Coupon.DiscountType.PERCENTAGE,
+            discount_value=Decimal('10'),
+        )
+        self.assertEqual(c.code, 'CARELY10')
+
+
+class CouponCheckoutIntegrationTests(TestCase):
+    """Tests de integración: cupón en el flujo checkout_cart."""
+
+    def setUp(self):
+        self.user = make_user('buyer@carely.com')
+        self.address = make_address(self.user, recipient_name='Buyer', address_line='Calle Compra')
+        self.prod = make_product('Tónico', price='100.00', stock=10)
+        self.cart = Cart.objects.create(user=self.user)
+        CartItem.objects.create(cart=self.cart, product=self.prod, quantity=2)
+        # subtotal = 200.00
+
+    # 14 & 15. Order conserva coupon_code y discount_amount
+    def test_order_guarda_coupon_code_y_discount(self):
+        coupon = make_coupon('SAVE10', discount_value='10.00')
+        order = checkout_cart(self.user, self.address.id, coupon_code='SAVE10')
+        order.refresh_from_db()
+        self.assertEqual(order.coupon_code, 'SAVE10')
+        self.assertEqual(order.coupon, coupon)
+        self.assertEqual(order.discount_amount, Decimal('20.00'))  # 10% de 200
+
+    # 16. Total final correcto
+    def test_total_final_correcto_con_cupon(self):
+        make_coupon('SAVE10PCT', discount_value='10.00')
+        order = checkout_cart(self.user, self.address.id, coupon_code='SAVE10PCT')
+        order.refresh_from_db()
+        # subtotal 200, discount 20, total 180
+        self.assertEqual(order.total, Decimal('180.00'))
+
+    # 17. No modifica unit_price de OrderItem
+    def test_no_modifica_unit_price_en_items(self):
+        make_coupon('PCT50', discount_value='50.00')
+        order = checkout_cart(self.user, self.address.id, coupon_code='PCT50')
+        for item in order.items.all():
+            # Precio original 100. No debe cambiarse aunque haya 50% de descuento.
+            self.assertEqual(item.unit_price, Decimal('100.00'))
+
+    # 18. Sin cupón funciona exactamente igual que antes
+    def test_checkout_sin_cupon_funciona_igual(self):
+        order = checkout_cart(self.user, self.address.id)
+        order.refresh_from_db()
+        self.assertEqual(order.coupon_code, '')
+        self.assertIsNone(order.coupon)
+        self.assertEqual(order.discount_amount, Decimal('0.00'))
+        self.assertEqual(order.total, Decimal('200.00'))
+
+    # 19. Cupón debe revalidarse en checkout (no confiar en sesión)
+    def test_cupon_invalido_al_confirmar_rechaza_pedido(self):
+        # Crear cupón expirado
+        past = timezone.now() - timedelta(seconds=1)
+        make_coupon('EXPIRADOC', valid_until=past)
+        with self.assertRaises(InvalidCouponError):
+            checkout_cart(self.user, self.address.id, coupon_code='EXPIRADOC')
+        # No debe haberse creado ningún pedido
+        self.assertEqual(Order.objects.count(), 0)
+
+    # 21. Si checkout falla, no se contabiliza el uso del cupón
+    def test_uso_cupon_no_contabilizado_si_checkout_falla(self):
+        coupon = make_coupon('USETEST', usage_limit=5, usage_count=0)
+        # Provocar fallo: vaciar carrito antes de checkout
+        self.cart.items.all().delete()
+        with self.assertRaises(EmptyCartError):
+            checkout_cart(self.user, self.address.id, coupon_code='USETEST')
+        coupon.refresh_from_db()
+        self.assertEqual(coupon.usage_count, 0)
+
+    # 22. Validar usage_limit
+    def test_cupon_alcanza_limite_de_usos(self):
+        # usage_count igual al límite
+        make_coupon('AGOTADO', usage_limit=1, usage_count=1)
+        with self.assertRaises(InvalidCouponError):
+            checkout_cart(self.user, self.address.id, coupon_code='AGOTADO')
+
+    # 24. Usuario no puede usar info de otro para descuentos
+    def test_aislamiento_usuario_no_accede_info_ajena(self):
+        user2 = make_user('otro@carely.com')
+        addr2 = make_address(user2, recipient_name='Otro', address_line='Otra Dir')
+        coupon = make_coupon('COMUN', discount_value='10.00')
+
+        # user (sin carrito del user2) no puede usar la dirección de user2
+        with self.assertRaises(InvalidAddressError):
+            checkout_cart(self.user, addr2.id, coupon_code='COMUN')
+
+    # 25. Cancelar pedido NO devuelve uso del cupón (política definida)
+    def test_cancelar_pedido_no_devuelve_uso_cupon(self):
+        from apps.orders.models import OrderStatusHistory
+        coupon = make_coupon('CANCELTEST', usage_limit=5, usage_count=0)
+        order = checkout_cart(self.user, self.address.id, coupon_code='CANCELTEST')
+        coupon.refresh_from_db()
+        self.assertEqual(coupon.usage_count, 1)
+
+        # Cancelar pedido
+        order.status = Order.Status.CANCELADO
+        order.save(update_fields=['status'])
+
+        # usage_count NO debe cambiar (política: cancelación no devuelve usos)
+        coupon.refresh_from_db()
+        self.assertEqual(coupon.usage_count, 1)
+
+    # 20. Si carrito cambia después de aplicar cupón, el descuento se recalcula
+    # (esto se prueba a nivel unitario en validate_coupon)
+    def test_recalculo_si_subtotal_cambia_minimum_purchase(self):
+        make_coupon('MINPURCH', discount_value='10.00', minimum_purchase='300.00')
+        # Subtotal = 200, mínimo = 300 → inválido
+        with self.assertRaises(InvalidCouponError):
+            validate_coupon('MINPURCH', Decimal('200.00'))
+        # Con subtotal suficiente → válido
+        coupon, discount = validate_coupon('MINPURCH', Decimal('300.00'))
+        self.assertEqual(discount, Decimal('30.00'))
+

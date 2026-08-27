@@ -202,11 +202,12 @@
                             <table role="presentation" class="totals" align="right">
                                 <tr>
                                     <td>Subtotal:</td>
-                                    <td>COP {{order.total|floatformat:2}}</td>
+                                    <td>COP {{order.subtotal|floatformat:2}}</td>
                                 </tr>
                                 <tr>
                                     <td>Envíos / Descuentos:</td>
-                                    <td>A calcular</td>
+                                    <td>{% if order.discount_amount > 0 %}- COP
+                                        {{order.discount_amount|floatformat:2}}{% else %}N/A{% endif %}</td>
                                 </tr>
                                 <tr>
                                     <td class="totals-total">Total:</td>

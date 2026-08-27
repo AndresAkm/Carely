@@ -1,0 +1,40 @@
+{% extends 'core/dashboard_base.html' %}
+{% block dashboard_title %}Eliminar cupón{% endblock %}
+{% block dashboard_content %}
+
+<div class="dashboard-card dashboard-confirm-card text-center">
+    <div class="dashboard-card-body">
+        <div class="confirm-icon">
+            <i class="bi bi-trash"></i>
+        </div>
+        <h1 class="dashboard-heading">¿Eliminar cupón?</h1>
+        <p class="dashboard-muted">
+            Esta acción eliminará el cupón
+            <strong style="font-family:monospace;">{{ object.code }}</strong>.
+        </p>
+        <p class="text-secondary" style="font-size:0.9rem;">
+            Los pedidos que ya usaron este cupón
+            <strong>conservarán su descuento</strong> (snapshot histórico).
+            Esta acción es irreversible.
+        </p>
+        {% if object.usage_count > 0 %}
+        <div class="alert alert-warning d-inline-block">
+            <i class="bi bi-exclamation-triangle me-1"></i>
+            Este cupón fue usado <strong>{{ object.usage_count }}</strong> vez/veces.
+        </div>
+        {% endif %}
+        <form method="post">
+            {% csrf_token %}
+            <div class="d-flex gap-3 justify-content-center mt-3">
+                <a href="{% url 'dashboard:coupon_list' %}" class="btn btn-carely-outline">
+                    Cancelar
+                </a>
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-trash me-1"></i>Eliminar cupón
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

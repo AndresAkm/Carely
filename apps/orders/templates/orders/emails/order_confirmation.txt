@@ -21,8 +21,8 @@ PRODUCTOS:
   Precio unitario: COP {{item.unit_price|floatformat:2}}
 {%endfor %}
 
-Subtotal: COP {{order.total|floatformat:2}}
-Envíos / Descuentos: A calcular
+Subtotal: COP {{order.subtotal|floatformat:2}}
+Envíos / Descuentos: {% if order.discount_amount > 0 %}- COP {{order.discount_amount|floatformat:2}}{% else %}N/A{% endif %}
 TOTAL A PAGAR: COP {{order.total|floatformat:2}}
 {%if site_url %}
 Puedes revisar en cualquier momento los detalles de tu compra ingresando aquí:

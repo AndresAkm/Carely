@@ -5,7 +5,7 @@ from django.db import transaction
 
 from apps.users.models import Address
 from apps.cart.models import Cart, CartItem
-from apps.orders.models import Order, OrderItem, OrderStatusHistory
+from apps.orders.models import Coupon, Order, OrderItem, OrderStatusHistory
 from apps.inventory.services import (
     InventoryService,
     InsufficientStockError,
@@ -16,6 +16,10 @@ from apps.users.services import GmailService
 logger = logging.getLogger(__name__)
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Excepciones de dominio
+# ─────────────────────────────────────────────────────────────────────────────
+
 class EmptyCartError(Exception):
     pass
 
@@ -24,21 +28,75 @@ class InvalidAddressError(Exception):
     pass
 
 
-def checkout_cart(user, address_id: int, notes: str = '', site_url: str = '') -> Order:
+class InvalidCouponError(Exception):
+    pass
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Servicio de cupones
+# ─────────────────────────────────────────────────────────────────────────────
+
+def get_coupon(code: str) -> Coupon:
+    """
+    Retorna el Coupon con el código dado (normalizado a mayúsculas).
+    Lanza InvalidCouponError si no existe.
+    """
+    code = code.strip().upper()
+    if not code:
+        raise InvalidCouponError('El código del cupón está vacío.')
+    try:
+        return Coupon.objects.get(code=code)
+    except Coupon.DoesNotExist:
+        raise InvalidCouponError(f'El cupón "{code}" no existe.')
+
+
+def validate_coupon(code: str, subtotal: Decimal) -> tuple[Coupon, Decimal]:
+    """
+    Valida un cupón y retorna (coupon, discount_amount).
+    Lanza InvalidCouponError con mensaje descriptivo si es inválido.
+    """
+    coupon = get_coupon(code)
+    valid, reason = coupon.is_valid(subtotal)
+    if not valid:
+        raise InvalidCouponError(reason)
+    discount = coupon.calculate_discount(subtotal)
+    return coupon, discount
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Checkout
+# ─────────────────────────────────────────────────────────────────────────────
+
+def checkout_cart(
+    user,
+    address_id: int,
+    notes: str = '',
+    coupon_code: str = '',
+    site_url: str = '',
+) -> Order:
     """
     Procesa el checkout transformando el carrito en un pedido final.
 
-    La operación es completamente atómica:
-    - Valida la dirección.
-    - Valida el carrito.
-    - Crea el pedido.
-    - Descuenta el inventario.
-    - Crea los items del pedido.
-    - Calcula el total.
-    - Vacía el carrito.
-    - (on_commit) Envia un correo de confirmación utilizando GmailService.
+    Operación completamente atómica:
+      1. Valida la dirección.
+      2. Valida el carrito.
+      3. Valida el cupón (si se proporcionó) con select_for_update() para evitar
+         condiciones de carrera en usage_limit.
+      4. Crea el pedido.
+      5. Descuenta el inventario.
+      6. Crea los items del pedido.
+      7. Calcula subtotal, aplica descuento y guarda total.
+      8. Incrementa usage_count del cupón.
+      9. Vacía el carrito.
+      10. (on_commit) Envía correo de confirmación.
 
     Si cualquier paso falla, toda la operación se revierte.
+
+    Política de cancelación de cupones:
+      El usage_count se incrementa al crear el pedido. Cancelar posteriormente
+      un pedido NO devuelve el uso del cupón automáticamente. Esta es una
+      política deliberada para evitar abuso (colocar y cancelar pedidos para
+      reciclar cupones de uso único).
     """
 
     with transaction.atomic():
@@ -75,9 +133,7 @@ def checkout_cart(user, address_id: int, notes: str = '', site_url: str = '') ->
         try:
             cart = Cart.objects.get(user=user)
         except Cart.DoesNotExist:
-            raise EmptyCartError(
-                'No se encontró el carrito.'
-            )
+            raise EmptyCartError('No se encontró el carrito.')
 
         cart_items = list(
             CartItem.objects
@@ -86,21 +142,58 @@ def checkout_cart(user, address_id: int, notes: str = '', site_url: str = '') ->
         )
 
         if not cart_items:
-            raise EmptyCartError(
-                'El carrito está vacío.'
-            )
+            raise EmptyCartError('El carrito está vacío.')
 
         # ─────────────────────────────────────────────
-        # 3. Crear pedido
+        # 3. Calcular subtotal (en backend, nunca desde frontend)
         # ─────────────────────────────────────────────
 
-        order = Order.objects.create(
+        subtotal = sum(
+            (item.product.price * item.quantity for item in cart_items),
+            Decimal('0.00'),
+        )
+
+        # ─────────────────────────────────────────────
+        # 4. Validar y bloquear cupón (select_for_update evita race conditions)
+        # ─────────────────────────────────────────────
+
+        coupon_obj = None
+        discount_amount = Decimal('0.00')
+        coupon_code_snapshot = ''
+
+        if coupon_code and coupon_code.strip():
+            normalized_code = coupon_code.strip().upper()
+            try:
+                # select_for_update bloquea la fila hasta el commit.
+                coupon_obj = Coupon.objects.select_for_update().get(code=normalized_code)
+            except Coupon.DoesNotExist:
+                raise InvalidCouponError(f'El cupón "{normalized_code}" no existe.')
+
+            valid, reason = coupon_obj.is_valid(subtotal)
+            if not valid:
+                raise InvalidCouponError(reason)
+
+            discount_amount = coupon_obj.calculate_discount(subtotal)
+            coupon_code_snapshot = coupon_obj.code
+
+        # ─────────────────────────────────────────────
+        # 5. Crear pedido base
+        # ─────────────────────────────────────────────
+
+        order = Order(
             user=user,
             status=Order.Status.PENDIENTE,
             shipping_address=address_snapshot,
             notes=notes.strip(),
             total=Decimal('0.00'),
+            coupon=coupon_obj,
+            coupon_code=coupon_code_snapshot,
+            discount_amount=discount_amount,
         )
+        # Llamar a models.Model.save directamente para saltarse Order.save()
+        # (que intenta recalcular total desde items, que todavía no existen).
+        from django.db.models import Model as DjangoModel
+        DjangoModel.save(order)
 
         OrderStatusHistory.objects.create(
             order=order,
@@ -108,24 +201,16 @@ def checkout_cart(user, address_id: int, notes: str = '', site_url: str = '') ->
             comment='Pedido realizado',
             changed_by=user,
         )
-        # ─────────────────────────────────────────────
-        # 4. Procesar productos
-        # ─────────────────────────────────────────────
 
-        total = Decimal('0.00')
+        # ─────────────────────────────────────────────
+        # 6. Procesar productos (inventario + items)
+        # ─────────────────────────────────────────────
 
         for cart_item in cart_items:
-
             product = cart_item.product
             quantity = cart_item.quantity
-
-            # Guardamos el precio actual antes de cualquier
-            # operación posterior sobre el producto.
             unit_price = product.price
 
-            # Descontar inventario.
-            # Si no hay suficiente stock, lanza
-            # InsufficientStockError y se revierte todo.
             InventoryService.remove_stock(
                 product=product,
                 quantity=quantity,
@@ -133,7 +218,6 @@ def checkout_cart(user, address_id: int, notes: str = '', site_url: str = '') ->
                 created_by=user,
             )
 
-            # Crear item del pedido.
             OrderItem.objects.create(
                 order=order,
                 product=product,
@@ -142,33 +226,40 @@ def checkout_cart(user, address_id: int, notes: str = '', site_url: str = '') ->
                 unit_price=unit_price,
             )
 
-            total += unit_price * quantity
-
         # ─────────────────────────────────────────────
-        # 5. Guardar total
+        # 7. Calcular total final (subtotal - descuento)
         # ─────────────────────────────────────────────
 
+        total = max(subtotal - discount_amount, Decimal('0.00'))
         order.total = total
-        order.save(update_fields=['total'])
+        # Pasar 'total' en update_fields para que Order.save() no recalcule.
+        Order.objects.filter(pk=order.pk).update(total=total)
 
         # ─────────────────────────────────────────────
-        # 6. Vaciar carrito
+        # 8. Incrementar usage_count del cupón
+        # ─────────────────────────────────────────────
+
+        if coupon_obj is not None:
+            Coupon.objects.filter(pk=coupon_obj.pk).update(
+                usage_count=coupon_obj.usage_count + 1
+            )
+
+        # ─────────────────────────────────────────────
+        # 9. Vaciar carrito
         # ─────────────────────────────────────────────
 
         CartItem.objects.filter(cart=cart).delete()
 
         # ─────────────────────────────────────────────
-        # 7. Programar envío de email de confirmación
+        # 10. Programar envío de email de confirmación
         # ─────────────────────────────────────────────
 
         def send_confirmation():
             try:
-                # Se recarga el pedido para asegurar que items y todo estén correctos
-                # en el hilo de estado posterior al commit (aunque on_commit corre síncrono por defecto en runserver)
                 order.refresh_from_db()
                 context = {
                     'order': order,
-                    'site_url': site_url if site_url else ''
+                    'site_url': site_url if site_url else '',
                 }
                 GmailService.send_message(
                     subject=f'¡Tu pedido #{order.id} está confirmado!',
@@ -178,13 +269,10 @@ def checkout_cart(user, address_id: int, notes: str = '', site_url: str = '') ->
                     context=context,
                 )
             except Exception as exc:
-                # Capturar cualquier error para no afectar retroactivamente (on_commit igual no afecta la transaccion)
-                logger.error(f'Error al enviar correo de confirmación para el pedido #{order.id}: {exc}')
+                logger.error(
+                    f'Error al enviar correo de confirmación para el pedido #{order.id}: {exc}'
+                )
 
         transaction.on_commit(send_confirmation)
-
-        # ─────────────────────────────────────────────
-        # 8. Devolver pedido
-        # ─────────────────────────────────────────────
 
         return order

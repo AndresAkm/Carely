@@ -1,14 +1,16 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Q, Count
-from django.shortcuts import redirect
-from django.urls import reverse
-from django.views.generic import DetailView, ListView, UpdateView
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse, reverse_lazy
+from django.utils import timezone
+from django.views import View
+from django.views.generic import CreateView, DetailView, DeleteView, ListView, UpdateView
 
 from apps.core.permissions import is_admin
 
-from ..forms import OrderFilterForm, OrderStatusForm
-from ..models import Order, OrderStatusHistory
+from ..forms import CouponForm, OrderFilterForm, OrderStatusForm
+from ..models import Coupon, Order, OrderStatusHistory
 
 
 class DashboardOrderMixin(LoginRequiredMixin, UserPassesTestMixin):
@@ -99,4 +101,98 @@ class OrderStatusUpdateView(DashboardOrderMixin, UpdateView):
             f'El pedido #{self.object.pk} se actualizó correctamente.'
         )
 
+        return response
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CUPONES
+# ─────────────────────────────────────────────────────────────────────────────
+
+class DashboardCouponMixin(LoginRequiredMixin, UserPassesTestMixin):
+    def test_func(self):
+        return is_admin(self.request.user)
+
+    def handle_no_permission(self):
+        return redirect('core:home')
+
+
+class CouponListView(DashboardCouponMixin, ListView):
+    model = Coupon
+    template_name = 'orders/dashboard/coupon_list.html'
+    context_object_name = 'coupons'
+    paginate_by = 10
+    ordering = ['-created_at']
+
+    def get_queryset(self):
+        queryset = Coupon.objects.order_by('-created_at')
+        q = self.request.GET.get('q', '').strip()
+        if q:
+            queryset = queryset.filter(
+                Q(code__icontains=q) | Q(discount_type__icontains=q)
+            )
+        is_active = self.request.GET.get('is_active', '')
+        if is_active in ('1', '0'):
+            queryset = queryset.filter(is_active=is_active == '1')
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['search_q'] = self.request.GET.get('q', '')
+        ctx['filter_active'] = self.request.GET.get('is_active', '')
+        ctx['now'] = timezone.now()
+        return ctx
+
+
+class CouponCreateView(DashboardCouponMixin, CreateView):
+    model = Coupon
+    form_class = CouponForm
+    template_name = 'orders/dashboard/coupon_form.html'
+    success_url = reverse_lazy('dashboard:coupon_list')
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, f'Cupón "{self.object.code}" creado correctamente.')
+        return response
+
+
+class CouponUpdateView(DashboardCouponMixin, UpdateView):
+    model = Coupon
+    form_class = CouponForm
+    template_name = 'orders/dashboard/coupon_form.html'
+    success_url = reverse_lazy('dashboard:coupon_list')
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, f'Cupón "{self.object.code}" actualizado correctamente.')
+        return response
+
+
+class CouponToggleActiveView(DashboardCouponMixin, View):
+    """Activa o desactiva un cupón via POST (sin formulario complejo)."""
+
+    def post(self, request, pk):
+        coupon = get_object_or_404(Coupon, pk=pk)
+        coupon.is_active = not coupon.is_active
+        coupon.save(update_fields=['is_active'])
+        state = 'activado' if coupon.is_active else 'desactivado'
+        messages.success(request, f'Cupón "{coupon.code}" {state}.')
+        return redirect('dashboard:coupon_list')
+
+
+class CouponDeleteView(DashboardCouponMixin, DeleteView):
+    """
+    Eliminación segura de cupones.
+
+    ON DELETE SET NULL en Order.coupon garantiza que los pedidos existentes
+    conservan su snapshot (coupon_code + discount_amount) aunque el cupón
+    sea eliminado. No se pierde historial.
+    """
+    model = Coupon
+    template_name = 'orders/dashboard/coupon_confirm_delete.html'
+    success_url = reverse_lazy('dashboard:coupon_list')
+
+    def form_valid(self, form):
+        code = self.object.code
+        response = super().form_valid(form)
+        messages.success(self.request, f'Cupón "{code}" eliminado correctamente.')
         return response

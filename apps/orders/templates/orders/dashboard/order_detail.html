@@ -4,24 +4,111 @@
 
 {% block dashboard_content %}
 <div class="dashboard-page-header">
-    <div><h1 class="dashboard-heading">Pedido #{{ order.pk }}</h1><p class="dashboard-muted">Creado el {{ order.created_at|date:'d/m/Y H:i' }}</p></div>
-    <div class="d-flex gap-2"><a href="{% url 'dashboard:order_list' %}" class="btn btn-carely-outline">Volver</a><a href="{% url 'dashboard:order_status' order.pk %}" class="btn btn-carely-primary">Actualizar estado</a></div>
+    <div>
+        <h1 class="dashboard-heading">Pedido #{{ order.pk }}</h1>
+        <p class="dashboard-muted">Creado el {{ order.created_at|date:'d/m/Y H:i' }}</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'dashboard:order_list' %}" class="btn btn-carely-outline">Volver</a>
+        <a href="{% url 'dashboard:order_status' order.pk %}" class="btn btn-carely-primary">Actualizar estado</a>
+    </div>
 </div>
 
 <div class="row g-4">
     <div class="col-lg-8">
         <div class="dashboard-card">
-            <div class="dashboard-card-header d-flex justify-content-between align-items-center"><h5 class="dashboard-card-title mb-0">Productos</h5><span class="status-badge status-badge--{{ order.status }}">{{ order.get_status_display }}</span></div>
+            <div class="dashboard-card-header d-flex justify-content-between align-items-center">
+                <h5 class="dashboard-card-title mb-0">Productos</h5>
+                <span class="status-badge status-badge--{{ order.status }}">{{ order.get_status_display }}</span>
+            </div>
             <div class="dashboard-card-body p-0 table-responsive">
-                <table class="table dashboard-table align-middle mb-0"><thead><tr><th>Producto</th><th class="text-center">Cantidad</th><th class="text-end">Precio</th><th class="text-end">Subtotal</th></tr></thead><tbody>
-                {% for item in order.items.all %}<tr><td><strong>{{ item.product.name }}</strong></td><td class="text-center">{{ item.quantity }}</td><td class="text-end">COP {{ item.unit_price|floatformat:2 }}</td><td class="text-end">COP {{ item.subtotal|floatformat:2 }}</td></tr>{% empty %}<tr><td colspan="4" class="text-center py-4 text-secondary">Este pedido no tiene productos.</td></tr>{% endfor %}
-                </tbody><tfoot><tr><th colspan="3" class="text-end">Total</th><th class="text-end">COP {{ order.total|floatformat:2 }}</th></tr></tfoot></table>
+                <table class="table dashboard-table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th class="text-center">Cantidad</th>
+                            <th class="text-end">Precio</th>
+                            <th class="text-end">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in order.items.all %}
+                        <tr>
+                            <td><strong>{{ item.product.name }}</strong></td>
+                            <td class="text-center">{{ item.quantity }}</td>
+                            <td class="text-end">COP {{ item.unit_price|floatformat:2 }}</td>
+                            <td class="text-end">COP {{ item.subtotal|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center py-4 text-secondary">Este pedido no tiene productos.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        {% if order.coupon_code %}
+                        <tr>
+                            <th colspan="3" class="text-end text-secondary">Subtotal</th>
+                            <th class="text-end text-secondary">COP {{ order.subtotal|floatformat:2 }}</th>
+                        </tr>
+                        <tr>
+                            <th colspan="3" class="text-end" style="color:#198754;"><i class="bi bi-tag-fill"></i> Cupón
+                                {{ order.coupon_code }}</th>
+                            <th class="text-end" style="color:#198754;">- COP {{ order.discount_amount|floatformat:2 }}
+                            </th>
+                        </tr>
+                        {% endif %}
+                        <tr>
+                            <th colspan="3" class="text-end">Total</th>
+                            <th class="text-end">COP {{ order.total|floatformat:2 }}</th>
+                        </tr>
+                    </tfoot>
+                </table>
             </div>
         </div>
     </div>
     <div class="col-lg-4">
-        <div class="dashboard-card mb-4"><div class="dashboard-card-header"><h5 class="dashboard-card-title">Cliente</h5></div><div class="dashboard-card-body"><p class="mb-1"><strong>{{ order.user.get_full_name|default:order.user.email }}</strong></p><p class="text-secondary mb-3">{{ order.user.email }}</p><h6 class="small text-uppercase text-secondary">Dirección de envío</h6><p class="mb-0">{{ order.shipping_address|default:'No especificada.'|linebreaksbr }}</p></div></div>
-        <div class="dashboard-card"><div class="dashboard-card-header"><h5 class="dashboard-card-title">Notas y pagos</h5></div><div class="dashboard-card-body"><p class="mb-3">{{ order.notes|default:'Sin notas internas.'|linebreaksbr }}</p>{% for payment in order.payments.all %}<div class="border-top pt-2 mt-2"><div class="d-flex justify-content-between"><span>{{ payment.get_payment_method_display }}</span><strong>COP {{ payment.amount|floatformat:2 }}</strong></div><small class="text-secondary">{{ payment.get_status_display }}{% if payment.transaction_id %} · {{ payment.transaction_id }}{% endif %}</small></div>{% empty %}<small class="text-secondary">No hay pagos registrados.</small>{% endfor %}</div></div>
+        <div class="dashboard-card mb-4">
+            <div class="dashboard-card-header">
+                <h5 class="dashboard-card-title">Cliente</h5>
+            </div>
+            <div class="dashboard-card-body">
+                <p class="mb-1"><strong>{{ order.user.get_full_name|default:order.user.email }}</strong></p>
+                <p class="text-secondary mb-3">{{ order.user.email }}</p>
+                <h6 class="small text-uppercase text-secondary">Dirección de envío</h6>
+                <p class="mb-0">{{ order.shipping_address|default:'No especificada.'|linebreaksbr }}</p>
+            </div>
+        </div>
+        <div class="dashboard-card">
+            <div class="dashboard-card-header">
+                <h5 class="dashboard-card-title">Notas y pagos</h5>
+            </div>
+            <div class="dashboard-card-body">
+                <p class="mb-3">
+                    {{ order.notes|default:'Sin notas internas.'|linebreaksbr }}
+                </p>
+
+                {% for payment in order.payments.all %}
+                <div class="border-top pt-2 mt-2">
+                    <div class="d-flex justify-content-between">
+                        <span>{{ payment.get_payment_method_display }}</span>
+                        <strong>COP {{ payment.amount|floatformat:2 }}</strong>
+                    </div>
+
+                    <small class="text-secondary">
+                        {{ payment.get_status_display }}
+                        {% if payment.transaction_id %}
+                        · {{ payment.transaction_id }}
+                        {% endif %}
+                    </small>
+                </div>
+                {% empty %}
+                <small class="text-secondary">
+                    No hay pagos registrados.
+                </small>
+                {% endfor %}
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
