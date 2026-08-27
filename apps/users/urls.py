@@ -1,6 +1,6 @@
 from django.contrib.auth import views as auth_views
 from django.urls import path
-from .views.web import LoginView, LogoutView, ProfileView, RegisterView, RegistrationConfirmationView
+from .views.web import AddressCreateView, AddressDeleteView, AddressListView, AddressSetDefaultView, AddressUpdateView, LoginView, LogoutView, ProfileView, RegisterView, RegistrationConfirmationView
 
 app_name = 'users'
 
@@ -40,4 +40,10 @@ urlpatterns = [
     path('password-reset/complete/', auth_views.PasswordResetCompleteView.as_view(
         template_name='users/password_reset_complete.html',
     ), name='password_reset_complete'),
+
+    path('direcciones/', AddressListView.as_view(), name='address_list'),
+    path('direcciones/nueva/', AddressCreateView.as_view(), name='address_create'),
+    path('direcciones/<int:pk>/editar/', AddressUpdateView.as_view(), name='address_update'),
+    path('direcciones/<int:pk>/eliminar/', AddressDeleteView.as_view(), name='address_delete'),
+    path('direcciones/<int:pk>/predeterminada/', AddressSetDefaultView.as_view(), name='address_set_default'),
 ]

@@ -2,6 +2,7 @@ import os
 import secrets
 from datetime import timedelta
 from pathlib import Path
+from urllib.parse import urlparse
 
 from django.core.exceptions import ImproperlyConfigured
 
@@ -151,6 +152,33 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+SUPABASE_URL = os.environ.get('SUPABASE_URL', '').rstrip('/')
+SUPABASE_S3_ACCESS_KEY_ID = os.environ.get('SUPABASE_S3_ACCESS_KEY_ID', '')
+SUPABASE_S3_SECRET_ACCESS_KEY = os.environ.get('SUPABASE_S3_SECRET_ACCESS_KEY', '')
+SUPABASE_STORAGE_BUCKET = os.environ.get('SUPABASE_STORAGE_BUCKET', '')
+
+if all((SUPABASE_URL, SUPABASE_S3_ACCESS_KEY_ID, SUPABASE_S3_SECRET_ACCESS_KEY, SUPABASE_STORAGE_BUCKET)):
+    supabase_host = urlparse(SUPABASE_URL).netloc
+    AWS_S3_ENDPOINT_URL = f'https://{supabase_host.replace(".supabase.co", ".storage.supabase.co")}/storage/v1/s3'
+    AWS_ACCESS_KEY_ID = SUPABASE_S3_ACCESS_KEY_ID
+    AWS_SECRET_ACCESS_KEY = SUPABASE_S3_SECRET_ACCESS_KEY
+    AWS_STORAGE_BUCKET_NAME = SUPABASE_STORAGE_BUCKET
+    AWS_S3_REGION_NAME = 'us-east-1'
+    AWS_S3_ADDRESSING_STYLE = 'path'
+    AWS_S3_SIGNATURE_VERSION = 's3v4'
+    AWS_DEFAULT_ACL = None
+    AWS_QUERYSTRING_AUTH = False
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_S3_CUSTOM_DOMAIN = f'{supabase_host}/storage/v1/object/public/{SUPABASE_STORAGE_BUCKET}'
+    STORAGES = {
+        'default': {
+            'BACKEND': 'storages.backends.s3.S3Storage',
+        },
+        'staticfiles': {
+            'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+        },
+    }
 
 LOGIN_URL = 'users:login'
 LOGIN_REDIRECT_URL = 'core:dashboard'

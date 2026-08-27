@@ -224,3 +224,60 @@ class DashboardUserCreateForm(DashboardUserForm):
         if commit:
             user.save()
         return user
+
+
+class AddressForm(forms.ModelForm):
+    class Meta:
+        from .models import Address
+        model = Address
+        fields = [
+            'recipient_name', 'phone', 'address_line', 'address_line2',
+            'city', 'department', 'postal_code', 'instructions',
+            'is_default', 'is_active',
+        ]
+        widgets = {
+            'recipient_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre del destinatario'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Teléfono de contacto'}),
+            'address_line': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Calle, número, barrio'}),
+            'address_line2': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Apt, suite, piso (opcional)'}),
+            'city': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ciudad o municipio'}),
+            'department': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Departamento'}),
+            'postal_code': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Código postal (opcional)'}),
+            'instructions': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Indicaciones adicionales (opcional)'}),
+            'is_default': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+
+class DashboardAddressForm(forms.ModelForm):
+    user = forms.ModelChoiceField(
+        label='Usuario',
+        queryset=None,
+        widget=forms.Select(attrs={'class': 'form-control'}),
+    )
+
+    class Meta:
+        from .models import Address
+        model = Address
+        fields = [
+            'user', 'recipient_name', 'phone', 'address_line', 'address_line2',
+            'city', 'department', 'postal_code', 'instructions',
+            'is_default', 'is_active',
+        ]
+        widgets = {
+            'recipient_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control'}),
+            'address_line': forms.TextInput(attrs={'class': 'form-control'}),
+            'address_line2': forms.TextInput(attrs={'class': 'form-control'}),
+            'city': forms.TextInput(attrs={'class': 'form-control'}),
+            'department': forms.TextInput(attrs={'class': 'form-control'}),
+            'postal_code': forms.TextInput(attrs={'class': 'form-control'}),
+            'instructions': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'is_default': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from .models import User
+        self.fields['user'].queryset = User.objects.all().order_by('email')

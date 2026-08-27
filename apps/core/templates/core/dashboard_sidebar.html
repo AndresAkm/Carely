@@ -41,6 +41,12 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name|slice:':7' == 'address' %}active{% endif %}" href="{% url 'dashboard:address_list' %}">
+                    <i class="bi bi-geo-alt"></i>
+                    <span>Direcciones</span>
+                </a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link {% if request.resolver_match.url_name|slice:':6' == 'report' %}active{% endif %}" href="{% url 'dashboard:report_list' %}">
                     <i class="bi bi-bar-chart"></i>
                     <span>Reportes</span>

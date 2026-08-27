@@ -38,6 +38,25 @@ env\Scripts\python.exe manage.py createsuperuser
 | `DJANGO_DB_HOST` | `localhost` |
 | `DJANGO_DB_PORT` | `3306` |
 
+## Supabase Storage
+
+Las imágenes de categorías y productos utilizan un bucket público de Supabase
+mediante el backend S3-compatible de `django-storages`. El bucket debe existir
+previamente y su nombre se configura con `SUPABASE_STORAGE_BUCKET`.
+
+Variables necesarias:
+
+```text
+SUPABASE_URL
+SUPABASE_S3_ACCESS_KEY_ID
+SUPABASE_S3_SECRET_ACCESS_KEY
+SUPABASE_STORAGE_BUCKET
+```
+
+Las credenciales S3 se utilizan únicamente en el backend. No se exponen en
+templates, JavaScript ni respuestas API. Las rutas conservan los prefijos
+`categories/` y `products/`.
+
 ## Modelos
 
 | App | Modelos |

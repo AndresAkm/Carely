@@ -1,16 +1,16 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.shortcuts import render, redirect
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views import View
-from django.views.generic import UpdateView
+from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 from django.views.generic import TemplateView
 
 from apps.core.permissions import is_admin
 
-from ..forms import LoginForm, ProfileForm, RegisterForm
-from ..models import User
+from ..forms import AddressForm, LoginForm, ProfileForm, RegisterForm
+from ..models import Address, User
 from ..services import GmailService, GmailServiceError
 
 
@@ -105,3 +105,67 @@ class ProfileView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         messages.success(self.request, 'Tu perfil se actualizó correctamente.')
         return super().form_valid(form)
+
+
+class AddressListView(LoginRequiredMixin, ListView):
+    model = Address
+    template_name = 'users/address_list.html'
+    context_object_name = 'addresses'
+    paginate_by = 6
+
+    def get_queryset(self):
+        return Address.objects.filter(user=self.request.user, is_active=True).order_by('-is_default', '-created_at')
+
+
+class AddressCreateView(LoginRequiredMixin, CreateView):
+    model = Address
+    form_class = AddressForm
+    template_name = 'users/address_form.html'
+    success_url = reverse_lazy('users:address_list')
+
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        address = form.save()
+        if not Address.objects.filter(user=self.request.user, is_active=True).exclude(pk=address.pk).filter(is_default=True).exists():
+            address.is_default = True
+            address.save(update_fields=['is_default'])
+        messages.success(self.request, 'Dirección creada correctamente.')
+        return redirect(self.success_url)
+
+
+class AddressUpdateView(LoginRequiredMixin, UpdateView):
+    model = Address
+    form_class = AddressForm
+    template_name = 'users/address_form.html'
+    success_url = reverse_lazy('users:address_list')
+
+    def get_queryset(self):
+        return Address.objects.filter(user=self.request.user, is_active=True)
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Dirección actualizada correctamente.')
+        return super().form_valid(form)
+
+
+class AddressDeleteView(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        addr = Address.objects.filter(user=request.user, is_active=True).get(pk=kwargs['pk'])
+        addr.is_active = False
+        addr.is_default = False
+        addr.save(update_fields=['is_active', 'is_default'])
+        messages.success(request, 'Dirección eliminada correctamente.')
+        return redirect('users:address_list')
+
+
+class AddressSetDefaultView(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        addr = Address.objects.filter(user=request.user, is_active=True).get(pk=kwargs['pk'])
+        from django.db import transaction
+        with transaction.atomic():
+            Address.objects.select_for_update().filter(
+                user=request.user, is_default=True,
+            ).update(is_default=False)
+            addr.is_default = True
+            addr.save(update_fields=['is_default'])
+        messages.success(request, 'Dirección predeterminada actualizada.')
+        return redirect('users:address_list')

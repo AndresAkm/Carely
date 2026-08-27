@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.db import IntegrityError
 from django.db.models import Q
 from django.db.models.deletion import ProtectedError
 from django.shortcuts import redirect
@@ -37,8 +38,13 @@ class CategoryCreateView(DashboardAdminMixin, CreateView):
     success_url = reverse_lazy('dashboard:category_list')
 
     def form_valid(self, form):
+        try:
+            response = super().form_valid(form)
+        except IntegrityError:
+            form.add_error('name', 'Ya existe una categoría con ese nombre.')
+            return self.form_invalid(form)
         messages.success(self.request, 'La categoría se creó correctamente.')
-        return super().form_valid(form)
+        return response
 
 
 class CategoryUpdateView(DashboardAdminMixin, UpdateView):
@@ -48,8 +54,13 @@ class CategoryUpdateView(DashboardAdminMixin, UpdateView):
     success_url = reverse_lazy('dashboard:category_list')
 
     def form_valid(self, form):
+        try:
+            response = super().form_valid(form)
+        except IntegrityError:
+            form.add_error('name', 'Ya existe una categoría con ese nombre.')
+            return self.form_invalid(form)
         messages.success(self.request, 'La categoría se actualizó correctamente.')
-        return super().form_valid(form)
+        return response
 
 
 class CategoryDeleteView(DashboardAdminMixin, DeleteView):
@@ -106,8 +117,13 @@ class ProductCreateView(DashboardAdminMixin, CreateView):
     success_url = reverse_lazy('dashboard:product_list')
 
     def form_valid(self, form):
+        try:
+            response = super().form_valid(form)
+        except IntegrityError:
+            form.add_error('name', 'Ya existe un producto con ese nombre.')
+            return self.form_invalid(form)
         messages.success(self.request, 'El producto se creó correctamente.')
-        return super().form_valid(form)
+        return response
 
 
 class ProductUpdateView(DashboardAdminMixin, UpdateView):
@@ -117,8 +133,13 @@ class ProductUpdateView(DashboardAdminMixin, UpdateView):
     success_url = reverse_lazy('dashboard:product_list')
 
     def form_valid(self, form):
+        try:
+            response = super().form_valid(form)
+        except IntegrityError:
+            form.add_error('name', 'Ya existe un producto con ese nombre.')
+            return self.form_invalid(form)
         messages.success(self.request, 'El producto se actualizó correctamente.')
-        return super().form_valid(form)
+        return response
 
 
 class ProductDeleteView(DashboardAdminMixin, DeleteView):

@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import User
+from .models import Address, User
 
 
 @admin.register(User)
@@ -20,3 +20,12 @@ class CarelyUserAdmin(UserAdmin):
     def has_delete_permission(self, request, obj=None):
         # User deletion is intentionally centralized in the dashboard force-delete flow.
         return False
+
+
+@admin.register(Address)
+class AddressAdmin(admin.ModelAdmin):
+    list_display = ['recipient_name', 'user', 'city', 'department', 'is_active', 'is_default', 'created_at']
+    list_filter = ['is_active', 'is_default', 'department']
+    search_fields = ['recipient_name', 'user__email', 'city', 'address_line']
+    autocomplete_fields = ['user']
+    readonly_fields = ['created_at', 'updated_at']

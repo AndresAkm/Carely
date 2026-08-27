@@ -1,6 +1,7 @@
 from django import forms
 
 from .models import Category, Product
+from django.utils.text import slugify
 
 
 class DashboardFormMixin:
@@ -20,8 +21,24 @@ class CategoryForm(DashboardFormMixin, forms.ModelForm):
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
+    def clean_name(self):
+        name = self.cleaned_data['name']
+        existing = Category.objects.filter(slug=slugify(name))
+        if self.instance.pk:
+            existing = existing.exclude(pk=self.instance.pk)
+        if existing.exists():
+            raise forms.ValidationError('Ya existe una categoría con ese nombre.')
+        return name
+
 
 class ProductForm(DashboardFormMixin, forms.ModelForm):
+    category = forms.ModelChoiceField(
+        label='Categoría',
+        queryset=Category.objects.all(),
+        required=False,
+        empty_label='Selecciona una categoría',
+    )
+
     class Meta:
         model = Product
         fields = ['category', 'name', 'description', 'price', 'image', 'stock', 'is_active', 'featured']
@@ -31,6 +48,15 @@ class ProductForm(DashboardFormMixin, forms.ModelForm):
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'featured': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
+
+    def clean_name(self):
+        name = self.cleaned_data['name']
+        existing = Product.objects.filter(slug=slugify(name))
+        if self.instance.pk:
+            existing = existing.exclude(pk=self.instance.pk)
+        if existing.exists():
+            raise forms.ValidationError('Ya existe un producto con ese nombre.')
+        return name
 
 
 class ProductFilterForm(forms.Form):

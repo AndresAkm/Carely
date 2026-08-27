@@ -1,5 +1,6 @@
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
-from django.db import models
+from django.db import models, transaction
 
 
 class User(AbstractUser):
@@ -43,3 +44,85 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
+
+
+class Address(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='addresses',
+        verbose_name='usuario',
+    )
+    recipient_name = models.CharField(
+        'nombre del destinatario',
+        max_length=150,
+    )
+    phone = models.CharField(
+        'teléfono de contacto',
+        max_length=20,
+        blank=True,
+    )
+    address_line = models.CharField(
+        'dirección principal',
+        max_length=255,
+    )
+    address_line2 = models.CharField(
+        'complemento de dirección',
+        max_length=255,
+        blank=True,
+    )
+    city = models.CharField(
+        'ciudad o municipio',
+        max_length=100,
+    )
+    department = models.CharField(
+        'departamento',
+        max_length=100,
+    )
+    postal_code = models.CharField(
+        'código postal',
+        max_length=10,
+        blank=True,
+    )
+    instructions = models.TextField(
+        'indicaciones adicionales',
+        blank=True,
+    )
+    is_default = models.BooleanField(
+        'dirección predeterminada',
+        default=False,
+    )
+    is_active = models.BooleanField(
+        'activo',
+        default=True,
+    )
+    created_at = models.DateTimeField(
+        'creado en',
+        auto_now_add=True,
+    )
+    updated_at = models.DateTimeField(
+        'actualizado en',
+        auto_now=True,
+    )
+
+    class Meta:
+        verbose_name = 'dirección'
+        verbose_name_plural = 'direcciones'
+        ordering = ['-is_default', '-created_at']
+        indexes = [
+            models.Index(fields=['user', 'is_active'], name='idx_address_user_active'),
+        ]
+
+    def __str__(self):
+        return f'{self.recipient_name} — {self.address_line}, {self.city}'
+
+    def save(self, *args, **kwargs):
+        if self.is_default and not self.is_active:
+            self.is_default = False
+        if self.is_default:
+            with transaction.atomic():
+                Address.objects.select_for_update().filter(
+                    user=self.user,
+                    is_default=True,
+                ).exclude(pk=self.pk).update(is_default=False)
+        super().save(*args, **kwargs)

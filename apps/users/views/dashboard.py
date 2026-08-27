@@ -1,7 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.views import PasswordChangeView
-from django.db import transaction
+from django.db import models, transaction
 from django.shortcuts import redirect
 from django.views import View
 from django.urls import reverse_lazy
@@ -10,8 +10,8 @@ from django.views.generic import CreateView, ListView, UpdateView
 from apps.core.permissions import is_admin
 from apps.payments.models import Payment
 
-from ..forms import DashboardUserCreateForm, DashboardUserForm, ForceDeleteUserForm
-from ..models import User
+from ..forms import AddressForm, DashboardAddressForm, DashboardUserCreateForm, DashboardUserForm, ForceDeleteUserForm
+from ..models import Address, User
 
 
 class DashboardUserMixin(LoginRequiredMixin, UserPassesTestMixin):
@@ -148,3 +148,60 @@ class UserForceDeleteView(DashboardUserMixin, View):
             user.delete()
         messages.success(request, 'El usuario y sus datos relacionados se eliminaron correctamente.')
         return redirect('dashboard:user_list')
+
+
+class AddressListView(DashboardUserMixin, ListView):
+    model = Address
+    template_name = 'users/dashboard/address_list.html'
+    context_object_name = 'addresses'
+    paginate_by = 10
+
+    def get_queryset(self):
+        queryset = Address.objects.select_related('user')
+        search = self.request.GET.get('q', '').strip()
+        status = self.request.GET.get('status', '')
+        if search:
+            queryset = queryset.filter(
+                models.Q(recipient_name__icontains=search)
+                | models.Q(user__email__icontains=search)
+                | models.Q(city__icontains=search)
+            )
+        if status == 'active':
+            queryset = queryset.filter(is_active=True)
+        elif status == 'inactive':
+            queryset = queryset.filter(is_active=False)
+        return queryset.order_by('-created_at')
+
+
+class AddressCreateView(DashboardUserMixin, CreateView):
+    model = Address
+    form_class = DashboardAddressForm
+    template_name = 'users/dashboard/address_form.html'
+    success_url = reverse_lazy('dashboard:address_list')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'La dirección se creó correctamente.')
+        return super().form_valid(form)
+
+
+class AddressUpdateView(DashboardUserMixin, UpdateView):
+    model = Address
+    form_class = DashboardAddressForm
+    template_name = 'users/dashboard/address_form.html'
+    success_url = reverse_lazy('dashboard:address_list')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'La dirección se actualizó correctamente.')
+        return super().form_valid(form)
+
+
+class AddressToggleActiveView(DashboardUserMixin, View):
+    def post(self, request, *args, **kwargs):
+        addr = Address.objects.get(pk=kwargs['pk'])
+        if addr.is_default and addr.is_active:
+            addr.is_default = False
+        addr.is_active = not addr.is_active
+        addr.save(update_fields=['is_active', 'is_default'])
+        action = 'activó' if addr.is_active else 'desactivó'
+        messages.success(request, f'Se {action} la dirección correctamente.')
+        return redirect('dashboard:address_list')

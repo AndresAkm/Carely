@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mis direcciones - Carely{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'users/css/profile.css' %}?v=1" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+{% include 'navbar.html' %}
+
+<main class="profile-page">
+    <div class="container">
+        <div class="profile-header">
+            <span class="profile-eyebrow"><i class="bi bi-geo-alt me-1"></i>Mis direcciones</span>
+            <h1 class="profile-title">Gestiona tus direcciones de envío</h1>
+            <p class="profile-subtitle">Agrega, edita o elimina tus direcciones para agilizar tus pedidos.</p>
+        </div>
+
+        <div class="row g-4 g-lg-5 align-items-start">
+            <div class="col-lg-4">
+                <aside class="profile-summary">
+                    <div class="profile-avatar">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</div>
+                    <h2>{{ user.get_full_name|default:user.email }}</h2>
+                    <p class="profile-summary-email">{{ user.email }}</p>
+                    <span class="profile-role"><i class="bi bi-heart-fill me-1"></i>Cliente Carely</span>
+                    <dl class="profile-summary-details">
+                        <div><dt>Miembro desde</dt><dd>{{ user.created_at|date:'d/m/Y' }}</dd></div>
+                        <div><dt>Direcciones</dt><dd>{{ addresses|length }}</dd></div>
+                    </dl>
+                    <a href="{% url 'users:profile' %}" class="profile-password-link"><i class="bi bi-person me-2"></i>Mi perfil</a>
+                </aside>
+            </div>
+            <div class="col-lg-8">
+                <section class="profile-card">
+                    <div class="profile-card-header" style="display:flex;justify-content:space-between;align-items:center;">
+                        <div><h2>Mis direcciones</h2><p>Direcciones registradas para envíos.</p></div>
+                        <a href="{% url 'users:address_create' %}" class="c-btn c-btn--primary"><i class="bi bi-plus-lg me-1"></i>Nueva dirección</a>
+                    </div>
+                    {% for addr in addresses %}
+                    <div style="border:1px solid var(--border-color, #e2e8f0);border-radius:12px;padding:1.25rem;margin-bottom:1rem;">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:0.5rem;">
+                            <div>
+                                <strong>{{ addr.recipient_name }}</strong>
+                                {% if addr.is_default %}<span style="background:var(--primary-color, #6366f1);color:#fff;font-size:0.7rem;padding:2px 8px;border-radius:20px;margin-left:0.5rem;">Predeterminada</span>{% endif %}
+                                <p style="margin:0.35rem 0 0;color:var(--text-secondary, #64748b);font-size:0.9rem;">
+                                    {{ addr.address_line }}{% if addr.address_line2 %}, {{ addr.address_line2 }}{% endif %}<br>
+                                    {{ addr.city }}, {{ addr.department }}{% if addr.postal_code %} — {{ addr.postal_code }}{% endif %}
+                                </p>
+                                {% if addr.phone %}<p style="margin:0.25rem 0 0;color:var(--text-secondary, #64748b);font-size:0.85rem;"><i class="bi bi-telephone me-1"></i>{{ addr.phone }}</p>{% endif %}
+                            </div>
+                            <div style="display:flex;gap:0.5rem;flex-shrink:0;align-items:center;">
+                                {% if not addr.is_default %}
+                                <form method="post" action="{% url 'users:address_set_default' addr.pk %}">{% csrf_token %}<button type="submit" class="btn btn-sm btn-carely-outline" title="Marcar como predeterminada"><i class="bi bi-star"></i></button></form>
+                                {% endif %}
+                                <a href="{% url 'users:address_update' addr.pk %}" class="btn btn-sm btn-carely-outline" title="Editar" style="padding:4px 12px;"><i class="bi bi-pencil"></i></a>
+                                <form method="post" action="{% url 'users:address_delete' addr.pk %}" onsubmit="return confirm('¿Eliminar esta dirección?');">{% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar"><i class="bi bi-trash3"></i></button></form>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div style="text-align:center;padding:3rem 1rem;color:var(--text-secondary, #64748b);">
+                        <i class="bi bi-geo-alt" style="font-size:2.5rem;display:block;margin-bottom:0.75rem;"></i>
+                        <p style="margin-bottom:1rem;">Aún no tienes direcciones registradas.</p>
+                        <a href="{% url 'users:address_create' %}" class="c-btn c-btn--primary"><i class="bi bi-plus-lg me-1"></i>Agregar primera dirección</a>
+                    </div>
+                    {% endfor %}
+                </section>
+            </div>
+        </div>
+    </div>
+</main>
+
+{% include 'footer.html' %}
+{% endblock %}

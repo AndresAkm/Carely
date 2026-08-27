@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if object %}Editar dirección{% else %}Nueva dirección{% endif %} - Carely{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'users/css/profile.css' %}?v=1" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+{% include 'navbar.html' %}
+
+<main class="profile-page">
+    <div class="container">
+        <div class="profile-header">
+            <span class="profile-eyebrow"><i class="bi bi-geo-alt me-1"></i>Mis direcciones</span>
+            <h1 class="profile-title">{% if object %}Editar dirección{% else %}Nueva dirección{% endif %}</h1>
+            <p class="profile-subtitle">{% if object %}Actualiza los datos de tu dirección de envío.{% else %}Agrega una nueva dirección para tus envíos.{% endif %}</p>
+        </div>
+
+        <div class="row g-4 g-lg-5 align-items-start">
+            <div class="col-lg-4">
+                <aside class="profile-summary">
+                    <div class="profile-avatar">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</div>
+                    <h2>{{ user.get_full_name|default:user.email }}</h2>
+                    <p class="profile-summary-email">{{ user.email }}</p>
+                    <span class="profile-role"><i class="bi bi-heart-fill me-1"></i>Cliente Carely</span>
+                    <dl class="profile-summary-details">
+                        <div><dt>Miembro desde</dt><dd>{{ user.created_at|date:'d/m/Y' }}</dd></div>
+                    </dl>
+                    <a href="{% url 'users:address_list' %}" class="profile-password-link"><i class="bi bi-arrow-left me-2"></i>Volver a direcciones</a>
+                </aside>
+            </div>
+            <div class="col-lg-8">
+                <section class="profile-card">
+                    <div class="profile-card-header"><h2>{% if object %}Editar{% else %}Agregar{% endif %} dirección</h2><p>Completa los datos de la dirección de envío.</p></div>
+                    <form method="post" novalidate class="profile-form" onsubmit="const button=this.querySelector('[type=submit]'); if (button.disabled) return false; button.disabled=true; button.textContent='Guardando...';">
+                        {% csrf_token %}
+                        {% if form.non_field_errors %}<div class="profile-form-error">{{ form.non_field_errors }}</div>{% endif %}
+                        {% for field in form %}
+                        <div class="profile-field {% if field.name == 'is_default' %}profile-field--full{% endif %}">
+                            {% if field.name == 'is_default' %}
+                                <div style="display:flex;align-items:center;gap:0.5rem;">
+                                    {{ field }}
+                                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                </div>
+                            {% else %}
+                                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                {{ field }}
+                            {% endif %}
+                            {% for error in field.errors %}<div class="profile-field-error">{{ error }}</div>{% endfor %}
+                        </div>
+                        {% endfor %}
+                        <div class="profile-form-actions">
+                            <a href="{% url 'users:address_list' %}" class="c-btn c-btn--outline">Cancelar</a>
+                            <button type="submit" class="c-btn c-btn--primary"><i class="bi bi-check2 me-1"></i>Guardar dirección</button>
+                        </div>
+                    </form>
+                </section>
+            </div>
+        </div>
+    </div>
+</main>
+
+{% include 'footer.html' %}
+{% endblock %}

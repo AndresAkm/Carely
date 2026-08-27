@@ -12,7 +12,7 @@ from apps.catalog.views.dashboard import (
 )
 from apps.core.report_views import ReportExportView, ReportView
 from apps.orders.views.dashboard import OrderDetailView, OrderListView, OrderStatusUpdateView
-from apps.users.views.dashboard import UserCreateView, UserForceDeleteView, UserListView, UserPasswordChangeView, UserToggleActiveView, UserUpdateView
+from apps.users.views.dashboard import AddressCreateView, AddressListView, AddressToggleActiveView, AddressUpdateView, UserCreateView, UserForceDeleteView, UserListView, UserPasswordChangeView, UserToggleActiveView, UserUpdateView
 
 app_name = 'dashboard'
 
@@ -36,4 +36,8 @@ urlpatterns = [
     path('usuarios/<int:pk>/editar/', UserUpdateView.as_view(), name='user_update'),
     path('usuarios/<int:pk>/password/', UserPasswordChangeView.as_view(), name='user_password'),
     path('usuarios/<int:pk>/estado/', UserToggleActiveView.as_view(), name='user_toggle_active'),
+    path('direcciones/', AddressListView.as_view(), name='address_list'),
+    path('direcciones/nueva/', AddressCreateView.as_view(), name='address_create'),
+    path('direcciones/<int:pk>/editar/', AddressUpdateView.as_view(), name='address_update'),
+    path('direcciones/<int:pk>/estado/', AddressToggleActiveView.as_view(), name='address_toggle_active'),
 ]
