@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            margin: 0;
+            background: #f7f1f6;
+            font-family: Arial, sans-serif;
+            color: #29253a;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+        .wrapper {
+            padding: 32px 12px;
+            background: #f7f1f6;
+        }
+
+        .main-card {
+            max-width: 600px;
+            background: #fff;
+            border-radius: 24px;
+            box-shadow: 0 16px 40px rgba(66, 55, 90, .14);
+            overflow: hidden;
+            margin: 0 auto;
+        }
+
+        .header-bar {
+            height: 7px;
+            background: linear-gradient(90deg, #e8609b, #5b8def);
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .brand {
+            margin: 0 auto 28px;
+            color: #20202a;
+            font-size: 30px;
+            font-weight: 700;
+            letter-spacing: -1px;
+            text-align: center;
+        }
+
+        .title {
+            margin: 0 0 16px;
+            font-size: 24px;
+            text-align: center;
+        }
+
+        .text {
+            margin: 0 0 24px;
+            color: #6f6a7d;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .details-box {
+            background: #fdfcff;
+            border: 1px solid #efeef4;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+
+        .details-box p {
+            margin: 0 0 8px;
+            color: #6f6a7d;
+        }
+
+        .details-box strong {
+            color: #29253a;
+        }
+
+        .products-table {
+            width: 100%;
+            text-align: left;
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+
+        .products-table th {
+            padding: 12px 8px;
+            border-bottom: 2px solid #efeef4;
+            color: #29253a;
+        }
+
+        .products-table td {
+            padding: 12px 8px;
+            border-bottom: 1px solid #efeef4;
+            color: #6f6a7d;
+            vertical-align: top;
+        }
+
+        .totals {
+            width: 100%;
+            text-align: right;
+            margin-bottom: 32px;
+            font-size: 15px;
+        }
+
+        .totals td {
+            padding: 6px 8px;
+        }
+
+        .totals-total {
+            font-weight: bold;
+            color: #e8609b;
+            font-size: 18px;
+            border-top: 2px dashed #efeef4;
+            padding-top: 12px;
+        }
+
+        .btn-container {
+            text-align: center;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 14px 26px;
+            border-radius: 12px;
+            background: #e8609b;
+            color: #fff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .footer {
+            margin: 28px 0 0;
+            color: #999;
+            font-size: 13px;
+            line-height: 1.5;
+            text-align: center;
+        }
+
+        @media only screen and (max-width: 600px) {
+            .content {
+                padding: 24px;
+            }
+
+            .products-table th,
+            .products-table td {
+                padding: 8px 4px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <table role="presentation" width="100%" class="wrapper">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="100%" class="main-card">
+                    <tr>
+                        <td class="header-bar"></td>
+                    </tr>
+                    <tr>
+                        <td class="content">
+                            <div class="brand">Carely</div>
+                            <h1 class="title">¡Tu pedido está confirmado!</h1>
+                            <p class="text">Hola {{order.user.first_name|default:order.user.email}}, gracias por tu
+                                compra. Hemos registrado tu pedido correctamente y pronto estaremos procesándolo.</p>
+
+                            <div class="details-box">
+                                <p><strong>Pedido #:</strong> {{order.id}}</p>
+                                <p><strong>Fecha y Hora:</strong> {{order.created_at|date:"d M Y, h:i a"}}</p>
+                                <p><strong>Estado:</strong> {{order.get_status_display}}</p>
+                                <p style="margin-top: 16px;"><strong>Dirección de
+                                        entrega:</strong><br>{{order.shipping_address|linebreaksbr}}</p>
+                                {%if order.notes %}
+                                <p style="margin-top: 16px;"><strong>Notas:</strong><br>{{order.notes}}</p>
+                                {%endif %}
+                            </div>
+
+                            <table role="presentation" class="products-table">
+                                <thead>
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th style="text-align: center;">Cant</th>
+                                        <th style="text-align: right;">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {%for item in order.items.all %}
+                                    <tr>
+                                        <td>{{item.product_name}}<br><small style="color: #999;">COP
+                                                {{item.unit_price|floatformat:2}}</small></td>
+                                        <td style="text-align: center;">x{{item.quantity}}</td>
+                                        <td style="text-align: right; font-weight: bold; color: #29253a;">COP
+                                            {{item.subtotal|floatformat:2}}</td>
+                                    </tr>
+                                    {%endfor %}
+                                </tbody>
+                            </table>
+
+                            <table role="presentation" class="totals" align="right">
+                                <tr>
+                                    <td>Subtotal:</td>
+                                    <td>COP {{order.total|floatformat:2}}</td>
+                                </tr>
+                                <tr>
+                                    <td>Envíos / Descuentos:</td>
+                                    <td>A calcular</td>
+                                </tr>
+                                <tr>
+                                    <td class="totals-total">Total:</td>
+                                    <td class="totals-total">COP {{order.total|floatformat:2}}</td>
+                                </tr>
+                            </table>
+
+                            <div style="clear: both;"></div>
+
+                            {%if site_url %}
+                            <div class="btn-container">
+                                <a href="{{site_url}}{%url 'orders:order_detail' order.id %}" class="btn"
+                                    style="color: #ffffff !important;">Ver estado
+                                    de mi pedido</a>
+                            </div>
+                            {%endif %}
+
+                            <p class="footer">¡Gracias por confiar en Carely para el cuidado personal!<br>Si tienes
+                                alguna duda con este pedido, por favor responde a este correo.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>

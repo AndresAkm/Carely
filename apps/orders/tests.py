@@ -138,6 +138,44 @@ class CheckoutServiceTests(TestCase):
         self.prod2.refresh_from_db()
         self.assertEqual(self.prod2.stock, 4)
 
+    def test_checkout_envia_correo(self):
+        from django.core import mail
+        from django.test import TransactionTestCase
+
+        # Flush outbox
+        mail.outbox = []
+
+        # We must use captureOnCommitCallbacks to trigger on_commit in standard TestCase
+        with self.captureOnCommitCallbacks(execute=True):
+            order = checkout_cart(self.user, self.address.id, site_url='http://localhost:8000')
+
+        self.assertEqual(len(mail.outbox), 1)
+        email = mail.outbox[0]
+        self.assertEqual(email.subject, f'¡Tu pedido #{order.id} está confirmado!')
+        self.assertEqual(email.to, [self.user.email])
+        
+        # Verify content contains required fields
+        self.assertIn(str(order.id), email.body)
+        self.assertIn(self.prod1.name, email.body)
+        self.assertIn(str(int(order.total)), email.body)
+        self.assertIn(self.address.address_line, email.body)
+        self.assertEqual(order.user.email, self.user.email)
+
+    def test_checkout_error_correo_no_revierte_pedido(self):
+        from unittest.mock import patch
+        
+        # Patcheamos GmailService.send_message para que tire error.
+        with patch('apps.orders.services.GmailService.send_message') as mock_send:
+            mock_send.side_effect = Exception("Fallo de red al enviar el correo")
+            
+            with self.captureOnCommitCallbacks(execute=True):
+                order = checkout_cart(self.user, self.address.id)
+            
+        # El pedido DEBIÓ procesarse completamente a pesar del error de envío.
+        self.assertEqual(Order.objects.filter(id=order.id).count(), 1)
+        self.assertEqual(self.cart.items.count(), 0)
+        self.assertTrue(mock_send.called)
+
 class OrderViewsTests(TestCase):
     def setUp(self):
         self.user = make_user('tester@carely.com')

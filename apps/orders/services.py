@@ -1,3 +1,4 @@
+import logging
 from decimal import Decimal
 
 from django.db import transaction
@@ -9,6 +10,10 @@ from apps.inventory.services import (
     InventoryService,
     InsufficientStockError,
 )
+from apps.users.services import GmailService
+
+
+logger = logging.getLogger(__name__)
 
 
 class EmptyCartError(Exception):
@@ -19,7 +24,7 @@ class InvalidAddressError(Exception):
     pass
 
 
-def checkout_cart(user, address_id: int, notes: str = '') -> Order:
+def checkout_cart(user, address_id: int, notes: str = '', site_url: str = '') -> Order:
     """
     Procesa el checkout transformando el carrito en un pedido final.
 
@@ -31,6 +36,7 @@ def checkout_cart(user, address_id: int, notes: str = '') -> Order:
     - Crea los items del pedido.
     - Calcula el total.
     - Vacía el carrito.
+    - (on_commit) Envia un correo de confirmación utilizando GmailService.
 
     Si cualquier paso falla, toda la operación se revierte.
     """
@@ -152,7 +158,33 @@ def checkout_cart(user, address_id: int, notes: str = '') -> Order:
         CartItem.objects.filter(cart=cart).delete()
 
         # ─────────────────────────────────────────────
-        # 7. Devolver pedido
+        # 7. Programar envío de email de confirmación
+        # ─────────────────────────────────────────────
+
+        def send_confirmation():
+            try:
+                # Se recarga el pedido para asegurar que items y todo estén correctos
+                # en el hilo de estado posterior al commit (aunque on_commit corre síncrono por defecto en runserver)
+                order.refresh_from_db()
+                context = {
+                    'order': order,
+                    'site_url': site_url if site_url else ''
+                }
+                GmailService.send_message(
+                    subject=f'¡Tu pedido #{order.id} está confirmado!',
+                    recipient=user.email,
+                    text_template='orders/emails/order_confirmation.txt',
+                    html_template='orders/emails/order_confirmation.html',
+                    context=context,
+                )
+            except Exception as exc:
+                # Capturar cualquier error para no afectar retroactivamente (on_commit igual no afecta la transaccion)
+                logger.error(f'Error al enviar correo de confirmación para el pedido #{order.id}: {exc}')
+
+        transaction.on_commit(send_confirmation)
+
+        # ─────────────────────────────────────────────
+        # 8. Devolver pedido
         # ─────────────────────────────────────────────
 
         return order

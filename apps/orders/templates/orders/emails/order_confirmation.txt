@@ -1,0 +1,32 @@
+Hola {{order.user.first_name|default:order.user.email}},
+
+¡Tu pedido está confirmado! 
+
+Hemos registrado tu pedido correctamente y pronto estaremos procesándolo.
+
+RESUMEN DEL PEDIDO #{{order.id}}
+Fecha: {{order.created_at|date:"d M Y, h:i a"}}
+Estado: {{order.get_status_display}}
+
+DIRECCIÓN DE ENTREGA:
+{{order.shipping_address}}
+{%if order.notes %}
+NOTAS DEL PEDIDO:
+{{order.notes}}
+{%endif %}
+
+PRODUCTOS:
+{%for item in order.items.all %}
+- {{item.product_name}} (x{{item.quantity}}) - COP {{item.subtotal|floatformat:2}}
+  Precio unitario: COP {{item.unit_price|floatformat:2}}
+{%endfor %}
+
+Subtotal: COP {{order.total|floatformat:2}}
+Envíos / Descuentos: A calcular
+TOTAL A PAGAR: COP {{order.total|floatformat:2}}
+{%if site_url %}
+Puedes revisar en cualquier momento los detalles de tu compra ingresando aquí:
+{{site_url}}{%url 'orders:order_detail' order.id %}
+{%endif %}
+¡Gracias por confiar en Carely para el cuidado personal!
+Si tienes alguna duda con este pedido, por favor contáctanos.

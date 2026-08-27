@@ -36,10 +36,13 @@ def checkout_view(request):
             try:
                 address_id = int(address_id)
 
+                # Obtener la url base limpia
+                site_url = request.build_absolute_uri('/')[:-1]
                 order = checkout_cart(
                     request.user,
                     address_id,
                     notes=notes,
+                    site_url=site_url,
                 )
 
                 messages.success(
