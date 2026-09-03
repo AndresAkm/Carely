@@ -120,7 +120,7 @@ def checkout_cart(
             f"{address.recipient_name}\n"
             f"{address.address_line}\n"
             f"{address.address_line2}\n"
-            f"{address.city}, {address.department}\n"
+            f"{address.city.name}, {address.department.name}\n"
             f"CP: {address.postal_code}\n"
             f"Tel: {address.phone}\n"
             f"Instrucciones: {address.instructions}"

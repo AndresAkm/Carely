@@ -46,6 +46,53 @@ class User(AbstractUser):
         return self.email
 
 
+class Department(models.Model):
+    api_id = models.IntegerField(
+        'identificador externo',
+        unique=True,
+    )
+    name = models.CharField(
+        'nombre',
+        max_length=100,
+    )
+
+    class Meta:
+        verbose_name = 'departamento'
+        verbose_name_plural = 'departamentos'
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
+class City(models.Model):
+    api_id = models.IntegerField(
+        'identificador externo',
+        unique=True,
+    )
+    name = models.CharField(
+        'nombre',
+        max_length=100,
+    )
+    department = models.ForeignKey(
+        Department,
+        on_delete=models.CASCADE,
+        related_name='cities',
+        verbose_name='departamento',
+    )
+
+    class Meta:
+        verbose_name = 'ciudad'
+        verbose_name_plural = 'ciudades'
+        ordering = ['name']
+        indexes = [
+            models.Index(fields=['department', 'name'], name='idx_city_department_name'),
+        ]
+
+    def __str__(self):
+        return self.name
+
+
 class Address(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -71,13 +118,17 @@ class Address(models.Model):
         max_length=255,
         blank=True,
     )
-    city = models.CharField(
-        'ciudad o municipio',
-        max_length=100,
+    city = models.ForeignKey(
+        City,
+        on_delete=models.PROTECT,
+        related_name='addresses',
+        verbose_name='ciudad o municipio',
     )
-    department = models.CharField(
-        'departamento',
-        max_length=100,
+    department = models.ForeignKey(
+        Department,
+        on_delete=models.PROTECT,
+        related_name='addresses',
+        verbose_name='departamento',
     )
     postal_code = models.CharField(
         'código postal',
@@ -114,7 +165,7 @@ class Address(models.Model):
         ]
 
     def __str__(self):
-        return f'{self.recipient_name} — {self.address_line}, {self.city}'
+        return f'{self.recipient_name} — {self.address_line}, {self.city.name}'
 
     def save(self, *args, **kwargs):
         if self.is_default and not self.is_active:

@@ -34,7 +34,7 @@
             <div class="col-lg-8">
                 <section class="profile-card">
                     <div class="profile-card-header"><h2>{% if object %}Editar{% else %}Agregar{% endif %} dirección</h2><p>Completa los datos de la dirección de envío.</p></div>
-                    <form method="post" novalidate class="profile-form" onsubmit="const button=this.querySelector('[type=submit]'); if (button.disabled) return false; button.disabled=true; button.textContent='Guardando...';">
+                    <form method="post" novalidate class="profile-form" data-chained-address data-cities-url="{% url 'users:department_cities_api' 0 %}" onsubmit="const button=this.querySelector('[type=submit]'); if (button.disabled) return false; button.disabled=true; button.textContent='Guardando...';">
                         {% csrf_token %}
                         {% if form.non_field_errors %}<div class="profile-form-error">{{ form.non_field_errors }}</div>{% endif %}
                         {% for field in form %}
@@ -63,4 +63,5 @@
 </main>
 
 {% include 'footer.html' %}
+<script src="{% static 'users/js/chained_address.js' %}"></script>
 {% endblock %}

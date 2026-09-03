@@ -5,7 +5,7 @@ from django.urls import reverse
 
 from apps.catalog.models import Category, Product
 from apps.cart.models import Cart, CartItem
-from apps.users.models import Address
+from apps.users.models import Address, City, Department
 from apps.orders.models import Order, OrderItem
 from apps.inventory.services import InventoryService, InsufficientStockError
 from apps.orders.services import checkout_cart, EmptyCartError, InvalidAddressError
@@ -35,12 +35,14 @@ def make_product(name='Proc', price='10.0', stock=10):
     return p
 
 def make_address(user, recipient_name='T', address_line='Q', active=True):
+    dept, _ = Department.objects.get_or_create(api_id=99, defaults={'name': 'Dept'})
+    city, _ = City.objects.get_or_create(api_id=99, defaults={'name': 'City', 'department': dept})
     return Address.objects.create(
         user=user, 
         recipient_name=recipient_name, 
         address_line=address_line,
-        city='City',
-        department='Dept',
+        city=city,
+        department=dept,
         postal_code='123',
         phone='1234567',
         instructions='Inst',

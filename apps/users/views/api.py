@@ -1,12 +1,13 @@
 from django.db import transaction
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from ..models import Address, User
-from ..serializer import AddressSerializer, UserSerializer
+from ..models import Address, City, Department, User
+from ..serializer import AddressSerializer, CitySerializer, DepartmentSerializer, UserSerializer
 from apps.core.permissions import IsAdmin, IsAuthenticatedOwnedOrAdmin, is_admin
 
 
@@ -59,3 +60,23 @@ class AddressViewSet(viewsets.ModelViewSet):
             address.save(update_fields=['is_default'])
         address.refresh_from_db()
         return Response(self.get_serializer(address).data)
+
+
+class DepartmentViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    queryset = Department.objects.all()
+    serializer_class = DepartmentSerializer
+
+
+class CityViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    queryset = City.objects.all()
+    serializer_class = CitySerializer
+    http_method_names = ['get', 'head', 'options']
+
+    def get_queryset(self):
+        queryset = self.queryset
+        department = self.request.query_params.get('department')
+        if department:
+            queryset = queryset.filter(department_id=department)
+        return queryset

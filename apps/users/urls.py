@@ -1,6 +1,6 @@
 from django.contrib.auth import views as auth_views
 from django.urls import path
-from .views.web import AddressCreateView, AddressDeleteView, AddressListView, AddressSetDefaultView, AddressUpdateView, LoginView, LogoutView, PasswordChangeView, PasswordResetConfirmView, ProfileView, RegisterView, RegistrationConfirmationView
+from .views.web import AddressCreateView, AddressDeleteView, AddressListView, AddressSetDefaultView, AddressUpdateView, LoginView, LogoutView, PasswordChangeView, PasswordResetConfirmView, ProfileView, RegisterView, RegistrationConfirmationView, department_cities_api
 
 app_name = 'users'
 
@@ -46,4 +46,5 @@ urlpatterns = [
     path('direcciones/<int:pk>/editar/', AddressUpdateView.as_view(), name='address_update'),
     path('direcciones/<int:pk>/eliminar/', AddressDeleteView.as_view(), name='address_delete'),
     path('direcciones/<int:pk>/predeterminada/', AddressSetDefaultView.as_view(), name='address_set_default'),
+    path('municipios/departamento/<int:department_pk>/', department_cities_api, name='department_cities_api'),
 ]

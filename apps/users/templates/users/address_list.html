@@ -46,7 +46,7 @@
                                 {% if addr.is_default %}<span style="background:var(--primary-color, #6366f1);color:#fff;font-size:0.7rem;padding:2px 8px;border-radius:20px;margin-left:0.5rem;">Predeterminada</span>{% endif %}
                                 <p style="margin:0.35rem 0 0;color:var(--text-secondary, #64748b);font-size:0.9rem;">
                                     {{ addr.address_line }}{% if addr.address_line2 %}, {{ addr.address_line2 }}{% endif %}<br>
-                                    {{ addr.city }}, {{ addr.department }}{% if addr.postal_code %} — {{ addr.postal_code }}{% endif %}
+                                    {{ addr.city.name }}, {{ addr.department.name }}{% if addr.postal_code %} — {{ addr.postal_code }}{% endif %}
                                 </p>
                                 {% if addr.phone %}<p style="margin:0.25rem 0 0;color:var(--text-secondary, #64748b);font-size:0.85rem;"><i class="bi bi-telephone me-1"></i>{{ addr.phone }}</p>{% endif %}
                             </div>

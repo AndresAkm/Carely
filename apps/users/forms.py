@@ -4,6 +4,8 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth.forms import SetPasswordForm
 import re
 
+from .models import Address, City, Department
+
 User = get_user_model()
 
 
@@ -226,13 +228,46 @@ class DashboardUserCreateForm(DashboardUserForm):
         return user
 
 
-class AddressForm(forms.ModelForm):
+class _ColombiaAddressMixin:
+    """Aplica selects encadenados departamento -> municipio a un AddressForm."""
+
+    city_field_widget = forms.Select
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['department'].queryset = Department.objects.all()
+        self.fields['city'].queryset = self._city_queryset()
+
+    def _city_queryset(self):
+        department_id = self._department_value()
+        if department_id:
+            return City.objects.filter(department_id=department_id)
+        if self.instance and self.instance.pk:
+            return City.objects.filter(department=self.instance.department)
+        return City.objects.none()
+
+    def _department_value(self):
+        if self.data:
+            return self.data.get('department')
+        if self.instance and self.instance.pk:
+            return self.instance.department_id
+        return None
+
+    def clean(self):
+        cleaned_data = super().clean()
+        department = cleaned_data.get('department')
+        city = cleaned_data.get('city')
+        if department and city and city.department_id != department.pk:
+            self.add_error('city', 'El municipio no pertenece al departamento seleccionado.')
+        return cleaned_data
+
+
+class AddressForm(_ColombiaAddressMixin, forms.ModelForm):
     class Meta:
-        from .models import Address
         model = Address
         fields = [
             'recipient_name', 'phone', 'address_line', 'address_line2',
-            'city', 'department', 'postal_code', 'instructions',
+            'department', 'city', 'postal_code', 'instructions',
             'is_default', 'is_active',
         ]
         widgets = {
@@ -240,8 +275,8 @@ class AddressForm(forms.ModelForm):
             'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Teléfono de contacto'}),
             'address_line': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Calle, número, barrio'}),
             'address_line2': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Apt, suite, piso (opcional)'}),
-            'city': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ciudad o municipio'}),
-            'department': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Departamento'}),
+            'city': forms.Select(attrs={'class': 'form-control'}),
+            'department': forms.Select(attrs={'class': 'form-control'}),
             'postal_code': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Código postal (opcional)'}),
             'instructions': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Indicaciones adicionales (opcional)'}),
             'is_default': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
@@ -249,7 +284,7 @@ class AddressForm(forms.ModelForm):
         }
 
 
-class DashboardAddressForm(forms.ModelForm):
+class DashboardAddressForm(_ColombiaAddressMixin, forms.ModelForm):
     user = forms.ModelChoiceField(
         label='Usuario',
         queryset=None,
@@ -257,7 +292,6 @@ class DashboardAddressForm(forms.ModelForm):
     )
 
     class Meta:
-        from .models import Address
         model = Address
         fields = [
             'user', 'recipient_name', 'phone', 'address_line', 'address_line2',
@@ -269,8 +303,8 @@ class DashboardAddressForm(forms.ModelForm):
             'phone': forms.TextInput(attrs={'class': 'form-control'}),
             'address_line': forms.TextInput(attrs={'class': 'form-control'}),
             'address_line2': forms.TextInput(attrs={'class': 'form-control'}),
-            'city': forms.TextInput(attrs={'class': 'form-control'}),
-            'department': forms.TextInput(attrs={'class': 'form-control'}),
+            'city': forms.Select(attrs={'class': 'form-control'}),
+            'department': forms.Select(attrs={'class': 'form-control'}),
             'postal_code': forms.TextInput(attrs={'class': 'form-control'}),
             'instructions': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'is_default': forms.CheckboxInput(attrs={'class': 'form-check-input'}),

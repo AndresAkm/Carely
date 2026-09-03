@@ -1,6 +1,7 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth import views as auth_views
 from django.contrib import messages
+from django.http import Http404, JsonResponse
 from django.shortcuts import render, redirect
 from django.urls import reverse, reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -11,7 +12,7 @@ from django.views.generic import TemplateView
 from apps.core.permissions import is_admin
 
 from ..forms import AddressForm, LoginForm, ProfileForm, RegisterForm
-from ..models import Address, User
+from ..models import Address, City, Department, User
 from ..services import GmailService, GmailServiceError
 
 
@@ -115,7 +116,9 @@ class AddressListView(LoginRequiredMixin, ListView):
     paginate_by = 6
 
     def get_queryset(self):
-        return Address.objects.filter(user=self.request.user, is_active=True).order_by('-is_default', '-created_at')
+        return Address.objects.select_related('city__department').filter(
+            user=self.request.user, is_active=True
+        ).order_by('-is_default', '-created_at')
 
 
 class AddressCreateView(LoginRequiredMixin, CreateView):
@@ -192,3 +195,11 @@ class PasswordChangeView(auth_views.PasswordChangeView):
         except GmailServiceError:
             pass
         return response
+
+
+def department_cities_api(request, department_pk):
+    """Retorna los municipios de un departamento como JSON (id, name)."""
+    if not Department.objects.filter(pk=department_pk).exists():
+        raise Http404('Departamento no encontrado')
+    cities = City.objects.filter(department_id=department_pk).values('id', 'name')
+    return JsonResponse({'cities': list(cities)})

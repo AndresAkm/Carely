@@ -42,7 +42,7 @@ def checkout_view(request):
         )
         return redirect('cart:cart')
 
-    addresses = Address.objects.filter(
+    addresses = Address.objects.select_related('city__department').filter(
         user=request.user, is_active=True
     ).order_by('-is_default', '-created_at')
 

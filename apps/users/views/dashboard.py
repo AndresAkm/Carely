@@ -157,14 +157,14 @@ class AddressListView(DashboardUserMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        queryset = Address.objects.select_related('user')
+        queryset = Address.objects.select_related('user', 'city__department')
         search = self.request.GET.get('q', '').strip()
         status = self.request.GET.get('status', '')
         if search:
             queryset = queryset.filter(
                 models.Q(recipient_name__icontains=search)
                 | models.Q(user__email__icontains=search)
-                | models.Q(city__icontains=search)
+                | models.Q(city__name__icontains=search)
             )
         if status == 'active':
             queryset = queryset.filter(is_active=True)

@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import Address, User
+from .models import Address, City, Department, User
 
 
 @admin.register(User)
@@ -26,6 +26,22 @@ class CarelyUserAdmin(UserAdmin):
 class AddressAdmin(admin.ModelAdmin):
     list_display = ['recipient_name', 'user', 'city', 'department', 'is_active', 'is_default', 'created_at']
     list_filter = ['is_active', 'is_default', 'department']
-    search_fields = ['recipient_name', 'user__email', 'city', 'address_line']
-    autocomplete_fields = ['user']
+    search_fields = ['recipient_name', 'user__email', 'city__name', 'address_line']
+    autocomplete_fields = ['user', 'city', 'department']
     readonly_fields = ['created_at', 'updated_at']
+
+
+@admin.register(Department)
+class DepartmentAdmin(admin.ModelAdmin):
+    list_display = ['name', 'api_id']
+    search_fields = ['name']
+    ordering = ['name']
+
+
+@admin.register(City)
+class CityAdmin(admin.ModelAdmin):
+    list_display = ['name', 'department', 'api_id']
+    list_filter = ['department']
+    search_fields = ['name', 'department__name']
+    autocomplete_fields = ['department']
+    ordering = ['department', 'name']
