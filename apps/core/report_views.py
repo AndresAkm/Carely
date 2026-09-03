@@ -1,6 +1,8 @@
 from io import BytesIO
+import os
 from decimal import Decimal
 
+from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Avg, Count, DecimalField, ExpressionWrapper, F, Sum, Value
 from django.db.models.functions import Coalesce, TruncDate
@@ -13,6 +15,11 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+try:
+    from svglib.svglib import svg2rlg
+except ImportError:
+    svg2rlg = None
 
 from apps.core.forms import ReportFilterForm
 from apps.core.permissions import is_admin
@@ -109,17 +116,17 @@ class ReportExportView(DashboardReportMixin, View):
         styles = getSampleStyleSheet()
         styles.add(ParagraphStyle(
             name='ReportTitle', parent=styles['Title'], fontName='Helvetica-Bold',
-            fontSize=18, leading=22, textColor=colors.HexColor('#263238'),
+            fontSize=18, leading=22, textColor=colors.HexColor('#1A1A1A'),
             alignment=TA_CENTER, spaceAfter=5 * mm,
         ))
         styles.add(ParagraphStyle(
             name='ReportSection', parent=styles['Heading2'], fontName='Helvetica-Bold',
-            fontSize=11, leading=14, textColor=colors.HexColor('#5b8def'),
+            fontSize=11, leading=14, textColor=colors.HexColor('#5B8DEF'),
             spaceBefore=5 * mm, spaceAfter=2 * mm,
         ))
         styles.add(ParagraphStyle(
             name='ReportCell', parent=styles['BodyText'], fontName='Helvetica',
-            fontSize=8, leading=10,
+            fontSize=8, leading=10, textColor=colors.HexColor('#1A1A1A'),
         ))
         styles.add(ParagraphStyle(
             name='ReportCellRight', parent=styles['ReportCell'], alignment=TA_RIGHT,
@@ -142,7 +149,22 @@ class ReportExportView(DashboardReportMixin, View):
             title='Reporte de pedidos Carely',
             author='Carely',
         )
-        story = [Paragraph('Reporte de pedidos', styles['ReportTitle'])]
+        story = []
+
+        if svg2rlg:
+            logo_path = os.path.join(settings.BASE_DIR, 'apps', 'core', 'static', 'core', 'images', 'carely-logo.svg')
+            if os.path.exists(logo_path):
+                drawing = svg2rlg(logo_path)
+                if drawing:
+                    scale_factor = 0.45
+                    drawing.width = drawing.width * scale_factor
+                    drawing.height = drawing.height * scale_factor
+                    drawing.scale(scale_factor, scale_factor)
+                    drawing.hAlign = 'CENTER'
+                    story.append(drawing)
+                    story.append(Spacer(1, 4 * mm))
+
+        story.append(Paragraph('Reporte de pedidos', styles['ReportTitle']))
         form = data['report_form']
         selected_filters = []
         if form.is_valid():
@@ -157,7 +179,7 @@ class ReportExportView(DashboardReportMixin, View):
             'Filtros: ' + ', '.join(selected_filters) if selected_filters else 'Filtros: todos los pedidos',
             styles['ReportCell'],
         ))
-        story.append(Spacer(1, 3 * mm))
+        story.append(Spacer(1, 3 * mm)) 
 
         summary = [
             [cell('Pedidos'), cell('Ventas no canceladas'), cell('Ticket promedio'), cell('Pendientes')],
@@ -165,9 +187,9 @@ class ReportExportView(DashboardReportMixin, View):
         ]
         summary_table = Table(summary, colWidths=[42 * mm] * 4)
         summary_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#edf3ff')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#263238')),
-            ('GRID', (0, 0), (-1, -1), .35, colors.HexColor('#dce3ef')),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#F5F0F8')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#1A1A1A')),
+            ('GRID', (0, 0), (-1, -1), .35, colors.HexColor('#E8E3EE')),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('TOPPADDING', (0, 0), (-1, -1), 7),
@@ -182,14 +204,14 @@ class ReportExportView(DashboardReportMixin, View):
                 cell(order.user.get_full_name() or order.user.email),
                 cell(order.get_status_display()),
                 cell(money(order.total), 'ReportCellRight'),
-                cell(order.created_at.strftime('%d/%m/%Y %H:%M')),
+                cell(order.created_at.strftime('%d/%m/%Y %H:%M') if order.created_at else 'N/A'),
             ])
         orders_table = Table(orders_table_data, colWidths=[18 * mm, 65 * mm, 32 * mm, 27 * mm, 35 * mm], repeatRows=1)
         orders_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#263238')),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1A1A1A')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-            ('GRID', (0, 0), (-1, -1), .3, colors.HexColor('#dce3ef')),
-            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f7f9fc')]),
+            ('GRID', (0, 0), (-1, -1), .3, colors.HexColor('#E8E3EE')),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#FEFCFD')]),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('TOPPADDING', (0, 0), (-1, -1), 5),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
@@ -199,11 +221,12 @@ class ReportExportView(DashboardReportMixin, View):
         story.append(Paragraph('Ventas por día', styles['ReportSection']))
         daily_table_data = [[cell('Fecha'), cell('Pedidos'), cell('Ventas', 'ReportCellRight')]]
         for row in data['daily_sales']:
-            daily_table_data.append([cell(row['day'].strftime('%d/%m/%Y')), cell(row['orders']), cell(money(row['revenue']), 'ReportCellRight')])
+            date_str = row['day'].strftime('%d/%m/%Y') if row['day'] else 'N/A'
+            daily_table_data.append([cell(date_str), cell(row['orders']), cell(money(row['revenue']), 'ReportCellRight')])
         daily_table = Table(daily_table_data, colWidths=[60 * mm, 40 * mm, 50 * mm], repeatRows=1)
         daily_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#edf3ff')),
-            ('GRID', (0, 0), (-1, -1), .3, colors.HexColor('#dce3ef')),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#F5F0F8')),
+            ('GRID', (0, 0), (-1, -1), .3, colors.HexColor('#E8E3EE')),
             ('ALIGN', (1, 1), (1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('TOPPADDING', (0, 0), (-1, -1), 5),
@@ -217,8 +240,8 @@ class ReportExportView(DashboardReportMixin, View):
             products_table_data.append([cell(product['product__name']), cell(product['quantity']), cell(money(product['revenue']), 'ReportCellRight')])
         products_table = Table(products_table_data, colWidths=[90 * mm, 30 * mm, 50 * mm], repeatRows=1)
         products_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#edf3ff')),
-            ('GRID', (0, 0), (-1, -1), .3, colors.HexColor('#dce3ef')),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#F5F0F8')),
+            ('GRID', (0, 0), (-1, -1), .3, colors.HexColor('#E8E3EE')),
             ('ALIGN', (1, 1), (1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('TOPPADDING', (0, 0), (-1, -1), 5),

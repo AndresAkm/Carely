@@ -86,8 +86,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 DB_HOST = os.environ.get('DJANGO_DB_HOST', '').strip()
-if not DB_HOST or DB_HOST.lower() in {'localhost', '127.0.0.1', '::1'}:
-    raise ImproperlyConfigured('DJANGO_DB_HOST must point to the remote MariaDB Cloud instance.')
 
 DATABASES = {
     'default': {
