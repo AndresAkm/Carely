@@ -1,3 +1,6 @@
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.core import mail
+from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -351,3 +354,77 @@ class AddressSecurityTests(APITestCase):
         url = reverse('direcciones-list')
         response = self.client.get(url)
         self.assertIn(response.status_code, (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN))
+
+
+class PasswordResetConfirmEmailTests(TestCase):
+
+    def setUp(self):
+        self.user = create_user()
+        self.token_generator = PasswordResetTokenGenerator()
+        self.token = self.token_generator.make_token(self.user)
+        self.uid = self.user.pk
+
+    def _get_confirm_url(self):
+        from django.utils.http import urlsafe_base64_encode
+        uidb64 = urlsafe_base64_encode(str(self.uid).encode())
+        return reverse('users:password_reset_confirm', kwargs={'uidb64': uidb64, 'token': self.token})
+
+    def test_send_email_on_successful_reset(self):
+        mail.outbox = []
+        url = self._get_confirm_url()
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        confirm_url = response.url
+        response = self.client.post(confirm_url, {
+            'new_password1': 'NuevaPass123!',
+            'new_password2': 'NuevaPass123!',
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(len(mail.outbox), 1)
+        email = mail.outbox[0]
+        self.assertEqual(email.subject, 'Tu contraseña de Carely fue actualizada')
+        self.assertEqual(email.to, [self.user.email])
+
+    def test_no_email_on_invalid_token(self):
+        mail.outbox = []
+        from django.utils.http import urlsafe_base64_encode
+        uidb64 = urlsafe_base64_encode(str(self.user.pk).encode())
+        url = reverse('users:password_reset_confirm', kwargs={'uidb64': uidb64, 'token': 'invalid-token'})
+        self.client.get(url)
+        response = self.client.post(url, {
+            'new_password1': 'NuevaPass123!',
+            'new_password2': 'NuevaPass123!',
+        })
+        self.assertEqual(len(mail.outbox), 0)
+
+
+class PasswordChangeEmailTests(TestCase):
+
+    def setUp(self):
+        self.user = create_user()
+        self.client.force_login(self.user)
+
+    def test_send_email_on_successful_change(self):
+        mail.outbox = []
+        url = reverse('users:password_change')
+        response = self.client.post(url, {
+            'old_password': 'pass12345',
+            'new_password1': 'NuevaPass123!',
+            'new_password2': 'NuevaPass123!',
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(len(mail.outbox), 1)
+        email = mail.outbox[0]
+        self.assertEqual(email.subject, 'Tu contraseña de Carely fue actualizada')
+        self.assertEqual(email.to, [self.user.email])
+
+    def test_no_email_on_invalid_old_password(self):
+        mail.outbox = []
+        url = reverse('users:password_change')
+        response = self.client.post(url, {
+            'old_password': 'incorrecta',
+            'new_password1': 'NuevaPass123!',
+            'new_password2': 'NuevaPass123!',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(mail.outbox), 0)

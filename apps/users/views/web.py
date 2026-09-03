@@ -1,4 +1,5 @@
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import views as auth_views
 from django.contrib import messages
 from django.shortcuts import render, redirect
 from django.urls import reverse, reverse_lazy
@@ -169,3 +170,25 @@ class AddressSetDefaultView(LoginRequiredMixin, View):
             addr.save(update_fields=['is_default'])
         messages.success(request, 'Dirección predeterminada actualizada.')
         return redirect('users:address_list')
+
+
+class PasswordResetConfirmView(auth_views.PasswordResetConfirmView):
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        try:
+            GmailService.send_password_reset_confirmation(form.user)
+        except GmailServiceError:
+            pass
+        return response
+
+
+class PasswordChangeView(auth_views.PasswordChangeView):
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        try:
+            GmailService.send_password_reset_confirmation(self.request.user)
+        except GmailServiceError:
+            pass
+        return response

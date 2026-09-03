@@ -40,3 +40,17 @@ class GmailService:
             html_template='users/registration_confirmation_email.html',
             context=context,
         )
+
+    @classmethod
+    def send_password_reset_confirmation(cls, user):
+        context = {
+            'user': user,
+            'login_url': reverse('users:login'),
+        }
+        return cls.send_message(
+            subject='Tu contraseña de Carely fue actualizada',
+            recipient=user.email,
+            text_template='users/password_reset_confirmation_email.txt',
+            html_template='users/password_reset_confirmation_email.html',
+            context=context,
+        )

@@ -1,6 +1,6 @@
 from django.contrib.auth import views as auth_views
 from django.urls import path
-from .views.web import AddressCreateView, AddressDeleteView, AddressListView, AddressSetDefaultView, AddressUpdateView, LoginView, LogoutView, ProfileView, RegisterView, RegistrationConfirmationView
+from .views.web import AddressCreateView, AddressDeleteView, AddressListView, AddressSetDefaultView, AddressUpdateView, LoginView, LogoutView, PasswordChangeView, PasswordResetConfirmView, ProfileView, RegisterView, RegistrationConfirmationView
 
 app_name = 'users'
 
@@ -11,7 +11,7 @@ urlpatterns = [
     path('logout/', LogoutView.as_view(), name='logout'),
     path('perfil/', ProfileView.as_view(), name='profile'),
 
-    path('password-change/', auth_views.PasswordChangeView.as_view(
+    path('password-change/', PasswordChangeView.as_view(
         template_name='users/password_change.html',
         success_url='/accounts/password-change/done/',
     ), name='password_change'),
@@ -32,7 +32,7 @@ urlpatterns = [
         template_name='users/password_reset_done.html',
     ), name='password_reset_done'),
 
-    path('password-reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(
+    path('password-reset/<uidb64>/<token>/', PasswordResetConfirmView.as_view(
         template_name='users/password_reset_confirm.html',
         success_url='/accounts/password-reset/complete/',
     ), name='password_reset_confirm'),
