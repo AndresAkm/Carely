@@ -29,7 +29,20 @@
 
 <div class="row g-4">
     <div class="col-lg-6">
-        <div class="dashboard-card h-100"><div class="dashboard-card-header"><h5 class="dashboard-card-title">Ventas por día</h5><p class="dashboard-card-subtitle mb-0">Máximo 30 días recientes del período seleccionado.</p></div><div class="dashboard-card-body p-0"><div class="table-responsive"><table class="table dashboard-table align-middle mb-0"><thead><tr><th>Fecha</th><th>Pedidos</th><th class="text-end">Ventas</th></tr></thead><tbody>{% for row in daily_sales %}<tr><td>{{ row.day|date:'d/m/Y' }}</td><td>{{ row.orders }}</td><td class="text-end">COP {{ row.revenue|floatformat:2 }}</td></tr>{% empty %}<tr><td colspan="3" class="text-center py-4 text-secondary">No hay ventas en este período.</td></tr>{% endfor %}</tbody></table></div></div></div>
+        <div class="dashboard-card h-100">
+            <div class="dashboard-card-header">
+                <h5 class="dashboard-card-title">Pedidos recientes</h5>
+                <p class="dashboard-card-subtitle mb-0">Últimos 10 pedidos.</p>
+            </div>
+            <div class="dashboard-card-body p-0">
+                <div class="table-responsive">
+                    <table class="table dashboard-table align-middle mb-0">
+                        <thead><tr><th>Fecha</th><th>Cliente</th><th class="text-end">Total</th></tr></thead>
+                        <tbody>{% for order in recent_orders %}<tr><td>{{ order.created_at|date:'d/m/Y H:i' }}</td><td>{{ order.user.get_full_name|default:order.user.email }}</td><td class="text-end">COP {{ order.total|floatformat:2 }}</td></tr>{% empty %}<tr><td colspan="3" class="text-center py-4 text-secondary">No hay pedidos recientes.</td></tr>{% endfor %}</tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
     <div class="col-lg-6">
         <div class="dashboard-card h-100"><div class="dashboard-card-header"><h5 class="dashboard-card-title">Productos más vendidos</h5><p class="dashboard-card-subtitle mb-0">Ordenados por ingresos generados.</p></div><div class="dashboard-card-body p-0"><div class="table-responsive"><table class="table dashboard-table align-middle mb-0"><thead><tr><th>Producto</th><th>Cantidad</th><th class="text-end">Ingresos</th></tr></thead><tbody>{% for product in top_products %}<tr><td><strong>{{ product.product__name }}</strong></td><td>{{ product.quantity }}</td><td class="text-end">COP {{ product.revenue|floatformat:2 }}</td></tr>{% empty %}<tr><td colspan="3" class="text-center py-4 text-secondary">No hay productos vendidos en este período.</td></tr>{% endfor %}</tbody></table></div></div></div>

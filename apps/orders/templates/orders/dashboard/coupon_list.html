@@ -111,15 +111,15 @@
                             {{ coupon.valid_from|date:'d/m/Y H:i' }}<br>
                             {% endif %}
                             {% if coupon.valid_until %}
-                            <span class="text-secondary">Hasta:</span>
-                            {% if coupon.valid_until < now %} <span style="color:#dc3545;">{{
-                                coupon.valid_until|date:'d/m/Y H:i' }}</span>
+                                <span class="text-secondary">Hasta:</span>
+                                {% if coupon.valid_until < now %}
+                                    <span style="color:#dc3545;">{{ coupon.valid_until|date:'d/m/Y H:i' }}</span>
                                 {% else %}
-                                {{ coupon.valid_until|date:'d/m/Y H:i' }}
+                                    {{ coupon.valid_until|date:'d/m/Y H:i' }}
                                 {% endif %}
-                                {% else %}
+                            {% else %}
                                 <span class="text-secondary">Sin expiración</span>
-                                {% endif %}
+                            {% endif %}
                         </td>
 
                         <!-- Usos -->

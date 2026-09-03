@@ -78,6 +78,8 @@ def get_report_data(request):
         revenue=Sum('total'),
     ).order_by('-day')[:30]
 
+    recent_orders = orders.select_related('user').order_by('-created_at')[:10]
+
     return {
         'report_form': filter_form,
         'orders': orders,
@@ -90,6 +92,7 @@ def get_report_data(request):
         'status_summary': status_summary,
         'top_products': top_products,
         'daily_sales': daily_sales,
+        'recent_orders': recent_orders,
     }
 
 
