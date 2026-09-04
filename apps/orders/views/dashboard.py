@@ -9,7 +9,7 @@ from django.views.generic import CreateView, DetailView, DeleteView, ListView, U
 
 from apps.core.permissions import is_admin
 
-from ..forms import CouponForm, OrderFilterForm, OrderStatusForm
+from ..forms import CouponForm, OrderFilterForm, OrderStatusForm, OrderNotesForm
 from ..models import Coupon, Order, OrderStatusHistory
 
 
@@ -74,9 +74,35 @@ class OrderStatusUpdateView(DashboardOrderMixin, UpdateView):
     template_name = 'orders/dashboard/order_status_form.html'
     context_object_name = 'order'
 
+    def get_queryset(self):
+        return Order.objects.select_related('user').prefetch_related('status_history')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        order = self.object
+
+        # Construir mapa status → fecha (primera aparición)
+        history_map = {}
+        for entry in order.status_history.order_by('created_at'):
+            if entry.status not in history_map:
+                history_map[entry.status] = entry.created_at
+
+        # Pedidos recién creados no tienen historial aún → usar created_at como fecha de pendiente
+        if Order.Status.PENDIENTE not in history_map and order.status == Order.Status.PENDIENTE:
+            history_map[Order.Status.PENDIENTE] = order.created_at
+
+        context['status_history_map'] = history_map
+        context['can_advance'] = (
+            order.status in STATUS_ORDER and
+            order.status != Order.Status.ENTREGADO
+        )
+        context['is_cancelled'] = order.status == Order.Status.CANCELADO
+        context['is_delivered'] = order.status == Order.Status.ENTREGADO
+        return context
+
     def get_success_url(self):
         return reverse(
-            'dashboard:order_detail',
+            'dashboard:order_status',
             kwargs={'pk': self.object.pk}
         )
 
@@ -102,6 +128,7 @@ class OrderStatusUpdateView(DashboardOrderMixin, UpdateView):
         )
 
         return response
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -196,3 +223,86 @@ class CouponDeleteView(DashboardCouponMixin, DeleteView):
         response = super().form_valid(form)
         messages.success(self.request, f'Cupón "{code}" eliminado correctamente.')
         return response
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NUEVOS ENDPOINTS PARA EL TIMELINE DE ESTADOS
+# ─────────────────────────────────────────────────────────────────────────────
+
+from django.views import View
+from django.shortcuts import get_object_or_404, redirect
+from apps.orders.models import OrderStatusHistory
+
+STATUS_ORDER = [
+    Order.Status.PENDIENTE,
+    Order.Status.CONFIRMADO,
+    Order.Status.ENVIADO,
+    Order.Status.ENTREGADO
+]
+
+class OrderAdvanceStatusView(DashboardOrderMixin, View):
+    def post(self, request, pk):
+        order = get_object_or_404(Order, pk=pk)
+        
+        if order.status == Order.Status.CANCELADO:
+            messages.error(request, 'No se puede avanzar un pedido cancelado.')
+            return redirect('dashboard:order_status', pk=order.pk)
+            
+        if order.status == Order.Status.ENTREGADO:
+            messages.error(request, 'El pedido ya está entregado.')
+            return redirect('dashboard:order_status', pk=order.pk)
+            
+        try:
+            current_index = STATUS_ORDER.index(order.status)
+            new_status = STATUS_ORDER[current_index + 1]
+            
+            order.status = new_status
+            order.save(update_fields=['status'])
+            
+            OrderStatusHistory.objects.create(
+                order=order,
+                status=new_status,
+                comment='Estado avanzado desde el panel',
+                changed_by=request.user
+            )
+            messages.success(request, f'El pedido avanzó a {order.get_status_display()}.')
+        except ValueError:
+            messages.error(request, 'Estado actual no válido para avanzar.')
+            
+        return redirect('dashboard:order_status', pk=order.pk)
+
+
+class OrderCancelView(DashboardOrderMixin, View):
+    def post(self, request, pk):
+        order = get_object_or_404(Order, pk=pk)
+        
+        if order.status in [Order.Status.ENTREGADO, Order.Status.CANCELADO]:
+            messages.error(request, 'No se puede cancelar en este estado.')
+            return redirect('dashboard:order_status', pk=order.pk)
+            
+        reason = request.POST.get('cancel_reason', '').strip()
+        
+        order.status = Order.Status.CANCELADO
+        order.save(update_fields=['status'])
+        
+        OrderStatusHistory.objects.create(
+            order=order,
+            status=Order.Status.CANCELADO,
+            comment=f"Cancelado por admin. {reason}".strip(),
+            changed_by=request.user
+        )
+        
+        messages.success(request, 'El pedido fue cancelado correctamente.')
+        return redirect('dashboard:order_status', pk=order.pk)
+
+
+class OrderUpdateNotesView(DashboardOrderMixin, View):
+    def post(self, request, pk):
+        order = get_object_or_404(Order, pk=pk)
+        notes = request.POST.get('notes', '').strip()
+        
+        order.notes = notes
+        order.save(update_fields=['notes'])
+        
+        messages.success(request, 'Las notas se actualizaron correctamente.')
+        return redirect('dashboard:order_status', pk=order.pk)

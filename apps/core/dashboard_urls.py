@@ -20,6 +20,9 @@ from apps.orders.views.dashboard import (
     OrderDetailView,
     OrderListView,
     OrderStatusUpdateView,
+    OrderAdvanceStatusView,
+    OrderCancelView,
+    OrderUpdateNotesView,
 )
 from apps.users.views.dashboard import AddressCreateView, AddressListView, AddressToggleActiveView, AddressUpdateView, UserCreateView, UserForceDeleteView, UserListView, UserPasswordChangeView, UserToggleActiveView, UserUpdateView
 
@@ -29,6 +32,9 @@ urlpatterns = [
     path('pedidos/', OrderListView.as_view(), name='order_list'),
     path('pedidos/<int:pk>/', OrderDetailView.as_view(), name='order_detail'),
     path('pedidos/<int:pk>/estado/', OrderStatusUpdateView.as_view(), name='order_status'),
+    path('pedidos/<int:pk>/avanzar/', OrderAdvanceStatusView.as_view(), name='order_advance'),
+    path('pedidos/<int:pk>/cancelar/', OrderCancelView.as_view(), name='order_cancel'),
+    path('pedidos/<int:pk>/notas/', OrderUpdateNotesView.as_view(), name='order_notes'),
     path('reportes/', ReportView.as_view(), name='report_list'),
     path('reportes/exportar/', ReportExportView.as_view(), name='report_export'),
     path('productos/', ProductListView.as_view(), name='product_list'),

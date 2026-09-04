@@ -1,0 +1,306 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   ORDER STATUS FORM (osf) – /dashboard/pedidos/<pk>/estado/
+   Diseño: tarjeta única con sección Estado (timeline) + sección Notas.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Tarjeta contenedora ──────────────────────────────────────────────────── */
+.osf-card {
+    max-width: 900px;
+}
+
+.osf-body {
+    padding: 28px 32px;
+}
+
+@media (max-width: 640px) {
+    .osf-body { padding: 20px 16px; }
+}
+
+/* ── Secciones ────────────────────────────────────────────────────────────── */
+.osf-section-label {
+    font-size: .95rem;
+    font-weight: 700;
+    color: var(--clr-text);
+    margin-bottom: 18px;
+}
+
+.osf-section--notes {
+    border-top: 1px solid var(--clr-border);
+    padding-top: 24px;
+    margin-top: 24px;
+}
+
+/* ── Fila de estado: timeline + botones ──────────────────────────────────── */
+.osf-estado-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding-bottom: 4px;
+    flex-wrap: wrap;
+}
+
+/* ── Timeline ─────────────────────────────────────────────────────────────── */
+.osf-timeline {
+    display: flex;
+    align-items: flex-start;
+    flex: 1;
+    min-width: 0;
+}
+
+/* ── Paso (label + circle) ───────────────────────────────────────────────── */
+.osf-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    flex-shrink: 0;
+}
+
+.osf-label {
+    font-size: .7rem;
+    color: var(--clr-text-2);
+    white-space: nowrap;
+    font-weight: 500;
+    line-height: 1;
+}
+
+/* ── Círculo ──────────────────────────────────────────────────────────────── */
+.osf-circle {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid var(--clr-border);
+    background: var(--clr-card);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .78rem;
+    font-weight: 700;
+    color: var(--clr-text-2);
+    position: relative;
+    flex-shrink: 0;
+    cursor: default;
+    transition: transform .2s var(--ease, cubic-bezier(.4,0,.2,1)), background .3s, border-color .3s;
+    z-index: 1;
+}
+
+/* Hover sutil en círculos */
+.osf-circle:hover {
+    transform: scale(1.12);
+}
+
+/* Completado → rosa sólido */
+.osf-circle--done {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+}
+
+/* Pendiente → contorno gris */
+.osf-circle--pending {
+    background: var(--clr-card);
+    border-color: var(--clr-border);
+    color: transparent;
+}
+
+/* Cancelado: contorno rojo (círculos que no se completaron) */
+.osf-circle--red-out {
+    background: var(--clr-card);
+    border-color: var(--clr-danger, #dc3545);
+    color: transparent;
+}
+
+/* Cancelado: relleno rojo con X */
+.osf-circle--red-fill {
+    background: var(--clr-danger, #dc3545);
+    border-color: var(--clr-danger, #dc3545);
+    color: #fff;
+    font-size: .82rem;
+}
+
+/* ── Tooltip de fecha (aparece al hacer hover) ───────────────────────────── */
+.osf-tip {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--clr-card);
+    border: 1px solid var(--clr-border);
+    border-radius: 7px;
+    padding: 4px 9px;
+    font-size: .64rem;
+    color: var(--clr-text-2);
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 30;
+    box-shadow: 0 4px 12px rgba(0,0,0,.08);
+    transition: opacity .18s var(--ease, cubic-bezier(.4,0,.2,1)),
+                transform .18s var(--ease, cubic-bezier(.4,0,.2,1));
+}
+
+.osf-circle:hover .osf-tip {
+    opacity: 1;
+}
+
+/* ── Línea conectora ──────────────────────────────────────────────────────── */
+.osf-line {
+    flex: 1;
+    height: 2px;
+    background: var(--clr-border);
+    align-self: flex-end;
+    margin-bottom: 14px;
+    min-width: 16px;
+    border-radius: 2px;
+    transition: background .3s;
+}
+
+/* Línea completada → rosa */
+.osf-line--done {
+    background: var(--accent);
+}
+
+/* Línea cancelada → rojo */
+.osf-line--red {
+    background: var(--clr-danger, #dc3545);
+}
+
+/* ── Botón > avanzar estado ───────────────────────────────────────────────── */
+.osf-advance-wrapper {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.osf-advance-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    font-size: 1.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    box-shadow: 0 4px 16px rgba(0,0,0, .1);
+    transition: transform .2s var(--ease, cubic-bezier(.4,0,.2,1)),
+                box-shadow .2s var(--ease, cubic-bezier(.4,0,.2,1));
+}
+
+.osf-advance-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 22px rgba(0,0,0, .15);
+}
+
+.osf-advance-btn:active {
+    transform: scale(.97);
+}
+
+/* ── Botón "Cancelar pedido" ─────────────────────────────────────────────── */
+.osf-cancel-order-btn {
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    background: transparent;
+    border-radius: 999px;
+    padding: 8px 18px;
+    font-size: .82rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background .2s var(--ease, cubic-bezier(.4,0,.2,1));
+    line-height: 1.4;
+}
+
+.osf-cancel-order-btn:hover {
+    background: var(--accent);
+    color: #fff;
+}
+
+/* ── Badges de estado terminal ────────────────────────────────────────────── */
+.osf-locked-badge,
+.osf-delivered-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 999px;
+    padding: 7px 14px;
+    font-size: .78rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.osf-locked-badge {
+    background: rgba(220, 53, 69, .09);
+    color: var(--clr-danger, #dc3545);
+    border: 1px solid rgba(220, 53, 69, .25);
+}
+
+.osf-delivered-badge {
+    background: rgba(25, 135, 84, .09);
+    color: #157347;
+    border: 1px solid rgba(25, 135, 84, .22);
+}
+
+/* ── Notas: botones de acción ─────────────────────────────────────────────── */
+.osf-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.osf-btn {
+    border-radius: 999px;
+    padding: 9px 24px;
+    font-size: .86rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all .2s var(--ease, cubic-bezier(.4,0,.2,1));
+    line-height: 1.4;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.osf-btn--outline {
+    border-color: var(--clr-border);
+    color: var(--clr-text);
+    background: transparent;
+}
+
+.osf-btn--outline:hover {
+    border-color: var(--clr-text-2);
+    background: var(--clr-bg-2);
+}
+
+.osf-btn--primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    box-shadow: 0 3px 12px rgba(0,0,0, .1);
+}
+
+.osf-btn--primary:hover {
+    filter: brightness(0.9);
+    box-shadow: 0 5px 18px rgba(0,0,0, .15);
+}
+
+/* ── Variante completa cancelada: etiquetas en rojo ──────────────────────── */
+.osf-timeline--cancelled .osf-label {
+    color: var(--clr-danger, #dc3545);
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 700px) {
+    .osf-circle { width: 26px; height: 26px; font-size: .72rem; }
+    .osf-line   { margin-bottom: 12px; min-width: 10px; }
+    .osf-label  { font-size: .62rem; }
+    .osf-advance-btn { width: 40px; height: 40px; font-size: 1.2rem; }
+    .osf-cancel-order-btn { padding: 6px 12px; font-size: .76rem; }
+    .osf-estado-row { gap: 12px; }
+}

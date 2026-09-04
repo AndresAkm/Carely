@@ -54,6 +54,20 @@ class OrderStatusForm(forms.ModelForm):
         }
 
 
+class OrderNotesForm(forms.ModelForm):
+    class Meta:
+        model = Order
+        fields = ['notes']
+        widgets = {
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Notas internas sobre este pedido',
+                'id': 'id_order_notes',
+            }),
+        }
+
+
 class CouponForm(forms.ModelForm):
     """
     Formulario para crear y editar cupones en el dashboard administrativo.

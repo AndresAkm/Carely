@@ -1,8 +1,322 @@
 {% extends 'core/dashboard_base.html' %}
+{% load static %}
 
 {% block dashboard_title %}Actualizar pedido #{{ order.pk }}{% endblock %}
 
+{% block extra_css %}
+{{ block.super }}
+<link href="{% static 'core/css/order-timeline.css' %}?v=3" rel="stylesheet">
+{% endblock %}
+
 {% block dashboard_content %}
-<div class="dashboard-page-header"><div><h1 class="dashboard-heading">Actualizar pedido #{{ order.pk }}</h1><p class="dashboard-muted">Cambia el estado y agrega una nota interna.</p></div><a href="{% url 'dashboard:order_detail' order.pk %}" class="btn btn-carely-outline">Volver</a></div>
-<div class="dashboard-card dashboard-form-card"><div class="dashboard-card-body"><form method="post" novalidate>{% csrf_token %}{% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}{% for field in form %}<div class="dashboard-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% for error in field.errors %}<div class="field-error">{{ error }}</div>{% endfor %}</div>{% endfor %}<div class="d-flex gap-2 justify-content-end"><a href="{% url 'dashboard:order_detail' order.pk %}" class="btn btn-carely-outline">Cancelar</a><button type="submit" class="btn btn-carely-primary">Guardar cambios</button></div></form></div></div>
+<div class="dashboard-page-header">
+    <div>
+        <h1 class="dashboard-heading">Actualizar pedido #{{ order.pk }}</h1>
+        <p class="dashboard-muted">Cambia el estado y agrega una nota interna.</p>
+    </div>
+    <a href="{% url 'dashboard:order_detail' order.pk %}" class="btn btn-carely-outline">Volver</a>
+</div>
+
+<div class="dashboard-card osf-card">
+    <div class="osf-body">
+
+        <!-- Formularios unificados -->
+        <form method="post" action="{% url 'dashboard:order_status' order.pk %}" id="notesForm" novalidate>
+            {% csrf_token %}
+            <!-- Input oculto para el estado del pedido, modificado por JS -->
+            <input type="hidden" name="status" id="id_status" value="{{ order.status }}">
+
+            <!-- ══ SECCIÓN 1: ESTADO ══════════════════════════════════════════ -->
+            <div class="osf-section">
+                <p class="osf-section-label">Estado</p>
+
+                <div class="osf-estado-row">
+                    <!-- ── Timeline ─────────────────────────────────────────── -->
+                    {% if is_cancelled %}
+                    <div class="osf-timeline osf-timeline--cancelled" id="orderTimeline">
+                        <div class="osf-step" data-status="pendiente">
+                            <span class="osf-label">Pendiente</span>
+                            <div class="osf-circle osf-circle--red-out">
+                                {% if "pendiente" in status_history_map %}<span class="osf-tip">{{ status_history_map.pendiente|date:'d M Y g:ia' }}</span>{% endif %}
+                            </div>
+                        </div>
+                        <div class="osf-line osf-line--red"></div>
+
+                        <div class="osf-step" data-status="confirmado">
+                            <span class="osf-label">Confirmado</span>
+                            <div class="osf-circle osf-circle--red-out">
+                                {% if "confirmado" in status_history_map %}<span class="osf-tip">{{ status_history_map.confirmado|date:'d M Y g:ia' }}</span>{% endif %}
+                            </div>
+                        </div>
+                        <div class="osf-line osf-line--red"></div>
+
+                        <div class="osf-step" data-status="enviado">
+                            <span class="osf-label">Enviado</span>
+                            <div class="osf-circle osf-circle--red-out">
+                                {% if "enviado" in status_history_map %}<span class="osf-tip">{{ status_history_map.enviado|date:'d M Y g:ia' }}</span>{% endif %}
+                            </div>
+                        </div>
+                        <div class="osf-line osf-line--red"></div>
+
+                        <div class="osf-step" data-status="entregado">
+                            <span class="osf-label">Entregado</span>
+                            <div class="osf-circle osf-circle--red-out">
+                                {% if "entregado" in status_history_map %}<span class="osf-tip">{{ status_history_map.entregado|date:'d M Y g:ia' }}</span>{% endif %}
+                            </div>
+                        </div>
+                        <div class="osf-line osf-line--red"></div>
+
+                        <div class="osf-step" data-status="cancelado">
+                            <span class="osf-label">Cancelado</span>
+                            <div class="osf-circle osf-circle--red-fill">
+                                <i class="bi bi-x-lg"></i>
+                                {% if "cancelado" in status_history_map %}<span class="osf-tip">{{ status_history_map.cancelado|date:'d M Y g:ia' }}</span>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% elif is_delivered %}
+                    <div class="osf-timeline" id="orderTimeline">
+                        <div class="osf-step" data-status="pendiente">
+                            <span class="osf-label">Pendiente</span>
+                            <div class="osf-circle osf-circle--done">
+                                <i class="bi bi-check-lg"></i>
+                                {% if "pendiente" in status_history_map %}<span class="osf-tip">{{ status_history_map.pendiente|date:'d M Y g:ia' }}</span>{% endif %}
+                            </div>
+                        </div>
+                        <div class="osf-line osf-line--done"></div>
+
+                        <div class="osf-step" data-status="confirmado">
+                            <span class="osf-label">Confirmado</span>
+                            <div class="osf-circle osf-circle--done">
+                                <i class="bi bi-check-lg"></i>
+                                {% if "confirmado" in status_history_map %}<span class="osf-tip">{{ status_history_map.confirmado|date:'d M Y g:ia' }}</span>{% endif %}
+                            </div>
+                        </div>
+                        <div class="osf-line osf-line--done"></div>
+
+                        <div class="osf-step" data-status="enviado">
+                            <span class="osf-label">Enviado</span>
+                            <div class="osf-circle osf-circle--done">
+                                <i class="bi bi-check-lg"></i>
+                                {% if "enviado" in status_history_map %}<span class="osf-tip">{{ status_history_map.enviado|date:'d M Y g:ia' }}</span>{% endif %}
+                            </div>
+                        </div>
+                        <div class="osf-line osf-line--done"></div>
+
+                        <div class="osf-step" data-status="entregado">
+                            <span class="osf-label">Entregado</span>
+                            <div class="osf-circle osf-circle--done">
+                                <i class="bi bi-check-lg"></i>
+                                {% if "entregado" in status_history_map %}<span class="osf-tip">{{ status_history_map.entregado|date:'d M Y g:ia' }}</span>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="osf-timeline" id="orderTimeline">
+                        <div class="osf-step" data-status="pendiente">
+                            <span class="osf-label">Pendiente</span>
+                            <div class="osf-circle {% if 'pendiente' in status_history_map or order.status == 'pendiente' %}osf-circle--done{% else %}osf-circle--pending{% endif %}">
+                                <i class="bi bi-check-lg" style="{% if 'pendiente' not in status_history_map and order.status != 'pendiente' %}display:none;{% endif %}"></i>
+                                {% if 'pendiente' in status_history_map %}<span class="osf-tip">{{ status_history_map.pendiente|date:'d M Y g:ia' }}</span>{% endif %}
+                            </div>
+                        </div>
+                        <div class="osf-line {% if 'pendiente' in status_history_map or order.status == 'pendiente' %}osf-line--done{% endif %}"></div>
+
+                        <div class="osf-step" data-status="confirmado">
+                            <span class="osf-label">Confirmado</span>
+                            <div class="osf-circle {% if 'confirmado' in status_history_map or order.status in 'confirmado,enviado,entregado' %}osf-circle--done{% else %}osf-circle--pending{% endif %}">
+                                <i class="bi bi-check-lg" style="{% if 'confirmado' not in status_history_map and order.status not in 'confirmado,enviado,entregado' %}display:none;{% endif %}"></i>
+                                {% if 'confirmado' in status_history_map %}<span class="osf-tip">{{ status_history_map.confirmado|date:'d M Y g:ia' }}</span>{% endif %}
+                            </div>
+                        </div>
+                        <div class="osf-line {% if 'confirmado' in status_history_map or order.status in 'confirmado,enviado,entregado' %}osf-line--done{% endif %}"></div>
+
+                        <div class="osf-step" data-status="enviado">
+                            <span class="osf-label">Enviado</span>
+                            <div class="osf-circle {% if 'enviado' in status_history_map or order.status in 'enviado,entregado' %}osf-circle--done{% else %}osf-circle--pending{% endif %}">
+                                <i class="bi bi-check-lg" style="{% if 'enviado' not in status_history_map and order.status not in 'enviado,entregado' %}display:none;{% endif %}"></i>
+                                {% if 'enviado' in status_history_map %}<span class="osf-tip">{{ status_history_map.enviado|date:'d M Y g:ia' }}</span>{% endif %}
+                            </div>
+                        </div>
+                        <div class="osf-line {% if 'enviado' in status_history_map or order.status in 'enviado,entregado' %}osf-line--done{% endif %}"></div>
+
+                        <div class="osf-step" data-status="entregado">
+                            <span class="osf-label">Entregado</span>
+                            <div class="osf-circle {% if 'entregado' in status_history_map or order.status == 'entregado' %}osf-circle--done{% else %}osf-circle--pending{% endif %}">
+                                <i class="bi bi-check-lg" style="{% if 'entregado' not in status_history_map and order.status != 'entregado' %}display:none;{% endif %}"></i>
+                                {% if 'entregado' in status_history_map %}<span class="osf-tip">{{ status_history_map.entregado|date:'d M Y g:ia' }}</span>{% endif %}
+                            </div>
+                        </div>
+                        <div class="osf-line"></div>
+
+                        <div class="osf-step" data-status="cancelado">
+                            <span class="osf-label">Cancelado</span>
+                            <div class="osf-circle osf-circle--pending"></div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- ── Botón avanzar estado (solo si puede) ─────────── -->
+                    {% if can_advance %}
+                    <div class="osf-advance-wrapper">
+                        <button type="button" class="osf-advance-btn" id="advanceStatusBtn" title="Avanzar al siguiente estado">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+                    {% endif %}
+
+                    <!-- ── Cancelar pedido ───────────────────────────────── -->
+                    {% if not is_cancelled and not is_delivered %}
+                    <button type="button"
+                            class="osf-cancel-order-btn"
+                            data-bs-toggle="modal"
+                            data-bs-target="#cancelOrderModal">
+                        Cancelar pedido
+                    </button>
+                    {% elif is_cancelled %}
+                    <div class="osf-locked-badge">
+                        <i class="bi bi-lock-fill"></i> Pedido cancelado
+                    </div>
+                    {% elif is_delivered %}
+                    <div class="osf-delivered-badge">
+                        <i class="bi bi-check-circle-fill"></i> Entregado
+                    </div>
+                    {% endif %}
+                </div><!-- /osf-estado-row -->
+            </div><!-- /osf-section -->
+
+            <!-- ══ SECCIÓN 2: NOTAS ══════════════════════════════════════════ -->
+            <div class="osf-section osf-section--notes">
+                <p class="osf-section-label">Notas</p>
+                {{ form.notes }}
+                {% for error in form.notes.errors %}
+                <div class="field-error">{{ error }}</div>
+                {% endfor %}
+                <div class="osf-actions">
+                    <button type="button" class="osf-btn osf-btn--outline" id="cancelNotesBtn">Cancelar</button>
+                    <button type="submit" class="osf-btn osf-btn--primary">Guardar cambios</button>
+                </div>
+            </div>
+        </form>
+    </div><!-- /osf-body -->
+</div><!-- /dashboard-card -->
+
+<!-- ══ Modal: Confirmar cancelación del pedido ═══════════════════════════ -->
+<div class="modal fade dashboard-confirm-modal"
+     id="cancelOrderModal"
+     tabindex="-1"
+     aria-labelledby="cancelOrderModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="confirm-icon">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                    </div>
+                    <h5 class="modal-title mb-0" id="cancelOrderModalLabel">
+                        ¿Cancelar pedido #{{ order.pk }}?
+                    </h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p>Esta acción <strong>no se puede deshacer</strong>. El pedido quedará en estado
+                   <strong>Cancelado</strong> y no podrá avanzar a otro estado.</p>
+                <form method="post" action="{% url 'dashboard:order_cancel' order.pk %}" id="cancelOrderForm">
+                    {% csrf_token %}
+                    <div class="dashboard-field mt-2">
+                        <label for="cancel_reason">
+                            Motivo de cancelación
+                            <span class="text-secondary fw-normal">(opcional)</span>
+                        </label>
+                        <textarea name="cancel_reason" id="cancel_reason"
+                                  class="form-control" rows="2"
+                                  placeholder="Ej: Solicitud del cliente…"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-carely-outline" data-bs-dismiss="modal">Volver</button>
+                <button type="submit" form="cancelOrderForm" class="btn btn-danger fw-semibold">
+                    <i class="bi bi-x-circle me-1"></i>Confirmar cancelación
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+(function () {
+    'use strict';
+    
+    // Configuración de avance de estado
+    const statusOrder = ['pendiente', 'confirmado', 'enviado', 'entregado'];
+    const statusInput = document.getElementById('id_status');
+    const advanceBtn = document.getElementById('advanceStatusBtn');
+    const timeline = document.getElementById('orderTimeline');
+    
+    if (advanceBtn && timeline && statusInput) {
+        advanceBtn.addEventListener('click', function() {
+            const currentStatus = statusInput.value;
+            const currentIndex = statusOrder.indexOf(currentStatus);
+            
+            if (currentIndex >= 0 && currentIndex < statusOrder.length - 1) {
+                const newStatus = statusOrder[currentIndex + 1];
+                statusInput.value = newStatus; // Actualiza el input hidden
+                
+                // Actualiza visualmente el timeline
+                const steps = timeline.querySelectorAll('.osf-step');
+                const lines = timeline.querySelectorAll('.osf-line');
+                
+                // Encuentra el paso actual y el siguiente
+                let foundCurrent = false;
+                steps.forEach((step, index) => {
+                    if (step.dataset.status === newStatus) {
+                        const circle = step.querySelector('.osf-circle');
+                        circle.classList.remove('osf-circle--pending');
+                        circle.classList.add('osf-circle--done');
+                        
+                        const icon = circle.querySelector('i');
+                        if (icon) icon.style.display = 'inline-block';
+                        
+                        // Pinta la línea anterior
+                        if (index > 0 && lines[index - 1]) {
+                            lines[index - 1].classList.add('osf-line--done');
+                        }
+                    }
+                });
+                
+                // Si llegamos a entregado, ocultar botón y estado cancelado visualmente
+                if (newStatus === 'entregado') {
+                    advanceBtn.parentElement.style.display = 'none';
+                    const cancelStep = Array.from(steps).find(s => s.dataset.status === 'cancelado');
+                    if (cancelStep) {
+                        cancelStep.style.display = 'none';
+                        if (lines[lines.length - 1]) lines[lines.length - 1].style.display = 'none';
+                    }
+                }
+            }
+        });
+    }
+
+    // Restaurar notas al pulsar "Cancelar"
+    var notesTA = document.getElementById('id_order_notes');
+    var cancelBtn = document.getElementById('cancelNotesBtn');
+    if (notesTA && cancelBtn) {
+        var originalValue = notesTA.value;
+        cancelBtn.addEventListener('click', function () {
+            notesTA.value = originalValue;
+            notesTA.blur();
+            
+            // Si también queremos deshacer los estados, recargamos la página o revertimos JS.
+            // Para mantener la simplicidad, solo recargamos la página.
+            window.location.reload();
+        });
+    }
+})();
+</script>
 {% endblock %}
