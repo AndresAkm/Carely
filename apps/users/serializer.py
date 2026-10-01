@@ -6,7 +6,7 @@ from .models import Address, City, Department, User
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'phone', 'role', 'is_active', 'date_joined']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'phone', 'role', 'is_active', 'date_joined', 'accepted_terms_at', 'terms_version']
         read_only_fields = ['id', 'username', 'role', 'is_active', 'date_joined', 'is_staff', 'is_superuser']
 
 

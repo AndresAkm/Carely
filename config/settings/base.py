@@ -77,6 +77,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'apps.core.context_processors.site_settings',
+                'apps.core.context_processors.footer_categories',
                 'apps.core.context_processors.cart_count',
             ],
         },
@@ -248,3 +249,30 @@ EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'true').lower() in {'1', 'true',
 EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'false').lower() in {'1', 'true', 'yes', 'on'}
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'no-reply@carely.com')
 PASSWORD_RESET_TIMEOUT = 3600
+
+# ── Datos públicos de la tienda (footer, legal, emails) ──────────────────────
+SITE_NAME = os.environ.get('CARELY_SITE_NAME', 'Carely')
+SITE_DESCRIPTION = os.environ.get(
+    'CARELY_SITE_DESCRIPTION',
+    'Tu tienda de cuidado personal de confianza',
+)
+
+# Versión de los términos y condiciones. Súbela cuando cambien los textos
+# legales para poder distinguir qué versión aceptó cada usuario.
+TERMS_VERSION = os.environ.get('CARELY_TERMS_VERSION', '2026-01-01')
+
+# Fecha visible en la página legal para que coincida con TERMS_VERSION.
+TERMS_EFFECTIVE_DATE = os.environ.get(
+    'CARELY_TERMS_EFFECTIVE_DATE',
+    '1 de enero de 2026',
+)
+
+CARELY_EMAIL = os.environ.get('CARELY_EMAIL', 'carelywebsite@gmail.com')
+CARELY_PHONE = os.environ.get('CARELY_PHONE', '+57 323 227 3483')
+CARELY_PHONE_HREF = os.environ.get('CARELY_PHONE_HREF', '+573232273483')
+CARELY_ADDRESS = os.environ.get('CARELY_ADDRESS', 'Medellín, Colombia')
+CARELY_SOCIALS = {
+    'facebook': os.environ.get('CARELY_SOCIAL_FACEBOOK', ''),
+    'instagram': os.environ.get('CARELY_SOCIAL_INSTAGRAM', ''),
+    'whatsapp': os.environ.get('CARELY_SOCIAL_WHATSAPP', ''),
+}

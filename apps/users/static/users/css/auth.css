@@ -375,6 +375,81 @@
     text-decoration: underline;
 }
 
+/* Aviso de términos en login (browsewrap) */
+.auth-browsewrap {
+    line-height: 1.55;
+}
+
+.auth-browsewrap a {
+    color: var(--accent);
+    text-decoration: none;
+    transition: color .3s var(--ease);
+}
+
+.auth-browsewrap a:hover {
+    color: #4A7BE0;
+    text-decoration: underline;
+}
+
+/* Checkbox de aceptación en registro */
+.auth-terms {
+    display: flex;
+    align-items: flex-start;
+    gap: .6rem;
+    padding: .85rem 1rem;
+    background: rgba(232, 96, 155, .05);
+    border: 1px solid rgba(232, 96, 155, .18);
+    border-radius: 12px;
+}
+
+.auth-terms .form-check-input {
+    flex: 0 0 auto;
+    margin-top: .28rem;
+}
+
+.auth-terms .form-check-label {
+    font-size: .84rem;
+    line-height: 1.55;
+    color: var(--clr-text);
+}
+
+.auth-terms .form-check-label a {
+    color: var(--accent);
+    font-weight: 500;
+    text-decoration: none;
+    transition: color .3s var(--ease);
+}
+
+.auth-terms .form-check-label a:hover {
+    color: #4A7BE0;
+    text-decoration: underline;
+}
+
+.auth-terms .invalid-feedback {
+    font-size: .8rem;
+    margin-left: 0;
+    padding-left: 0;
+}
+
+.auth-terms .form-check-input.is-invalid {
+    border-color: var(--clr-danger, #dc3545);
+}
+
+.auth-terms__note {
+    line-height: 1.55;
+    padding-left: .25rem;
+}
+
+.auth-terms__note a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.auth-terms__note a:hover {
+    color: #4A7BE0;
+    text-decoration: underline;
+}
+
 .password-requirements {
     font-size: .8rem;
     line-height: 1.6;

@@ -41,8 +41,22 @@
                     {% endif %}
                     <p class="product-detail-description">{{ product.description|default:'Descubre este producto seleccionado por Carely para acompañar tu rutina de cuidado personal.' }}</p>
                     <div class="product-detail-actions">
-                        <a href="{% url 'catalog:home' %}" class="c-btn c-btn--primary c-btn--lg"><i class="bi bi-arrow-left me-2"></i>Seguir explorando</a>
-                        {% if product.stock > 0 %}<a href="{% url 'catalog:home' %}" class="c-btn c-btn--outline c-btn--lg">Ver catálogo</a>{% endif %}
+                        {% if product.stock > 0 %}
+                        {% if user.is_authenticated %}
+                        <form class="product-detail-cart-form" action="{% url 'cart:add' product.pk %}" method="post">
+                            {% csrf_token %}
+                            <label class="product-detail-qty-label" for="product-detail-quantity">Cantidad</label>
+                            <input type="number" name="quantity" id="product-detail-quantity" class="form-control product-detail-qty" value="1" min="1" max="{{ product.stock }}">
+                            <button type="submit" class="c-btn c-btn--primary c-btn--lg"><i class="bi bi-cart-plus me-2"></i>Añadir al carrito</button>
+                        </form>
+                        <a href="{% url 'cart:cart' %}" class="c-btn c-btn--outline c-btn--lg"><i class="bi bi-bag me-2"></i>Ver carrito</a>
+                        {% else %}
+                        <a href="{% url 'users:login' %}?next={{ request.path }}" class="c-btn c-btn--primary c-btn--lg"><i class="bi bi-box-arrow-in-right me-2"></i>Inicia sesión para comprar</a>
+                        {% endif %}
+                        {% else %}
+                        <button type="button" class="c-btn c-btn--outline c-btn--lg" disabled>Producto agotado</button>
+                        <a href="{% url 'catalog:home' %}" class="c-btn c-btn--outline c-btn--lg"><i class="bi bi-arrow-left me-2"></i>Seguir explorando</a>
+                        {% endif %}
                     </div>
                 </div>
             </div>

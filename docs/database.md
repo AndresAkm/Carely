@@ -29,14 +29,19 @@ env\Scripts\python.exe manage.py createsuperuser
 - Base: `carely` (configurable vía variables de entorno en `.env`).
 - Variables usadas por `config/settings/production.py`:
 
+El motor es fijo (`django.db.backends.mysql`) y se define en
+`config/settings/base.py`; no hay variable de entorno para cambiarlo.
+
 | Variable | Valor por defecto |
 |----------|-------------------|
-| `DJANGO_DB_ENGINE` | `django.db.backends.mysql` |
 | `DJANGO_DB_NAME` | `carely` |
-| `DJANGO_DB_USER` | `carely` |
+| `DJANGO_DB_USER` | *(vacío)* |
 | `DJANGO_DB_PASSWORD` | *(vacío)* |
-| `DJANGO_DB_HOST` | `localhost` |
+| `DJANGO_DB_HOST` | *(vacío)* |
 | `DJANGO_DB_PORT` | `3306` |
+
+En los tests (`config/settings/test.py`) se usa SQLite sobre `db_test.sqlite3`,
+porque MariaDB Cloud no concede `CREATE DATABASE`.
 
 ## Supabase Storage
 
@@ -63,8 +68,17 @@ templates, JavaScript ni respuestas API. Las rutas conservan los prefijos
 |-----|---------|
 | `apps.catalog` | `Category`, `Product` |
 | `apps.core` | *(sin modelos)* |
-| `apps.users` | `User` |
+| `apps.users` | `User`, `Department`, `City`, `Address` |
 | `apps.inventory` | `InventoryMovement` |
 | `apps.cart` | `Cart`, `CartItem` |
-| `apps.orders` | `Order`, `OrderItem` |
+| `apps.orders` | `Coupon`, `Order`, `OrderItem`, `OrderStatusHistory` |
 | `apps.payments` | `Payment` |
+
+### Relaciones principales
+
+- `User` ← `Cart`, `Order`, `Address`, `InventoryMovement`.
+- `Department` ← `City` ← `Address`.
+- `Category` ← `Product` ← `CartItem`, `OrderItem`, `InventoryMovement`.
+- `Cart` ← `CartItem` (único por `cart` + `product`).
+- `Order` ← `OrderItem`, `OrderStatusHistory`, `Payment` (PROTECT), `Coupon` (SET_NULL).
+- `Address` usa borrado lógico (`is_active`); `City` y `Department` están en PROTECT.

@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth import views as auth_views
 from django.contrib import messages
@@ -6,12 +7,12 @@ from django.shortcuts import render, redirect
 from django.urls import reverse, reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views import View
-from django.views.generic import CreateView, DeleteView, ListView, UpdateView
+from django.views.generic import CreateView, DeleteView, FormView, ListView, UpdateView
 from django.views.generic import TemplateView
 
 from apps.core.permissions import is_admin
 
-from ..forms import AddressForm, LoginForm, ProfileForm, RegisterForm
+from ..forms import AddressForm, DeactivateAccountForm, LoginForm, ProfileForm, RegisterForm
 from ..models import Address, City, Department, User
 from ..services import GmailService, GmailServiceError
 
@@ -107,6 +108,37 @@ class ProfileView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         messages.success(self.request, 'Tu perfil se actualizó correctamente.')
         return super().form_valid(form)
+
+
+class AccountDeactivateView(LoginRequiredMixin, FormView):
+    template_name = 'users/deactivate_account.html'
+    form_class = DeactivateAccountForm
+    success_url = reverse_lazy('core:home')
+
+    def dispatch(self, request, *args, **kwargs):
+        if is_admin(request.user):
+            return redirect('core:dashboard')
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        user = self.request.user
+        user.is_active = False
+        user.save(update_fields=['is_active', 'updated_at'])
+        logout(self.request)
+        messages.success(
+            self.request,
+            f'Tu cuenta fue deshabilitada. Si deseas reactivarla, contáctanos a {settings.CARELY_EMAIL}.',
+        )
+        return super().form_valid(form)
+
+    def form_invalid(self, form):
+        messages.error(self.request, 'No pudimos deshabilitar tu cuenta. Revisa los datos ingresados.')
+        return super().form_invalid(form)
 
 
 class AddressListView(LoginRequiredMixin, ListView):

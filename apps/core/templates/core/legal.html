@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Términos y Política de Privacidad - Carely{% endblock %}
+{% block meta_description %}Consulta los términos y condiciones de Carely y nuestra política de privacidad y protección de datos personales.{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'core/css/legal.css' %}?v=1" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+{% include 'navbar.html' %}
+
+<main class="legal-page">
+    <div class="container">
+        <header class="legal-hero">
+            <span class="profile-eyebrow"><i class="bi bi-shield-check me-1"></i>Información legal</span>
+            <h1 class="legal-hero-title">Términos y Política de Privacidad</h1>
+            <p class="legal-hero-subtitle">Transparencia ante todo. Aquí encuentras las condiciones que rigen el uso de Carely y el tratamiento de tus datos personales.</p>
+            <p class="legal-hero-updated"><i class="bi bi-clock-history me-1"></i>Última actualización: {% now "d \d\e F \d\e Y" %}</p>
+
+            <nav class="legal-nav" aria-label="Índice del documento">
+                {% for group in legal_groups %}
+                <a href="#{{ group.id }}" class="legal-nav__link"><i class="bi {{ group.icon }} me-1"></i>{{ group.label }}</a>
+                {% endfor %}
+            </nav>
+        </header>
+
+        <div class="legal-layout">
+            <aside class="legal-toc">
+                <div class="legal-toc__card">
+                    <h2 class="legal-toc__title">Contenido</h2>
+                    {% for group in legal_groups %}
+                    <p class="legal-toc__group"><i class="bi {{ group.icon }} me-1"></i>{{ group.label }}</p>
+                    <ol class="legal-toc__list">
+                        {% for section in group.sections %}
+                        <li><a href="#{{ group.id }}-{{ forloop.counter }}">{{ section.title }}</a></li>
+                        {% endfor %}
+                    </ol>
+                    {% endfor %}
+                </div>
+            </aside>
+
+            <div class="legal-content">
+                {% for group in legal_groups %}
+                <section class="legal-group" id="{{ group.id }}">
+                    <h2 class="legal-group-title"><i class="bi {{ group.icon }} me-2"></i>{{ group.label }}</h2>
+
+                    {% for section in group.sections %}
+                    <article class="legal-block" id="{{ group.id }}-{{ forloop.counter }}">
+                        <h3 class="legal-block-title">{{ forloop.counter }}. {{ section.title }}</h3>
+                        {% for paragraph in section.paragraphs %}
+                        <p class="legal-paragraph">{{ paragraph }}</p>
+                        {% endfor %}
+                    </article>
+                    {% endfor %}
+                </section>
+                {% endfor %}
+
+                <section class="legal-contact">
+                    <h2 class="legal-group-title"><i class="bi bi-chat-dots me-2"></i>¿Tienes dudas?</h2>
+                    <p class="legal-paragraph">Escribenos a <a href="mailto:{{ carely_email }}">{{ carely_email }}</a> o llámanos al <a href="tel:{{ carely_phone_href }}">{{ carely_phone }}</a> de lunes a viernes de 8:00 a 18:00. Nuestro equipo resolverá tus dudas sobre tu cuenta, tus pedidos o el tratamiento de tus datos.</p>
+                </section>
+            </div>
+        </div>
+    </div>
+</main>
+
+{% include 'footer.html' %}
+{% endblock %}

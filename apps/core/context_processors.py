@@ -1,7 +1,29 @@
+from django.conf import settings
+
+
 def site_settings(request):
     return {
-        'site_name': 'Carely',
-        'site_description': 'Tu tienda de cuidado personal de confianza',
+        'site_name': settings.SITE_NAME,
+        'site_description': settings.SITE_DESCRIPTION,
+        'carely_email': settings.CARELY_EMAIL,
+        'carely_phone': settings.CARELY_PHONE,
+        'carely_phone_href': settings.CARELY_PHONE_HREF,
+        'carely_address': settings.CARELY_ADDRESS,
+        'carely_socials': settings.CARELY_SOCIALS,
+    }
+
+
+def footer_categories(request):
+    """
+    Inyecta `categories` (QS de categorías activas) en cada template.
+
+    El footer itera sobre `categories`, que solo recibían las vistas de home y
+    catálogo; en el resto de páginas el bloque salía vacío.
+    """
+    from apps.catalog.models import Category
+
+    return {
+        'categories': Category.objects.filter(is_active=True),
     }
 
 

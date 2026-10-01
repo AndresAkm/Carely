@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Deshabilitar mi cuenta - Carely{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'users/css/profile.css' %}?v=2" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+{% include 'navbar.html' %}
+
+<main class="profile-page">
+    <div class="container">
+        <div class="profile-header">
+            <span class="profile-eyebrow"><i class="bi bi-slash-circle me-1"></i>Zona de peligro</span>
+            <h1 class="profile-title">Deshabilitar mi cuenta</h1>
+            <p class="profile-subtitle">Esta acción es permanente. Confirma tu contraseña para continuar.</p>
+        </div>
+
+        <section class="profile-card profile-confirm">
+            <div class="profile-card-header">
+                <h2>¿Qué pasa si deshabilito mi cuenta?</h2>
+                <p>Lee con atención antes de continuar.</p>
+            </div>
+            <ul class="profile-confirm__list">
+                <li><i class="bi bi-x-circle me-2"></i>Dejarás de poder iniciar sesión con {{ carely_email }}.</li>
+                <li><i class="bi bi-x-circle me-2"></i>No podrás realizar pedidos, agregar productos al carrito ni gestionar tus direcciones.</li>
+                <li><i class="bi bi-x-circle me-2"></i>No recibirás promociones, recordatorios de carrito ni comunicaciones comerciales.</li>
+                <li><i class="bi bi-check-circle me-2"></i>Tu historial de pedidos y la información que registraste se conservan y pueden solicitarse escribiendo a {{ carely_email }}.</li>
+                <li><i class="bi bi-info-circle me-2"></i>Puedes solicitar la reactivación de tu cuenta en cualquier momento escribiendo a {{ carely_email }}.</li>
+            </ul>
+
+            <form method="post" novalidate class="profile-form profile-form--single">
+                {% csrf_token %}
+                {% if form.non_field_errors %}<div class="profile-form-error">{{ form.non_field_errors }}</div>{% endif %}
+                {% for field in form %}
+                <div class="profile-field profile-field--full">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% for error in field.errors %}<div class="profile-field-error">{{ error }}</div>{% endfor %}
+                </div>
+                {% endfor %}
+                <div class="profile-form-actions">
+                    <a href="{% url 'users:profile' %}" class="c-btn c-btn--outline">Cancelar</a>
+                    <button type="submit" class="profile-danger__btn"><i class="bi bi-slash-circle me-1"></i>Deshabilitar mi cuenta</button>
+                </div>
+            </form>
+        </section>
+    </div>
+</main>
+
+{% include 'footer.html' %}
+{% endblock %}

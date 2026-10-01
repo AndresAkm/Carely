@@ -9,7 +9,7 @@ from django.views.generic import CreateView, DetailView, DeleteView, ListView, U
 
 from apps.core.permissions import is_admin
 
-from ..forms import CouponForm, OrderFilterForm, OrderStatusForm, OrderNotesForm
+from ..forms import CouponForm, OrderFilterForm, OrderStatusForm
 from ..models import Coupon, Order, OrderStatusHistory
 
 

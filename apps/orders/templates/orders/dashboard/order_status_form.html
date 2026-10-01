@@ -303,18 +303,13 @@
         });
     }
 
-    // Restaurar notas al pulsar "Cancelar"
+    // Descartar cambios de notas al pulsar "Cancelar"
     var notesTA = document.getElementById('id_order_notes');
     var cancelBtn = document.getElementById('cancelNotesBtn');
     if (notesTA && cancelBtn) {
-        var originalValue = notesTA.value;
         cancelBtn.addEventListener('click', function () {
-            notesTA.value = originalValue;
+            notesTA.value = notesTA.defaultValue;
             notesTA.blur();
-            
-            // Si también queremos deshacer los estados, recargamos la página o revertimos JS.
-            // Para mantener la simplicidad, solo recargamos la página.
-            window.location.reload();
         });
     }
 })();

@@ -12,6 +12,7 @@ class CarelyUserAdmin(UserAdmin):
     ordering = ('email',)
     fieldsets = UserAdmin.fieldsets + (
         ('Información adicional', {'fields': ('phone', 'role')}),
+        ('Términos y condiciones', {'fields': ('accepted_terms_at', 'terms_version')}),
     )
     add_fieldsets = UserAdmin.add_fieldsets + (
         ('Información adicional', {'fields': ('phone', 'role')}),

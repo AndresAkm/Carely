@@ -1,7 +1,9 @@
+from django.conf import settings
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core import mail
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -446,6 +448,200 @@ class PasswordChangeEmailTests(TestCase):
         })
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(mail.outbox), 0)
+
+
+class AccountDeactivateTests(TestCase):
+
+    def setUp(self):
+        self.user = create_user()
+        self.url = reverse('users:account_deactivate')
+
+    def test_requires_login(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse('users:login'), response.url)
+
+    def test_get_renders_confirmation_page(self):
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'users/deactivate_account.html')
+
+    def test_deactivates_account_and_logs_out(self):
+        self.client.force_login(self.user)
+        response = self.client.post(self.url, {'password': 'pass12345', 'confirm': 'on'})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('core:home'))
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.is_active)
+        self.assertNotIn('_auth_user_id', self.client.session)
+
+    def test_inactive_user_cannot_login_afterwards(self):
+        from django.contrib.auth import authenticate
+        self.client.force_login(self.user)
+        self.client.post(self.url, {'password': 'pass12345', 'confirm': 'on'})
+        self.client.logout()
+        response = self.client.post(reverse('users:login'), {
+            'email': self.user.email,
+            'password': 'pass12345',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn('_auth_user_id', self.client.session)
+        self.assertIsNone(authenticate(username=self.user.email, password='pass12345'))
+
+    def test_wrong_password_keeps_account_active(self):
+        self.client.force_login(self.user)
+        response = self.client.post(self.url, {'password': 'incorrecta', 'confirm': 'on'})
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.is_active)
+        self.assertIn('password', response.context['form'].errors)
+
+    def test_missing_confirmation_keeps_account_active(self):
+        self.client.force_login(self.user)
+        response = self.client.post(self.url, {'password': 'pass12345'})
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.is_active)
+        self.assertIn('confirm', response.context['form'].errors)
+
+    def test_admin_is_redirected_to_dashboard(self):
+        admin = create_user(
+            username='admin', email='admin@example.com',
+            role=User.Role.ADMIN, is_staff=True,
+        )
+        self.client.force_login(admin)
+        response = self.client.post(self.url, {'password': 'pass12345', 'confirm': 'on'})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('core:dashboard'))
+        admin.refresh_from_db()
+        self.assertTrue(admin.is_active)
+
+
+def register_payload(**overrides):
+    payload = {
+        'first_name': 'Ana',
+        'last_name': 'Restrepo',
+        'email': 'ana@example.com',
+        'password1': 'Pass1234',
+        'password2': 'Pass1234',
+        'accept_terms': 'on',
+    }
+    payload.update(overrides)
+    return payload
+
+
+class RegisterTermsAcceptanceTests(TestCase):
+
+    def test_checkbox_is_rendered_on_register_page(self):
+        response = self.client.get(reverse('users:register'))
+        self.assertContains(response, 'name="accept_terms"')
+        self.assertContains(response, 'Términos y Condiciones')
+        self.assertContains(response, 'Política de Privacidad')
+        self.assertContains(response, reverse('core:privacy'))
+
+    def test_checkbox_links_point_to_legal_sections(self):
+        response = self.client.get(reverse('users:register'))
+        self.assertContains(response, '/privacidad/#terminos')
+        self.assertContains(response, '/privacidad/#privacidad')
+
+    def test_registration_fails_without_acceptance(self):
+        payload = register_payload()
+        del payload['accept_terms']
+        response = self.client.post(reverse('users:register'), payload)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context['form'].errors.get('accept_terms'))
+        self.assertFalse(User.objects.filter(email='ana@example.com').exists())
+
+    def test_registration_records_acceptance(self):
+        response = self.client.post(reverse('users:register'), register_payload())
+        self.assertEqual(response.status_code, 302)
+        user = User.objects.get(email='ana@example.com')
+        self.assertIsNotNone(user.accepted_terms_at)
+        self.assertEqual(user.terms_version, settings.TERMS_VERSION)
+        self.assertTrue(user.has_accepted_current_terms)
+
+    def test_acceptance_timestamp_is_set_once(self):
+        self.client.post(reverse('users:register'), register_payload())
+        user = User.objects.get(email='ana@example.com')
+        first_seen = user.accepted_terms_at
+        self.client.logout()
+        self.client.post(reverse('users:register'), register_payload(email='otro@example.com'))
+        user.refresh_from_db()
+        self.assertEqual(user.accepted_terms_at, first_seen)
+
+    def test_existing_users_have_no_recorded_acceptance(self):
+        user = create_user()
+        self.assertIsNone(user.accepted_terms_at)
+        self.assertEqual(user.terms_version, '')
+        self.assertFalse(user.has_accepted_current_terms)
+
+    def test_stale_terms_version_is_detected(self):
+        user = create_user()
+        user.accepted_terms_at = timezone.now()
+        user.terms_version = '1999-01-01'
+        user.save()
+        self.assertFalse(user.has_accepted_current_terms)
+
+
+class LoginTermsNoticeTests(TestCase):
+
+    def test_login_page_shows_notice_without_checkbox(self):
+        response = self.client.get(reverse('users:login'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'auth-browsewrap')
+        self.assertContains(response, 'Términos y Condiciones')
+        self.assertContains(response, 'Política de Privacidad')
+
+    def test_login_page_has_no_required_checkbox(self):
+        response = self.client.get(reverse('users:login'))
+        self.assertNotContains(response, 'name="accept_terms"')
+
+    def test_login_works_without_ticking_anything(self):
+        # El registro guarda username = email, que es lo que usa LoginView para autenticar.
+        create_user(username='ana@example.com', email='ana@example.com', password='Pass1234')
+        response = self.client.post(reverse('users:login'), {
+            'email': 'ana@example.com',
+            'password': 'Pass1234',
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('_auth_user_id', self.client.session)
+
+
+class LegalPageTests(TestCase):
+
+    def test_privacy_page_is_public(self):
+        response = self.client.get(reverse('core:privacy'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'core/legal.html')
+        self.assertContains(response, 'Términos y Condiciones')
+        self.assertContains(response, 'Ley 1581 de 2012')
+
+    def test_privacy_page_url_at_root(self):
+        response = self.client.get('/privacidad/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_contact_details_come_from_context(self):
+        response = self.client.get(reverse('core:privacy'))
+        self.assertEqual(response.context['carely_email'], settings.CARELY_EMAIL)
+        self.assertContains(response, settings.CARELY_EMAIL)
+
+    def test_terms_page_shows_effective_date(self):
+        response = self.client.get(reverse('core:privacy'))
+        self.assertContains(response, settings.TERMS_EFFECTIVE_DATE)
+
+    def test_terms_page_mentions_acceptance_checkbox(self):
+        response = self.client.get(reverse('core:privacy'))
+        self.assertContains(response, 'casilla de aceptación')
+
+    def test_groups_have_sections(self):
+        response = self.client.get(reverse('core:privacy'))
+        groups = response.context['legal_groups']
+        self.assertEqual([group['id'] for group in groups], ['terminos', 'privacidad'])
+        for group in groups:
+            self.assertTrue(group['sections'])
+            for section in group['sections']:
+                self.assertTrue(section['paragraphs'])
 
 
 class DepartmentCitiesApiTests(TestCase):

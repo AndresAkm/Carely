@@ -4,45 +4,46 @@
     <div class="container">
         <div class="footer-grid">
             <div class="footer-brand">
-                <a href="{% url 'core:home' %}" class="c-nav__brand footer-brand__logo" aria-label="Carely">
-                    <img src="{% static 'core/images/carely-logo.svg' %}" alt="Carely" class="c-footer__logo">
+                <a href="{% url 'core:home' %}" class="c-nav__brand footer-brand__logo" aria-label="{{ site_name }}">
+                    <img src="{% static 'core/images/carely-logo.svg' %}" alt="{{ site_name }}" class="c-footer__logo">
                 </a>
-                <p>Tu tienda de cuidado personal de confianza. Productos originales, asesoria personalizada y envios rapidos.</p>
+                <p>{{ site_description }}. Productos originales, asesoria personalizada y envios rapidos.</p>
                 <div class="footer-social">
-                    <a href="#" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
-                    <a href="#" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
-                    <a href="#" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>
+                    {% if carely_socials.facebook %}<a href="{{ carely_socials.facebook }}" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><i class="bi bi-facebook"></i></a>{% endif %}
+                    {% if carely_socials.instagram %}<a href="{{ carely_socials.instagram }}" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="bi bi-instagram"></i></a>{% endif %}
+                    {% if carely_socials.whatsapp %}<a href="{{ carely_socials.whatsapp }}" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>{% endif %}
                 </div>
             </div>
             <div class="footer-col">
                 <h5>Categorias</h5>
                 <ul>
                     {% for category in categories %}
-                    <li><a href="#">{{ category.name }}</a></li>
+                    <li><a href="{% url 'catalog:home' %}?category={{ category.slug }}">{{ category.name }}</a></li>
+                    {% empty %}
+                    <li><a href="{% url 'catalog:home' %}">Ver catalogo</a></li>
                     {% endfor %}
                 </ul>
             </div>
             <div class="footer-col">
                 <h5>Ayuda</h5>
                 <ul>
-                    <li><a href="#">Contacto</a></li>
-                    <li><a href="#">Envios</a></li>
-                    <li><a href="#">Devoluciones</a></li>
-                    <li><a href="#">FAQ</a></li>
-                    <li><a href="#">Terminos</a></li>
+                    <li><a href="mailto:{{ carely_email }}">Contacto</a></li>
+                    <li><a href="{% url 'core:privacy' %}#terminos">Terminos y envios</a></li>
+                    <li><a href="{% url 'core:privacy' %}#privacidad">Privacidad</a></li>
+                    <li><a href="{% url 'users:password_reset' %}">Recuperar contrasena</a></li>
                 </ul>
             </div>
             <div class="footer-col">
                 <h5>Contacto</h5>
                 <ul class="footer-contact">
-                    <li><i class="bi bi-envelope"></i> carelywebsite@gmail.com</li>
-                    <li><i class="bi bi-telephone"></i> +57 323 227 3483</li>
-                    <li><i class="bi bi-geo-alt"></i> Medellin, Colombia</li>
+                    <li><i class="bi bi-envelope"></i> <a href="mailto:{{ carely_email }}">{{ carely_email }}</a></li>
+                    <li><i class="bi bi-telephone"></i> <a href="tel:{{ carely_phone_href }}">{{ carely_phone }}</a></li>
+                    <li><i class="bi bi-geo-alt"></i> {{ carely_address }}</li>
                 </ul>
             </div>
         </div>
         <div class="footer-bottom">
-            <p>&copy; {% now "Y" %} Carely. Todos los derechos reservados.</p>
+            <p>&copy; {% now "Y" %} {{ site_name }}. Todos los derechos reservados.</p>
         </div>
     </div>
 </footer>

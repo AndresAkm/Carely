@@ -49,6 +49,20 @@
                         <div class="profile-form-actions"><a href="{% url 'catalog:home' %}" class="c-btn c-btn--outline">Cancelar</a><button type="submit" class="c-btn c-btn--primary"><i class="bi bi-check2 me-1"></i>Guardar cambios</button></div>
                     </form>
                 </section>
+
+                <section class="profile-card profile-danger mt-4">
+                    <div class="profile-card-header">
+                        <h2><i class="bi bi-exclamation-triangle me-2"></i>Zona de peligro</h2>
+                        <p>Las acciones de esta sección son definitivas.</p>
+                    </div>
+                    <div class="profile-danger__body">
+                        <div>
+                            <h3>Deshabilitar mi cuenta</h3>
+                            <p>Deja tu cuenta deshabilitada de forma permanente desde el sitio. Perderás el acceso para iniciar sesión, comprar y gestionar tus datos. Tu historial de pedidos se conserva y puedes solicitar la reactivación escribiendo a {{ carely_email }}.</p>
+                        </div>
+                        <a href="{% url 'users:account_deactivate' %}" class="profile-danger__btn"><i class="bi bi-slash-circle me-2"></i>Deshabilitar cuenta</a>
+                    </div>
+                </section>
             </div>
         </div>
     </div>

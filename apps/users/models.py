@@ -28,6 +28,18 @@ class User(AbstractUser):
         default=Role.CLIENT,
         verbose_name='rol',
     )
+    accepted_terms_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='términos aceptados en',
+        help_text='Fecha en que el usuario aceptó los términos y condiciones vigentes.',
+    )
+    terms_version = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name='versión de los términos aceptados',
+        help_text='Identificador de la versión de los términos aceptados, p. ej. 2026-01-01.',
+    )
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name='creado en',
@@ -44,6 +56,12 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
+
+    @property
+    def has_accepted_current_terms(self):
+        return bool(
+            self.accepted_terms_at and self.terms_version == settings.TERMS_VERSION,
+        )
 
 
 class Department(models.Model):

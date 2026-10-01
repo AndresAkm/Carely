@@ -1,7 +1,9 @@
 from django import forms
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.contrib.auth.forms import SetPasswordForm
+from django.utils import timezone
 import re
 
 from .models import Address, City, Department
@@ -75,6 +77,15 @@ class RegisterForm(forms.ModelForm):
             'autocomplete': 'new-password',
         })
     )
+    accept_terms = forms.BooleanField(
+        error_messages={
+            'required': 'Debes leer y aceptar los Términos y Condiciones y la Política de Privacidad para crear tu cuenta.',
+        },
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input',
+            'id': 'id_accept_terms',
+        })
+    )
 
     class Meta:
         model = User
@@ -111,6 +122,9 @@ class RegisterForm(forms.ModelForm):
         user.username = self.cleaned_data['email']
         user.email = self.cleaned_data['email']
         user.set_password(self.cleaned_data['password1'])
+        if self.cleaned_data.get('accept_terms'):
+            user.accepted_terms_at = timezone.now()
+            user.terms_version = settings.TERMS_VERSION
         if commit:
             user.save()
         return user
@@ -155,6 +169,34 @@ class ProfileForm(forms.ModelForm):
         if commit:
             user.save()
         return user
+
+
+class DeactivateAccountForm(forms.Form):
+    password = forms.CharField(
+        label='Contraseña actual',
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': '••••••••',
+            'autocomplete': 'current-password',
+        })
+    )
+    confirm = forms.BooleanField(
+        label='Entiendo que mi cuenta quedará deshabilitada',
+        error_messages={
+            'required': 'Debes confirmar que entiendes las consecuencias de deshabilitar tu cuenta.',
+        },
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+
+    def __init__(self, user, *args, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+
+    def clean_password(self):
+        password = self.cleaned_data['password']
+        if not self.user.check_password(password):
+            raise ValidationError('La contraseña es incorrecta.')
+        return password
 
 
 class ForceDeleteUserForm(forms.Form):

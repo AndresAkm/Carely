@@ -1,15 +1,9 @@
-from django.urls import path, include
-from rest_framework import routers
+from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from .views.api import UserViewSet
 
-
-router = routers.DefaultRouter()
-
-router.register('usuarios', UserViewSet, basename='usuarios')
-
+# El UserViewSet se registra en config/api_router.py bajo /api/v1/usuarios/.
+# Aquí solo viven los endpoints de token para evitar un registro duplicado.
 urlpatterns = [
-    path('', include(router.urls)),
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]
