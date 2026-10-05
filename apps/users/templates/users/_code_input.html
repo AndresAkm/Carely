@@ -1,0 +1,11 @@
+{% comment %}
+Casillas del código de un solo uso, una por dígito.
+Requiere `field` (el input real) y `code_digits` (range en el contexto).
+Enlaza users/js/code_input.js y users/css/code_input.css.
+{% endcomment %}
+<div class="code-input" data-code-input>
+    {{ field }}
+    <div class="code-input__boxes" aria-hidden="true">
+        {% for digit in code_digits %}<span class="code-input__box" data-code-box></span>{% endfor %}
+    </div>
+</div>

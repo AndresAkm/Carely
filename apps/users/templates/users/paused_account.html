@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Cuenta pausada - Carely{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'users/css/auth.css' %}?v=4" rel="stylesheet">
+<link href="{% static 'users/css/code_input.css' %}?v=1" rel="stylesheet">
+{% endblock %}
+
+{% block body_class %}auth-page register-page{% endblock %}
+
+{% block content %}
+{% include 'users/_auth_background.html' %}
+
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <div class="auth-header text-center">
+            <img src="{% static 'core/images/carely-logo.svg' %}" alt="Carely" class="auth-logo__image mx-auto mb-4">
+            <h1 class="auth-title">Tu cuenta está pausada</h1>
+        </div>
+
+        {% if paused_user.was_deactivated_by_admin %}
+        <p class="auth-subtitle text-center">
+            Hola {{ paused_user.first_name|default:paused_user.email }}, tu cuenta fue deshabilitada por nuestro
+            equipo de soporte. Para recuperarla, escribe a
+            <a href="mailto:{{ carely_email }}">{{ carely_email }}</a> desde el correo con el que te registraste y
+            verificaremos tu identidad.
+        </p>
+        {% else %}
+        <p class="auth-subtitle text-center">
+            Hola {{ paused_user.first_name|default:paused_user.email }}, tus credenciales son correctas, pero tu
+            cuenta está deshabilitada.
+        </p>
+        <p class="auth-subtitle text-center">
+            ¿Deseas reactivarla? Te enviamos un código al correo {{ paused_user.email }}. Confírmalo para demostrar
+            que tienes acceso a ese buzón.
+        </p>
+        <form method="post" novalidate class="mt-3">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label" for="{{ form.code.id_for_label }}">{{ form.code.label }}</label>
+                {% include 'users/_code_input.html' with field=form.code code_digits=code_digits %}
+                {% for error in form.code.errors %}
+                <div class="form-text text-danger">{{ error }}</div>
+                {% endfor %}
+            </div>
+            <button class="btn btn-carely-primary w-100">Reactivar mi cuenta</button>
+        </form>
+        <form method="post" class="mt-2">
+            {% csrf_token %}
+            <button type="submit" name="resend" value="1" class="btn btn-link w-100">Reenviarme el código</button>
+        </form>
+        <p class="auth-subtitle text-center mt-3">
+            Si no tienes acceso a ese correo, escríbenos a
+            <a href="mailto:{{ carely_email }}">{{ carely_email }}</a> y revisaremos tu caso.
+        </p>
+        {% endif %}
+
+        <a href="{% url 'users:login' %}" class="btn btn-link w-100 mt-3">Volver a iniciar sesión</a>
+    </div>
+</div>
+<script src="{% static 'users/js/code_input.js' %}"></script>
+{% endblock %}

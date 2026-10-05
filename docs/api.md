@@ -56,7 +56,10 @@ ViewSets registrados en `config/api_router.py`, bajo el prefijo `/api/v1/`:
 | GET | `/accounts/register/confirmation/` | `RegistrationConfirmationView` |
 | POST | `/accounts/logout/` | `LogoutView` |
 | GET/POST | `/accounts/perfil/` | `ProfileView` |
+| GET/POST | `/accounts/verificacion-dos-pasos/` | `TwoFactorSetupView` |
 | GET/POST | `/accounts/deshabilitar-cuenta/` | `AccountDeactivateView` |
+| GET/POST | `/accounts/cuenta-pausada/` | `PausedAccountView` |
+| GET/POST | `/accounts/reactivar-cuenta/<token>/` | `ReactivateAccountView` |
 | GET/POST | `/accounts/password-change/` | `PasswordChangeView` |
 | GET | `/accounts/password-change/done/` | `PasswordChangeDoneView` |
 | GET/POST | `/accounts/password-reset/` | `PasswordResetView` |

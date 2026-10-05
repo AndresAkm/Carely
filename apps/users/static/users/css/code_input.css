@@ -1,0 +1,63 @@
+/* Cajas para escribir el código de un solo uso, una por dígito.
+ *
+ * El input real queda transparente pero enfocable (así funcionan el
+ * autocompletado `one-time-code` y los gestores de contraseña) y estas cajas
+ * solo pintan su valor. Enlazar este archivo DESPUÉS de profile.css y
+ * auth.css: sus reglas ganan por orden, no por especificidad.
+ */
+
+.code-input {
+    position: relative;
+}
+
+.code-input .form-control {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+    opacity: 0;
+    overflow: hidden;
+}
+
+.code-input__boxes {
+    display: flex;
+    gap: 10px;
+    max-width: 340px;
+}
+
+.code-input__box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1 1 0;
+    min-width: 0;
+    height: 58px;
+    border: 2px solid var(--clr-border);
+    border-radius: var(--r-sm);
+    background: var(--clr-card);
+    color: var(--clr-text);
+    font-family: var(--ff-sans);
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1;
+    cursor: text;
+    transition: border-color .2s var(--ease), box-shadow .2s var(--ease);
+}
+
+.code-input__box.is-filled {
+    border-color: var(--accent);
+}
+
+.code-input__box.is-focused {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(91, 141, 239, .12);
+}
+
+@media (max-width: 480px) {
+    .code-input__boxes { gap: 8px; }
+    .code-input__box { height: 50px; font-size: 1.3rem; }
+}

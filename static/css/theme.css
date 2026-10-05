@@ -165,6 +165,43 @@ body,
     transform: scale(1.1);
 }
 
+/* FLOATING CART — fijo, a la izquierda del selector de color */
+.float-cart {
+    position: fixed;
+    bottom: 24px;
+    right: 80px;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.float-cart__btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--clr-card);
+    color: var(--clr-text);
+    box-shadow: var(--sh-lg);
+    font-size: 1.25rem;
+    cursor: pointer;
+    transition: all .3s var(--ease);
+}
+
+.float-cart__btn:hover {
+    transform: scale(1.08);
+    box-shadow: var(--sh-xl);
+    color: var(--accent);
+}
+
+.float-cart .cart-count-badge {
+    top: -4px;
+    right: -4px;
+}
+
 @media (max-width: 575.98px) {
     .theme-picker {
         bottom: 16px;
@@ -185,5 +222,14 @@ body,
         width: 34px;
         height: 34px;
         font-size: .85rem;
+    }
+    .float-cart {
+        bottom: 16px;
+        right: 66px;
+    }
+    .float-cart__btn {
+        width: 42px;
+        height: 42px;
+        font-size: 1.1rem;
     }
 }

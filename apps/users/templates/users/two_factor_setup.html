@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Verificación en dos pasos - Carely{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'users/css/profile.css' %}?v=2" rel="stylesheet">
+<link href="{% static 'users/css/code_input.css' %}?v=1" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+{% include 'navbar.html' %}
+
+<main class="profile-page">
+    <div class="container">
+        <div class="profile-header">
+            <span class="profile-eyebrow"><i class="bi bi-shield-lock me-1"></i>Seguridad</span>
+            <h1 class="profile-title">Verificación en dos pasos</h1>
+            <p class="profile-subtitle">
+                Te enviamos un código a {{ user.email }} para confirmar las acciones que afectan tu cuenta.
+            </p>
+        </div>
+
+        <section class="profile-card">
+            <div class="profile-card-header">
+                <h2>Estado</h2>
+            </div>
+
+            {% if user.two_factor_enabled %}
+            <p class="profile-confirm__list">
+                <i class="bi bi-check-circle-fill text-success me-2"></i>Activada desde el
+                {{ user.two_factor_enabled_at|date:"d/m/Y" }}.
+            </p>
+            <p class="profile-subtitle">
+                La usamos para confirmar que deshabilitas tu cuenta y para recuperarla después. Para desactivarla
+                también necesitamos un código nuevo.
+            </p>
+
+            <form method="post" novalidate class="profile-form profile-form--single">
+                {% csrf_token %}
+                {% if form.non_field_errors %}<div class="profile-form-error">{{ form.non_field_errors }}</div>{% endif %}
+                {% for field in form %}
+                {% if field.name == 'code' %}
+                <div class="profile-field profile-field--full">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {% include 'users/_code_input.html' with field=field code_digits=code_digits %}
+                    {% for error in field.errors %}<div class="profile-field-error">{{ error }}</div>{% endfor %}
+                </div>
+                {% else %}
+                <div class="profile-field profile-field--full">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% for error in field.errors %}<div class="profile-field-error">{{ error }}</div>{% endfor %}
+                </div>
+                {% endif %}
+                {% endfor %}
+                <div class="profile-form-actions">
+                    <button type="submit" class="profile-danger__btn"><i class="bi bi-shield-slash me-1"></i>Desactivar la verificación</button>
+                </div>
+            </form>
+            <form method="post" class="profile-form profile-form--single">
+                {% csrf_token %}
+                <button type="submit" name="resend" value="1" class="c-btn c-btn--outline w-100">Reenviarme el código</button>
+            </form>
+            {% else %}
+            <ul class="profile-confirm__list">
+                <li><i class="bi bi-x-circle me-2"></i>No está activada.</li>
+                <li><i class="bi bi-info-circle me-2"></i>Necesitas activarla para poder deshabilitar tu cuenta por tu cuenta.</li>
+                <li><i class="bi bi-info-circle me-2"></i>No pedimos código en cada inicio de sesión, solo en las acciones sensibles.</li>
+            </ul>
+
+            {% if pending_code %}
+            <form method="post" novalidate class="profile-form profile-form--single">
+                {% csrf_token %}
+                {% if form.non_field_errors %}<div class="profile-form-error">{{ form.non_field_errors }}</div>{% endif %}
+                {% for field in form %}
+                {% if field.name == 'code' %}
+                <div class="profile-field profile-field--full">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {% include 'users/_code_input.html' with field=field code_digits=code_digits %}
+                    {% for error in field.errors %}<div class="profile-field-error">{{ error }}</div>{% endfor %}
+                </div>
+                {% else %}
+                <div class="profile-field profile-field--full">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% for error in field.errors %}<div class="profile-field-error">{{ error }}</div>{% endfor %}
+                </div>
+                {% endif %}
+                {% endfor %}
+                <div class="profile-form-actions">
+                    <button type="submit" class="c-btn c-btn--primary">Activar la verificación</button>
+                </div>
+            </form>
+            <form method="post" class="profile-form profile-form--single">
+                {% csrf_token %}
+                <button type="submit" name="resend" value="1" class="c-btn c-btn--outline w-100">Reenviarme el código</button>
+            </form>
+            {% else %}
+            <p class="profile-subtitle">Te enviamos un código a {{ user.email }}. Revisa tu bandeja de entrada para continuar.</p>
+            <form method="post" class="profile-form profile-form--single">
+                {% csrf_token %}
+                <button type="submit" name="resend" value="1" class="c-btn c-btn--primary w-100">Enviarme el código</button>
+            </form>
+            {% endif %}
+            {% endif %}
+
+            <div class="profile-form profile-form--single">
+                <div class="profile-form-actions">
+                    <a href="{% url 'users:profile' %}" class="c-btn c-btn--outline">Volver al perfil</a>
+                </div>
+            </div>
+        </section>
+    </div>
+</main>
+
+{% include 'footer.html' %}
+<script src="{% static 'users/js/code_input.js' %}"></script>
+{% endblock %}

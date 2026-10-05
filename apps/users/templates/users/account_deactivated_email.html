@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es">
+
+<body style="margin:0;background:#f7f1f6;font-family:Arial,sans-serif;color:#29253a;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+        style="padding:32px 12px;background:#f7f1f6;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                    style="max-width:560px;background:#fff;border-radius:24px;box-shadow:0 16px 40px rgba(66,55,90,.14);overflow:hidden;">
+                    <tr>
+                        <td style="height:7px;background:linear-gradient(90deg,#e8609b,#5b8def);"></td>
+                    </tr>
+                    <tr>
+                        <td style="padding:40px;text-align:center;">
+                            <div
+                                style="margin:0 auto 28px;color:#20202a;font-size:30px;font-weight:700;letter-spacing:-1px;">
+                                Carely
+                            </div>
+                            <h1 style="margin:0 0 12px;font-size:26px;">Tu cuenta fue deshabilitada</h1>
+                            <p style="margin:0 0 28px;color:#6f6a7d;font-size:16px;line-height:1.6;">
+                                Hola {{ user.first_name|default:user.email }}, tu cuenta Carely ya está deshabilitada. No
+                                puedes iniciar sesión, agregar productos al carrito ni realizar pedidos.
+                            </p>
+                            <p style="margin:0 0 28px;color:#6f6a7d;font-size:16px;line-height:1.6;">
+                                Tu historial de pedidos y la información que registraste se conservan.
+                            </p>
+                            {% if reactivation_url %}
+                            <p style="margin:0 0 28px;color:#6f6a7d;font-size:16px;line-height:1.6;">
+                                Si cambias de opinión, usa el enlace de abajo para reactivar tu cuenta. Tiene una
+                                vigencia de {{ reactivation_validity }}.
+                            </p>
+                            <a href="{{ reactivation_url }}"
+                                style="display:inline-block;padding:14px 26px;border-radius:12px;background:#e8609b;color:#fff;text-decoration:none;font-weight:bold;">Reactivar
+                                mi cuenta</a>
+                            {% else %}
+                            <p style="margin:0 0 28px;color:#6f6a7d;font-size:16px;line-height:1.6;">
+                                Esta deshabilitación la realizó nuestro equipo de soporte. Para recuperar tu cuenta,
+                                escribe a <a href="mailto:{{ carely_email }}"
+                                    style="color:#e8609b;">{{ carely_email }}</a> desde el correo con el que te
+                                registraste y verificaremos tu identidad antes de reactivarla.
+                            </p>
+                            {% endif %}
+                            <p style="margin:28px 0 0;color:#999;font-size:13px;line-height:1.5;">
+                                Si no solicitaste esta acción, cambia tu contraseña y contacta a nuestro equipo de soporte
+                                de inmediato.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>

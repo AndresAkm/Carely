@@ -1,0 +1,40 @@
+{% extends 'errors/base.html' %}
+
+{% block error_title %}Acceso no autorizado{% endblock %}
+{% block error_class %}error-page--403{% endblock %}
+
+{% block error_content %}
+<section class="error-main">
+    <span class="error-code" aria-hidden="true">403</span>
+
+    <span class="error-eyebrow"><i class="bi bi-shield-lock me-1"></i>Error 403</span>
+    <h1 class="error-title">No tienes permiso para ver esta página</h1>
+    <p class="error-text">
+        Esta zona es solo para administradores de Carely. Si crees que se trata de un error
+        o necesitas acceder a tu cuenta, inicia sesión o escríbenos.
+    </p>
+
+    <div class="error-actions">
+        {% if user.is_authenticated %}
+        <a href="{% url 'core:home' %}" class="c-btn c-btn--primary c-btn--lg">
+            <i class="bi bi-house me-2"></i>Ir al inicio
+        </a>
+        {% else %}
+        <a href="{% url 'users:login' %}?next={{ next }}" class="c-btn c-btn--primary c-btn--lg">
+            <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar sesión
+        </a>
+        {% endif %}
+        <a href="{% url 'catalog:home' %}" class="c-btn c-btn--outline c-btn--lg">
+            <i class="bi bi-grid me-2"></i>Ver el catálogo
+        </a>
+    </div>
+
+    <div class="error-contact">
+        <p class="error-contact__text">
+            ¿Crees que deberías tener acceso? Escríbenos a
+            <a href="mailto:{{ carely_email }}">{{ carely_email }}</a>
+            y revisamos tu caso.
+        </p>
+    </div>
+</section>
+{% endblock %}

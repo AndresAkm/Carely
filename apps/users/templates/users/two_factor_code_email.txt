@@ -1,0 +1,7 @@
+Hola {{ user.first_name|default:user.email }},
+
+Tu código de verificación de Carely es:
+{{ code }}
+
+Vence en {{ minutes }} minutos y solo sirve una vez. Si no lo solicitaste,
+ignora este correo: tu cuenta sigue como estaba.

@@ -386,14 +386,13 @@ Revisa los productos en tu carrito de compras Carely antes de proceder al pago.
 
         function updateNavCount(newCount) {
 
-            const badge =
-                document.getElementById('nav-cart-badge');
+            document.querySelectorAll('.js-cart-count').forEach(badge => {
 
-            if (badge) {
                 badge.textContent = newCount;
-                badge.style.display =
-                    newCount > 0 ? 'inline-flex' : 'none';
-            }
+
+                badge.classList.toggle('is-empty', newCount <= 0);
+
+            });
         }
 
 

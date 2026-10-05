@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+
+<body style="margin:0;background:#f7f1f6;font-family:Arial,sans-serif;color:#29253a;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+        style="padding:32px 12px;background:#f7f1f6;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                    style="max-width:560px;background:#fff;border-radius:24px;box-shadow:0 16px 40px rgba(66,55,90,.14);overflow:hidden;">
+                    <tr>
+                        <td style="height:7px;background:linear-gradient(90deg,#e8609b,#5b8def);"></td>
+                    </tr>
+                    <tr>
+                        <td style="padding:40px;">
+                            <div
+                                style="margin:0 auto 28px;color:#20202a;font-size:30px;font-weight:700;letter-spacing:-1px;text-align:center;">
+                                Carely
+                            </div>
+                            <h1 style="margin:0 0 24px;font-size:24px;text-align:center;">Se deshabilitó una cuenta</h1>
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="font-size:15px;color:#6f6a7d;line-height:1.6;">
+                                <tr>
+                                    <td style="padding:8px 0;width:170px;color:#29253a;font-weight:bold;">Usuario</td>
+                                    <td style="padding:8px 0;">{{ user.email }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:8px 0;color:#29253a;font-weight:bold;">Nombre</td>
+                                    <td style="padding:8px 0;">{{ user.first_name }} {{ user.last_name }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:8px 0;color:#29253a;font-weight:bold;">Fecha</td>
+                                    <td style="padding:8px 0;">{{ deactivated_at }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:8px 0;color:#29253a;font-weight:bold;">Deshabilitada por</td>
+                                    <td style="padding:8px 0;">{{ actor }}</td>
+                                </tr>
+                            </table>
+                            <p style="margin:28px 0 0;color:#999;font-size:13px;line-height:1.5;">
+                                La cuenta conserva su historial de pedidos y sus datos. Si el titular escribe para
+                                recuperarla, verifícalo con el equipo antes de reactivarla desde el panel.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>

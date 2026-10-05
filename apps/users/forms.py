@@ -6,7 +6,8 @@ from django.contrib.auth.forms import SetPasswordForm
 from django.utils import timezone
 import re
 
-from .models import Address, City, Department
+from .models import Address, City, Department, TwoFactorCode
+from .services import consume_two_factor_code
 
 User = get_user_model()
 
@@ -171,6 +172,75 @@ class ProfileForm(forms.ModelForm):
         return user
 
 
+class TwoFactorCodeForm(forms.Form):
+    """Código de un solo uso recibido por correo."""
+
+    code = forms.CharField(
+        label='Código de verificación',
+        error_messages={'required': 'Escribe el código que te enviamos por correo.'},
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'autocomplete': 'one-time-code',
+            'inputmode': 'numeric',
+            'maxlength': settings.TWO_FACTOR_CODE_LENGTH,
+            'placeholder': '0' * settings.TWO_FACTOR_CODE_LENGTH,
+        }),
+    )
+
+    def __init__(self, user, purpose, *args, **kwargs):
+        self.user = user
+        self.purpose = purpose
+        super().__init__(*args, **kwargs)
+
+    def clean_code(self):
+        code = self.cleaned_data['code'].strip()
+        error = consume_two_factor_code(self.user, self.purpose, code)
+        if error:
+            raise ValidationError(error)
+        return code
+
+
+class TwoFactorDisableForm(forms.Form):
+    """Apagar el 2FA también se confirma con un código del correo."""
+
+    password = forms.CharField(
+        label='Contraseña actual',
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': '••••••••',
+            'autocomplete': 'current-password',
+        })
+    )
+    code = forms.CharField(
+        label='Código de verificación',
+        error_messages={'required': 'Escribe el código que te enviamos por correo.'},
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'autocomplete': 'one-time-code',
+            'inputmode': 'numeric',
+            'maxlength': settings.TWO_FACTOR_CODE_LENGTH,
+            'placeholder': '0' * settings.TWO_FACTOR_CODE_LENGTH,
+        }),
+    )
+
+    def __init__(self, user, *args, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+
+    def clean_password(self):
+        password = self.cleaned_data['password']
+        if not self.user.check_password(password):
+            raise ValidationError('La contraseña es incorrecta.')
+        return password
+
+    def clean_code(self):
+        code = self.cleaned_data['code'].strip()
+        error = consume_two_factor_code(self.user, TwoFactorCode.Purpose.ENABLE, code)
+        if error:
+            raise ValidationError(error)
+        return code
+
+
 class DeactivateAccountForm(forms.Form):
     password = forms.CharField(
         label='Contraseña actual',
@@ -187,6 +257,18 @@ class DeactivateAccountForm(forms.Form):
         },
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
     )
+    # Va al final a propósito: el código solo se consume si todo lo demás está bien.
+    code = forms.CharField(
+        label='Código de verificación',
+        error_messages={'required': 'Escribe el código que te enviamos por correo.'},
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'autocomplete': 'one-time-code',
+            'inputmode': 'numeric',
+            'maxlength': settings.TWO_FACTOR_CODE_LENGTH,
+            'placeholder': '0' * settings.TWO_FACTOR_CODE_LENGTH,
+        }),
+    )
 
     def __init__(self, user, *args, **kwargs):
         self.user = user
@@ -197,6 +279,13 @@ class DeactivateAccountForm(forms.Form):
         if not self.user.check_password(password):
             raise ValidationError('La contraseña es incorrecta.')
         return password
+
+    def clean_code(self):
+        code = self.cleaned_data['code'].strip()
+        error = consume_two_factor_code(self.user, TwoFactorCode.Purpose.DEACTIVATE, code)
+        if error:
+            raise ValidationError(error)
+        return code
 
 
 class ForceDeleteUserForm(forms.Form):

@@ -55,6 +55,9 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    # Va primero para poder interceptar las respuestas 403/404 de todo el
+    # sitio y pintarlas con las plantillas de Carely aun con DEBUG=True.
+    'apps.core.middleware.CarelyErrorPagesMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -249,6 +252,14 @@ EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'true').lower() in {'1', 'true',
 EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'false').lower() in {'1', 'true', 'yes', 'on'}
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'no-reply@carely.com')
 PASSWORD_RESET_TIMEOUT = 3600
+
+# Vigencia del enlace de reactivación que se envía al deshabilitar una cuenta.
+ACCOUNT_REACTIVATION_TIMEOUT = int(os.environ.get('ACCOUNT_REACTIVATION_TIMEOUT', 604800))
+
+# Verificación en dos pasos por código de un solo uso enviado al correo.
+TWO_FACTOR_CODE_LENGTH = int(os.environ.get('TWO_FACTOR_CODE_LENGTH', 6))
+TWO_FACTOR_CODE_TTL = int(os.environ.get('TWO_FACTOR_CODE_TTL', 600))
+TWO_FACTOR_MAX_ATTEMPTS = int(os.environ.get('TWO_FACTOR_MAX_ATTEMPTS', 5))
 
 # ── Datos públicos de la tienda (footer, legal, emails) ──────────────────────
 SITE_NAME = os.environ.get('CARELY_SITE_NAME', 'Carely')

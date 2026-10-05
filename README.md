@@ -30,6 +30,13 @@ Los recursos específicos de cada funcionalidad viven dentro de su app en
 `apps/<app>/static/<app>/` (css, js e imágenes), siguiendo el namespace
 recomendado por Django y conservando `static/` únicamente para lo compartido.
 
+## Agentes de IA
+
+Si vienes a trabajar en este proyecto con un asistente de IA, empieza por
+[`Agent/ONBOARDING.md`](Agent/ONBOARDING.md). Esa carpeta reúne las reglas, las
+convenciones y las recetas del proyecto, y `Agent/verify.ps1` ejecuta la
+comprobación completa (`check` + tests + migraciones + revisión del diff).
+
 
 ## Requisitos
 

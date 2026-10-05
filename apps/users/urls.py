@@ -1,6 +1,6 @@
 from django.contrib.auth import views as auth_views
 from django.urls import path
-from .views.web import AccountDeactivateView, AddressCreateView, AddressDeleteView, AddressListView, AddressSetDefaultView, AddressUpdateView, LoginView, LogoutView, PasswordChangeView, PasswordResetConfirmView, ProfileView, RegisterView, RegistrationConfirmationView, department_cities_api
+from .views.web import AccountDeactivateView, AddressCreateView, AddressDeleteView, AddressListView, AddressSetDefaultView, AddressUpdateView, LoginView, LogoutView, PasswordChangeView, PasswordResetConfirmView, PausedAccountView, ProfileView, ReactivateAccountView, RegisterView, RegistrationConfirmationView, TwoFactorSetupView, department_cities_api
 
 app_name = 'users'
 
@@ -10,7 +10,10 @@ urlpatterns = [
     path('register/confirmation/', RegistrationConfirmationView.as_view(), name='registration_confirmation'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('perfil/', ProfileView.as_view(), name='profile'),
+    path('verificacion-dos-pasos/', TwoFactorSetupView.as_view(), name='two_factor_setup'),
     path('deshabilitar-cuenta/', AccountDeactivateView.as_view(), name='account_deactivate'),
+    path('cuenta-pausada/', PausedAccountView.as_view(), name='account_paused'),
+    path('reactivar-cuenta/<str:token>/', ReactivateAccountView.as_view(), name='account_reactivate'),
 
     path('password-change/', PasswordChangeView.as_view(
         template_name='users/password_change.html',

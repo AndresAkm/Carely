@@ -1,0 +1,11 @@
+Hola equipo de soporte de Carely,
+
+Se deshabilitó una cuenta del sitio.
+
+Usuario: {{ user.email }}
+Nombre: {{ user.first_name }} {{ user.last_name }}
+Fecha: {{ deactivated_at }}
+Deshabilitada por: {{ actor }}
+
+La cuenta conserva su historial de pedidos y sus datos. Si el titular escribe
+para recuperarla, verifícalo con el equipo antes de reactivarla desde el panel.

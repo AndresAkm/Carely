@@ -1,0 +1,17 @@
+Hola {{ user.first_name|default:user.email }},
+
+Tu cuenta Carely fue deshabilitada. Ya no puedes iniciar sesión, agregar
+productos al carrito ni realizar pedidos.
+
+Tu historial de pedidos y la información que registraste se conservan.
+
+{% if reactivation_url %}Si cambias de opinión, puedes reactivar tu cuenta con este enlace. Tiene una
+vigencia de {{ reactivation_validity }} y solo funciona mientras la cuenta siga
+deshabilitada:
+{{ reactivation_url }}
+{% else %}Esta deshabilitación la realizó nuestro equipo de soporte. Para recuperar tu
+cuenta, escribe a {{ carely_email }} desde el correo con el que te registraste y
+verificaremos tu identidad antes de reactivarla.
+{% endif %}
+Si no solicitaste esta acción, cambia tu contraseña y contacta a nuestro equipo
+de soporte de inmediato.

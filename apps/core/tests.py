@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.conf import settings
 from django.urls import reverse
 from django.test import TestCase
 from rest_framework.test import APITestCase
@@ -134,6 +135,9 @@ class PageRenderSmokeTests(TestCase):
         from apps.catalog.models import Product
 
         self.user = User.objects.create_user(username='u', email='u@example.com', password='pass12345')
+        # Deshabilitar la cuenta exige 2FA activo; si no, la vista redirige.
+        self.user.two_factor_enabled = True
+        self.user.save()
         category = Category.objects.create(name='Perfumes', slug='perfumes', icon='bi-test')
         self.product = Product.objects.create(
             category=category, name='Aroma', slug='aroma',
@@ -169,6 +173,7 @@ class PageRenderSmokeTests(TestCase):
             reverse('users:address_list'),
             reverse('users:address_create'),
             reverse('users:account_deactivate'),
+            reverse('users:two_factor_setup'),
         ]
         for url in urls:
             with self.subTest(url=url):
@@ -223,3 +228,197 @@ class OrderStatusFormTemplateTests(TestCase):
         content = response.content.decode()
         self.assertIn('id="id_order_notes"', content)
         self.assertIn("getElementById('id_order_notes')", content)
+
+
+class ErrorPageTests(TestCase):
+    """Las páginas de error deben renderizar con el estilo de Carely."""
+
+    def test_404_view_returns_404_status(self):
+        response = self.client.get(reverse('core:error_404'))
+        self.assertEqual(response.status_code, 404)
+        self.assertTemplateUsed(response, 'errors/404.html')
+
+    def test_403_view_returns_403_status(self):
+        response = self.client.get(reverse('core:error_403'))
+        self.assertEqual(response.status_code, 403)
+        self.assertTemplateUsed(response, 'errors/403.html')
+
+    def test_unknown_url_renders_custom_404(self):
+        response = self.client.get('/ruta-que-no-existe/')
+        self.assertEqual(response.status_code, 404)
+        self.assertTemplateUsed(response, 'errors/404.html')
+
+    def test_404_shows_carely_content_not_django_default(self):
+        content = self.client.get('/ruta-que-no-existe/').content.decode()
+        self.assertIn('Esta página no existe', content)
+        self.assertIn('carely-logo', content)
+        # El mensaje por defecto de Django en inglés no debe aparecer.
+        self.assertNotIn('Page not found', content)
+
+    def test_404_offers_catalog_and_search(self):
+        content = self.client.get(reverse('core:error_404')).content.decode()
+        self.assertIn(reverse('catalog:home'), content)
+        self.assertIn('name="q"', content)
+        self.assertIn('Ver el catálogo', content)
+
+    def test_403_offers_login_when_anonymous(self):
+        content = self.client.get(reverse('core:error_403')).content.decode()
+        self.assertIn(reverse('users:login'), content)
+        self.assertIn('No tienes permiso', content)
+        self.assertNotIn('Page not found', content)
+
+    def test_403_offers_home_when_authenticated(self):
+        user = User.objects.create_user(
+            username='u', email='u@example.com', password='pass12345',
+        )
+        self.client.force_login(user)
+        content = self.client.get(reverse('core:error_403')).content.decode()
+        self.assertIn(reverse('core:home'), content)
+        # Ya hay sesión: ofrecer "iniciar sesión" sería absurdo.
+        self.assertNotIn(reverse('users:login'), content)
+
+    def test_403_preserves_next_destination(self):
+        response = self.client.get(reverse('core:error_403'), {'next': '/pedidos/'})
+        self.assertEqual(response.context['next'], '/pedidos/')
+        content = response.content.decode()
+        self.assertIn(f'{reverse("users:login")}?next=/pedidos/', content)
+
+    def test_403_falls_back_to_current_path(self):
+        """Sin `next` explícito debe usar la ruta que se intentó abrir."""
+        response = self.client.get(reverse('core:error_403'))
+        self.assertEqual(response.context['next'], '/errores/403/')
+
+    def test_403_uses_contact_email_from_settings(self):
+        content = self.client.get(reverse('core:error_403')).content.decode()
+        self.assertIn(settings.CARELY_EMAIL, content)
+
+    def test_both_pages_load_carely_stylesheet(self):
+        expectations = {
+            reverse('core:error_404'): 404,
+            reverse('core:error_403'): 403,
+        }
+        for url, status in expectations.items():
+            with self.subTest(url=url):
+                self.assertContains(
+                    self.client.get(url), 'core/css/errors.css', status_code=status,
+                )
+
+    def test_error_pages_are_not_indexed(self):
+        expectations = {
+            reverse('core:error_404'): 404,
+            reverse('core:error_403'): 403,
+        }
+        for url, status in expectations.items():
+            with self.subTest(url=url):
+                self.assertContains(self.client.get(url), 'noindex', status_code=status)
+
+    def test_real_403_from_protected_view_renders_carely_page(self):
+        """El 403 de Django debe usar la plantilla de Carely, no la genérica."""
+        user = User.objects.create_user(
+            username='cliente', email='cliente@example.com', password='pass12345',
+        )
+        self.client.force_login(user)
+        with self.settings(ROOT_URLCONF='apps.core.tests_test_urls'):
+            response = self.client.get('/protegida/')
+        self.assertEqual(response.status_code, 403)
+        self.assertTemplateUsed(response, '403.html')
+        self.assertContains(response, 'No tienes permiso', status_code=403)
+
+    def test_real_404_from_raised_http404_renders_carely_page(self):
+        """Igual para el 404: `Http404` debe pintar la página de Carely."""
+        with self.settings(ROOT_URLCONF='apps.core.tests_test_urls'):
+            response = self.client.get('/ruta-que-no-existe/')
+        self.assertEqual(response.status_code, 404)
+        self.assertTemplateUsed(response, '404.html')
+        self.assertContains(response, 'Esta página no existe', status_code=404)
+
+    def test_error_pages_are_reachable_in_development(self):
+        """Con DEBUG=True Django no usa 404.html, así que las vistas existen."""
+        with self.settings(DEBUG=True):
+            self.assertEqual(self.client.get(reverse('core:error_404')).status_code, 404)
+            self.assertEqual(self.client.get(reverse('core:error_403')).status_code, 403)
+
+
+class ErrorPagesWithDebugMiddlewareTests(TestCase):
+    """El middleware debe servir las páginas de Carely también con DEBUG=True."""
+
+    def test_404_is_branded_with_debug_true(self):
+        with self.settings(DEBUG=True):
+            response = self.client.get('/esta-ruta-no-existe/')
+        self.assertEqual(response.status_code, 404)
+        self.assertContains(response, 'Esta página no existe', status_code=404)
+        self.assertNotContains(response, 'didn’t match any of these', status_code=404)
+
+    def test_403_is_branded_with_debug_true(self):
+        with self.settings(ROOT_URLCONF='apps.core.tests_test_urls', DEBUG=True):
+            response = self.client.get('/protegida/')
+        self.assertEqual(response.status_code, 403)
+        self.assertContains(response, 'No tienes permiso', status_code=403)
+        self.assertNotContains(response, 'Username:', status_code=403)
+
+    def test_api_paths_are_never_branded(self):
+        """Bajo /api/ no se inyecta HTML: la API no debe recibir páginas web."""
+        with self.settings(DEBUG=True):
+            response = self.client.get(
+                '/api/v1/no-existe/',
+                headers={'accept': 'text/html'},
+            )
+        self.assertEqual(response.status_code, 404)
+        self.assertNotContains(response, 'Esta página no existe', status_code=404)
+
+    def test_json_client_response_is_passed_through_untouched(self):
+        """Un cliente JSON no debe recibir nuestra página: dejamos pasar su respuesta.
+
+        Nota: con `DEBUG=True` y una URL que no existe, Django entrega su propia
+        página técnica HTML antes de que exista cualquier respuesta JSON. Este
+        test comprueba lo que sí podemos garantizar: que el middleware no
+        inyecta la plantilla de Carely cuando el cliente no pide HTML.
+        """
+        with self.settings(DEBUG=True):
+            response = self.client.get(
+                '/no-existe/',
+                headers={'accept': 'application/json'},
+            )
+        self.assertEqual(response.status_code, 404)
+        self.assertNotContains(response, 'Esta página no existe', status_code=404)
+
+    def test_browser_gets_html_404(self):
+        with self.settings(DEBUG=True):
+            response = self.client.get(
+                '/no-existe/',
+                headers={'accept': 'text/html,application/xhtml+xml'},
+            )
+        self.assertIn('<html', response.content.decode().lower())
+
+    def test_normal_pages_are_untouched(self):
+        with self.settings(DEBUG=True):
+            response = self.client.get(reverse('core:home'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_500_is_not_intercepted(self):
+        """Los tracebacks de 500 deben seguir mostrándose en desarrollo."""
+        self.client.raise_request_exception = False
+        with self.settings(DEBUG=True, ROOT_URLCONF='apps.core.tests_test_urls'):
+            # Django registra el traceback en el logger `django.request`;
+            # lo silenciamos para no ensuciar la salida de los tests.
+            with self.assertLogs('django.request', level='ERROR') as logs:
+                response = self.client.get('/falla/')
+        self.assertEqual(response.status_code, 500)
+        self.assertTrue(
+            any('Internal Server Error' in line for line in logs.output),
+            logs.output,
+        )
+        self.assertNotContains(response, 'Esta página no existe', status_code=500)
+        self.assertNotContains(response, 'No tienes permiso', status_code=500)
+
+    def test_404_still_uses_carely_template_with_debug_false(self):
+        with self.settings(DEBUG=False):
+            response = self.client.get('/esta-ruta-no-existe/')
+        self.assertEqual(response.status_code, 404)
+        self.assertContains(response, 'Esta página no existe', status_code=404)
+
+    def test_error_pages_never_leak_url_patterns(self):
+        with self.settings(DEBUG=True):
+            content = self.client.get('/x/').content.decode()
+        self.assertNotIn('URLconf defined in', content)
+        self.assertNotIn('didn', content)

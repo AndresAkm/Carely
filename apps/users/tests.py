@@ -1,13 +1,19 @@
+from datetime import timedelta
+import re
+from unittest.mock import patch
+
 from django.conf import settings
+from django.contrib.auth.hashers import make_password
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core import mail
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .models import Address, City, Department, User
+from .models import Address, City, Department, TwoFactorCode, User
+from .services import GmailServiceError, build_reactivation_token
 
 
 def create_user(**kwargs):
@@ -18,6 +24,17 @@ def create_user(**kwargs):
     }
     defaults.update(kwargs)
     return User.objects.create_user(**defaults)
+
+
+def issue_two_factor_code(user, purpose, code='123456', ttl_seconds=None):
+    """Deja un código vigente como si el usuario lo hubiera recibido por correo."""
+    expires_in = settings.TWO_FACTOR_CODE_TTL if ttl_seconds is None else ttl_seconds
+    return TwoFactorCode.objects.create(
+        user=user,
+        purpose=purpose,
+        code_hash=make_password(code),
+        expires_at=timezone.now() + timedelta(seconds=expires_in),
+    )
 
 
 _geo_counter = [0]
@@ -454,44 +471,129 @@ class AccountDeactivateTests(TestCase):
 
     def setUp(self):
         self.user = create_user()
+        self.user.two_factor_enabled = True
+        self.user.save()
         self.url = reverse('users:account_deactivate')
+        self.code = '123456'
+
+    def deactivate(self, **overrides):
+        issue_two_factor_code(self.user, TwoFactorCode.Purpose.DEACTIVATE, self.code)
+        data = {'password': 'pass12345', 'confirm': 'on', 'code': self.code}
+        data.update(overrides)
+        return self.client.post(self.url, data)
 
     def test_requires_login(self):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 302)
         self.assertIn(reverse('users:login'), response.url)
 
-    def test_get_renders_confirmation_page(self):
+    def test_two_factor_is_required_before_deactivating(self):
+        self.user.two_factor_enabled = False
+        self.user.save()
+        self.client.force_login(self.user)
+        response = self.client.post(self.url, {'password': 'pass12345', 'confirm': 'on'})
+        self.assertRedirects(response, reverse('users:two_factor_setup'))
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.is_active)
+
+    def test_get_renders_confirmation_page_and_sends_the_code(self):
+        mail.outbox = []
         self.client.force_login(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'users/deactivate_account.html')
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].subject, 'Tu código de verificación de Carely')
+        self.assertEqual(mail.outbox[0].to, [self.user.email])
+        self.assertTrue(
+            TwoFactorCode.objects.filter(
+                user=self.user, purpose=TwoFactorCode.Purpose.DEACTIVATE, used_at__isnull=True,
+            ).exists()
+        )
+
+    def test_get_renders_the_code_as_digit_boxes(self):
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        # El input real sigue siendo el que envía el formulario.
+        self.assertContains(response, 'name="code"')
+        self.assertContains(response, 'data-code-input')
+        self.assertContains(response, 'data-code-box', count=settings.TWO_FACTOR_CODE_LENGTH)
+        self.assertContains(response, 'users/js/code_input.js')
+
+    def test_get_does_not_resend_a_pending_code(self):
+        issue_two_factor_code(self.user, TwoFactorCode.Purpose.DEACTIVATE, self.code)
+        mail.outbox = []
+        self.client.force_login(self.user)
+        self.client.get(self.url)
+        self.assertEqual(len(mail.outbox), 0)
 
     def test_deactivates_account_and_logs_out(self):
         self.client.force_login(self.user)
-        response = self.client.post(self.url, {'password': 'pass12345', 'confirm': 'on'})
+        response = self.deactivate()
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse('core:home'))
         self.user.refresh_from_db()
         self.assertFalse(self.user.is_active)
         self.assertNotIn('_auth_user_id', self.client.session)
 
+    def test_records_who_and_when_deactivated(self):
+        self.client.force_login(self.user)
+        self.deactivate()
+        self.user.refresh_from_db()
+        self.assertIsNotNone(self.user.deactivated_at)
+        self.assertIsNone(self.user.deactivated_by)
+        self.assertFalse(self.user.was_deactivated_by_admin)
+
+    def test_email_to_user_carries_reactivation_link(self):
+        mail.outbox = []
+        self.client.force_login(self.user)
+        self.deactivate()
+        self.assertEqual(len(mail.outbox), 2)
+        email = mail.outbox[0]
+        self.assertEqual(email.subject, 'Tu cuenta Carely fue deshabilitada')
+        self.assertEqual(email.to, [self.user.email])
+        self.assertIn(reverse('users:account_reactivate', args=[build_reactivation_token(self.user)]), email.body)
+
+    def test_notice_goes_to_support_without_reactivation_link(self):
+        mail.outbox = []
+        self.client.force_login(self.user)
+        self.deactivate()
+        notice = mail.outbox[1]
+        self.assertEqual(notice.subject, f'Cuenta deshabilitada: {self.user.email}')
+        self.assertEqual(notice.to, [settings.CARELY_EMAIL])
+        self.assertIn('El titular de la cuenta', notice.body)
+        self.assertNotIn('/accounts/reactivar-cuenta/', notice.body)
+
+    def test_account_stays_deactivated_when_email_fails(self):
+        issue_two_factor_code(self.user, TwoFactorCode.Purpose.DEACTIVATE, self.code)
+        with patch('apps.users.services.GmailService.send_message', side_effect=GmailServiceError('sin red')):
+            mail.outbox = []
+            self.client.force_login(self.user)
+            response = self.client.post(self.url, {
+                'password': 'pass12345', 'confirm': 'on', 'code': self.code,
+            })
+        self.assertEqual(response.status_code, 302)
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.is_active)
+        self.assertEqual(len(mail.outbox), 0)
+
     def test_inactive_user_cannot_login_afterwards(self):
         from django.contrib.auth import authenticate
         self.client.force_login(self.user)
-        self.client.post(self.url, {'password': 'pass12345', 'confirm': 'on'})
+        self.deactivate()
         self.client.logout()
         response = self.client.post(reverse('users:login'), {
             'email': self.user.email,
             'password': 'pass12345',
         })
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('users:account_paused'))
         self.assertNotIn('_auth_user_id', self.client.session)
         self.assertIsNone(authenticate(username=self.user.email, password='pass12345'))
 
     def test_wrong_password_keeps_account_active(self):
         self.client.force_login(self.user)
-        response = self.client.post(self.url, {'password': 'incorrecta', 'confirm': 'on'})
+        response = self.deactivate(password='incorrecta')
         self.assertEqual(response.status_code, 200)
         self.user.refresh_from_db()
         self.assertTrue(self.user.is_active)
@@ -499,11 +601,101 @@ class AccountDeactivateTests(TestCase):
 
     def test_missing_confirmation_keeps_account_active(self):
         self.client.force_login(self.user)
-        response = self.client.post(self.url, {'password': 'pass12345'})
+        response = self.client.post(self.url, {
+            'password': 'pass12345', 'code': self.code, 'confirm': '',
+        })
         self.assertEqual(response.status_code, 200)
         self.user.refresh_from_db()
         self.assertTrue(self.user.is_active)
         self.assertIn('confirm', response.context['form'].errors)
+
+    def test_missing_confirmation_does_not_consume_the_code(self):
+        self.client.force_login(self.user)
+        issue_two_factor_code(self.user, TwoFactorCode.Purpose.DEACTIVATE, self.code)
+        self.client.post(self.url, {'password': 'pass12345', 'code': self.code})
+        self.assertFalse(
+            TwoFactorCode.objects.filter(
+                user=self.user, purpose=TwoFactorCode.Purpose.DEACTIVATE, used_at__isnull=True,
+            ).exists()
+        )
+
+    def test_wrong_code_keeps_account_active(self):
+        self.client.force_login(self.user)
+        response = self.deactivate(code='000000')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('code', response.context['form'].errors)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.is_active)
+
+    def test_missing_code_keeps_account_active(self):
+        self.client.force_login(self.user)
+        response = self.deactivate(code='')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('code', response.context['form'].errors)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.is_active)
+
+    def test_code_cannot_be_used_twice(self):
+        self.client.force_login(self.user)
+        issue_two_factor_code(self.user, TwoFactorCode.Purpose.DEACTIVATE, self.code)
+        payload = {'password': 'pass12345', 'confirm': 'on', 'code': self.code}
+        self.assertEqual(self.client.post(self.url, payload).status_code, 302)
+        self.user.refresh_from_db()
+        self.user.is_active = True
+        self.user.save()
+        self.client.force_login(self.user)
+        response = self.client.post(self.url, payload)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('code', response.context['form'].errors)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.is_active)
+
+    def test_expired_code_keeps_account_active(self):
+        self.client.force_login(self.user)
+        issue_two_factor_code(self.user, TwoFactorCode.Purpose.DEACTIVATE, self.code, ttl_seconds=-10)
+        response = self.client.post(self.url, {
+            'password': 'pass12345', 'confirm': 'on', 'code': self.code,
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('code', response.context['form'].errors)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.is_active)
+
+    def test_get_replaces_an_expired_code(self):
+        self.client.force_login(self.user)
+        issue_two_factor_code(self.user, TwoFactorCode.Purpose.DEACTIVATE, self.code, ttl_seconds=-10)
+        mail.outbox = []
+        self.client.get(self.url)
+        self.assertEqual(len(mail.outbox), 1)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.is_active)
+
+    def test_code_is_locked_after_too_many_attempts(self):
+        self.client.force_login(self.user)
+        locked_code = issue_two_factor_code(self.user, TwoFactorCode.Purpose.DEACTIVATE, self.code)
+        locked_code.failed_attempts = settings.TWO_FACTOR_MAX_ATTEMPTS
+        locked_code.save(update_fields=['failed_attempts'])
+        response = self.client.post(self.url, {
+            'password': 'pass12345', 'confirm': 'on', 'code': self.code,
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('code', response.context['form'].errors)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.is_active)
+
+    def test_resend_replaces_the_previous_code(self):
+        issue_two_factor_code(self.user, TwoFactorCode.Purpose.DEACTIVATE, self.code)
+        mail.outbox = []
+        self.client.force_login(self.user)
+        response = self.client.post(self.url, {'resend': '1'})
+        self.assertRedirects(response, self.url)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(
+            TwoFactorCode.objects.filter(
+                user=self.user, purpose=TwoFactorCode.Purpose.DEACTIVATE, used_at__isnull=True,
+            ).count(),
+            1,
+        )
 
     def test_admin_is_redirected_to_dashboard(self):
         admin = create_user(
@@ -511,11 +703,537 @@ class AccountDeactivateTests(TestCase):
             role=User.Role.ADMIN, is_staff=True,
         )
         self.client.force_login(admin)
-        response = self.client.post(self.url, {'password': 'pass12345', 'confirm': 'on'})
+        response = self.client.post(self.url, {
+            'password': 'pass12345', 'confirm': 'on', 'code': self.code,
+        })
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse('core:dashboard'))
         admin.refresh_from_db()
         self.assertTrue(admin.is_active)
+
+
+class TwoFactorSetupTests(TestCase):
+
+    def setUp(self):
+        self.user = create_user()
+        self.url = reverse('users:two_factor_setup')
+        self.code = '123456'
+
+    def test_requires_login(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse('users:login'), response.url)
+
+    def test_get_sends_a_code_once(self):
+        mail.outbox = []
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'users/two_factor_setup.html')
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].subject, 'Tu código de verificación de Carely')
+        self.assertEqual(mail.outbox[0].to, [self.user.email])
+
+    def test_get_does_not_resend_a_pending_code(self):
+        issue_two_factor_code(self.user, TwoFactorCode.Purpose.ENABLE, self.code)
+        mail.outbox = []
+        self.client.force_login(self.user)
+        self.client.get(self.url)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_activating_renders_the_code_as_digit_boxes(self):
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        self.assertContains(response, 'name="code"')
+        self.assertContains(response, 'data-code-box', count=settings.TWO_FACTOR_CODE_LENGTH)
+        self.assertContains(response, 'users/css/code_input.css')
+
+    def test_disabling_also_renders_the_digit_boxes(self):
+        self.user.two_factor_enabled = True
+        self.user.save()
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        self.assertContains(response, 'name="code"')
+        self.assertContains(response, 'data-code-box', count=settings.TWO_FACTOR_CODE_LENGTH)
+
+    def test_the_back_link_keeps_the_card_padding(self):
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        # Sin el envoltorio .profile-form el botón queda pegado al borde.
+        self.assertRegex(
+            response.content.decode(),
+            r'<div class="profile-form profile-form--single">\s*'
+            r'<div class="profile-form-actions">\s*'
+            r'<a href="' + re.escape(reverse('users:profile')) + r'"',
+        )
+
+    def test_get_replaces_an_expired_code(self):
+        issue_two_factor_code(self.user, TwoFactorCode.Purpose.ENABLE, self.code, ttl_seconds=-10)
+        mail.outbox = []
+        self.client.force_login(self.user)
+        self.client.get(self.url)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(TwoFactorCode.objects.filter(user=self.user).count(), 1)
+        self.assertTrue(
+            TwoFactorCode.objects.get(user=self.user).is_usable
+        )
+
+    def test_disabling_sends_the_code_too(self):
+        self.user.two_factor_enabled = True
+        self.user.save()
+        mail.outbox = []
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertTrue(
+            TwoFactorCode.objects.filter(
+                user=self.user, purpose=TwoFactorCode.Purpose.ENABLE, used_at__isnull=True,
+            ).exists()
+        )
+
+    def test_correct_code_activates_two_factor(self):
+        self.client.force_login(self.user)
+        issue_two_factor_code(self.user, TwoFactorCode.Purpose.ENABLE, self.code)
+        response = self.client.post(self.url, {'code': self.code})
+        self.assertRedirects(response, self.url)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.two_factor_enabled)
+        self.assertIsNotNone(self.user.two_factor_enabled_at)
+
+    def test_wrong_code_keeps_two_factor_disabled(self):
+        self.client.force_login(self.user)
+        issue_two_factor_code(self.user, TwoFactorCode.Purpose.ENABLE, self.code)
+        response = self.client.post(self.url, {'code': '000000'})
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.two_factor_enabled)
+
+    def test_expired_code_keeps_two_factor_disabled(self):
+        self.client.force_login(self.user)
+        issue_two_factor_code(self.user, TwoFactorCode.Purpose.ENABLE, self.code, ttl_seconds=-10)
+        response = self.client.post(self.url, {'code': self.code})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('code', response.context['form'].errors)
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.two_factor_enabled)
+
+    def test_activation_code_is_locked_after_too_many_attempts(self):
+        self.client.force_login(self.user)
+        issue_two_factor_code(self.user, TwoFactorCode.Purpose.ENABLE, self.code)
+        for _ in range(settings.TWO_FACTOR_MAX_ATTEMPTS):
+            response = self.client.post(self.url, {'code': '000000'})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Demasiados intentos', str(response.context['form'].errors['code']))
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.two_factor_enabled)
+
+    def test_asking_for_a_code_without_one_pending(self):
+        self.client.force_login(self.user)
+        response = self.client.post(self.url, {'code': self.code})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Pide un código', str(response.context['form'].errors['code']))
+
+    def test_resend_replaces_the_previous_code(self):
+        issue_two_factor_code(self.user, TwoFactorCode.Purpose.ENABLE, self.code)
+        mail.outbox = []
+        self.client.force_login(self.user)
+        response = self.client.post(self.url, {'resend': '1'})
+        self.assertRedirects(response, self.url)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(
+            TwoFactorCode.objects.filter(
+                user=self.user, purpose=TwoFactorCode.Purpose.ENABLE, used_at__isnull=True,
+            ).count(),
+            1,
+        )
+
+    def test_disable_asks_for_password_and_code(self):
+        self.user.two_factor_enabled = True
+        self.user.save()
+        self.client.force_login(self.user)
+        response = self.client.post(self.url, {'password': 'incorrecta', 'code': self.code})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('password', response.context['form'].errors)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.two_factor_enabled)
+
+    def test_disable_turns_two_factor_off_and_drops_pending_codes(self):
+        self.user.two_factor_enabled = True
+        self.user.save()
+        issue_two_factor_code(self.user, TwoFactorCode.Purpose.ENABLE, self.code)
+        self.client.force_login(self.user)
+        response = self.client.post(self.url, {'password': 'pass12345', 'code': self.code})
+        self.assertRedirects(response, self.url, fetch_redirect_response=False)
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.two_factor_enabled)
+        self.assertIsNone(self.user.two_factor_enabled_at)
+        self.assertFalse(
+            TwoFactorCode.objects.filter(user=self.user, used_at__isnull=True).exists()
+        )
+
+    def test_disabling_needs_a_fresh_code(self):
+        self.user.two_factor_enabled = True
+        self.user.save()
+        self.client.force_login(self.user)
+        self.client.post(self.url, {'password': 'pass12345', 'code': self.code})
+        response = self.client.post(self.url, {'password': 'pass12345', 'code': self.code})
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.two_factor_enabled)
+
+    def test_admin_is_redirected_to_dashboard(self):
+        admin = create_user(
+            username='admin', email='admin@example.com',
+            role=User.Role.ADMIN, is_staff=True,
+        )
+        self.client.force_login(admin)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('core:dashboard'))
+        admin.refresh_from_db()
+        self.assertFalse(admin.two_factor_enabled)
+
+
+class PausedAccountTests(TestCase):
+
+    def setUp(self):
+        # El login autentica por username, y el registro lo guarda igual al email.
+        self.user = create_user(username='test@example.com', email='test@example.com')
+        self.user.is_active = False
+        self.user.deactivated_at = timezone.now()
+        self.user.save()
+        self.login_url = reverse('users:login')
+        self.paused_url = reverse('users:account_paused')
+        self.code = '123456'
+
+    def login_with_paused_account(self, password='pass12345'):
+        return self.client.post(self.login_url, {
+            'email': self.user.email,
+            'password': password,
+        })
+
+    def deactivate_by_admin(self):
+        admin = create_user(
+            username='admin', email='admin@example.com',
+            role=User.Role.ADMIN, is_staff=True,
+        )
+        self.user.deactivated_by = admin
+        self.user.save()
+        return admin
+
+    def test_correct_password_lands_on_paused_screen(self):
+        response = self.login_with_paused_account()
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, self.paused_url)
+        self.assertNotIn('_auth_user_id', self.client.session)
+        self.assertTemplateUsed(self.client.get(self.paused_url), 'users/paused_account.html')
+
+    def test_screen_renders_the_code_as_digit_boxes(self):
+        self.login_with_paused_account()
+        response = self.client.get(self.paused_url)
+        self.assertContains(response, 'name="code"')
+        self.assertContains(response, 'data-code-box', count=settings.TWO_FACTOR_CODE_LENGTH)
+        self.assertContains(response, 'users/css/code_input.css')
+
+    def test_no_digit_boxes_when_an_admin_deactivated_it(self):
+        self.deactivate_by_admin()
+        self.login_with_paused_account()
+        response = self.client.get(self.paused_url)
+        self.assertNotContains(response, 'data-code-box')
+
+    def test_wrong_password_does_not_reveal_the_status(self):
+        response = self.login_with_paused_account(password='incorrecta')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'users/login.html')
+        self.assertNotContains(response, 'está pausada')
+
+    def test_active_account_does_not_see_paused_screen(self):
+        self.user.is_active = True
+        self.user.save()
+        response = self.login_with_paused_account()
+        self.assertEqual(response.status_code, 302)
+        self.assertNotEqual(response.url, self.paused_url)
+
+    def test_paused_screen_needs_the_login_session(self):
+        response = self.client.get(self.paused_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, self.login_url)
+
+    def test_screen_sends_a_reactivation_code(self):
+        mail.outbox = []
+        self.login_with_paused_account()
+        response = self.client.get(self.paused_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].subject, 'Tu código de verificación de Carely')
+        self.assertEqual(mail.outbox[0].to, [self.user.email])
+        self.assertTrue(
+            TwoFactorCode.objects.filter(
+                user=self.user, purpose=TwoFactorCode.Purpose.REACTIVATE, used_at__isnull=True,
+            ).exists()
+        )
+
+    def test_screen_resends_the_code_on_demand(self):
+        issue_two_factor_code(self.user, TwoFactorCode.Purpose.REACTIVATE, self.code)
+        mail.outbox = []
+        self.login_with_paused_account()
+        response = self.client.post(self.paused_url, {'resend': '1'})
+        self.assertRedirects(response, self.paused_url)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].subject, 'Tu código de verificación de Carely')
+
+    def test_correct_code_reactivates_the_account(self):
+        self.login_with_paused_account()
+        issue_two_factor_code(self.user, TwoFactorCode.Purpose.REACTIVATE, self.code)
+        response = self.client.post(self.paused_url, {'code': self.code})
+        self.assertRedirects(response, self.login_url, fetch_redirect_response=False)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.is_active)
+        self.assertIsNone(self.user.deactivated_at)
+        self.assertNotIn('paused_user_id', self.client.session)
+
+    def test_reactivated_user_can_login_again(self):
+        self.login_with_paused_account()
+        issue_two_factor_code(self.user, TwoFactorCode.Purpose.REACTIVATE, self.code)
+        self.client.post(self.paused_url, {'code': self.code})
+        response = self.client.post(self.login_url, {
+            'email': self.user.email,
+            'password': 'pass12345',
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertNotEqual(response.url, self.paused_url)
+        self.assertIn('_auth_user_id', self.client.session)
+
+    def test_wrong_code_keeps_the_account_paused(self):
+        self.login_with_paused_account()
+        issue_two_factor_code(self.user, TwoFactorCode.Purpose.REACTIVATE, self.code)
+        response = self.client.post(self.paused_url, {'code': '000000'})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('code', response.context['form'].errors)
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.is_active)
+
+    def test_code_is_refused_without_the_login_session(self):
+        issue_two_factor_code(self.user, TwoFactorCode.Purpose.REACTIVATE, self.code)
+        response = self.client.post(self.paused_url, {'code': self.code})
+        self.assertRedirects(response, self.login_url, fetch_redirect_response=False)
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.is_active)
+
+    def test_expired_code_keeps_the_account_paused(self):
+        self.login_with_paused_account()
+        issue_two_factor_code(self.user, TwoFactorCode.Purpose.REACTIVATE, self.code, ttl_seconds=-10)
+        response = self.client.post(self.paused_url, {'code': self.code})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('code', response.context['form'].errors)
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.is_active)
+
+    def test_code_cannot_be_used_twice(self):
+        self.login_with_paused_account()
+        issue_two_factor_code(self.user, TwoFactorCode.Purpose.REACTIVATE, self.code)
+        self.assertEqual(self.client.post(self.paused_url, {'code': self.code}).status_code, 302)
+        self.user.is_active = False
+        self.user.deactivated_at = timezone.now()
+        self.user.save()
+        self.login_with_paused_account()
+        response = self.client.post(self.paused_url, {'code': self.code})
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.is_active)
+
+    def test_screen_replaces_an_expired_code(self):
+        self.login_with_paused_account()
+        issue_two_factor_code(self.user, TwoFactorCode.Purpose.REACTIVATE, self.code, ttl_seconds=-10)
+        mail.outbox = []
+        self.client.get(self.paused_url)
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_screen_does_not_resend_a_pending_code(self):
+        self.login_with_paused_account()
+        issue_two_factor_code(self.user, TwoFactorCode.Purpose.REACTIVATE, self.code)
+        mail.outbox = []
+        self.client.get(self.paused_url)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_screen_offers_support_when_an_admin_deactivated_it(self):
+        self.deactivate_by_admin()
+        self.login_with_paused_account()
+        response = self.client.get(self.paused_url)
+        self.assertContains(response, settings.CARELY_EMAIL)
+        self.assertNotContains(response, 'Reactivar mi cuenta')
+
+    def test_admin_deactivated_account_ignores_the_code(self):
+        self.deactivate_by_admin()
+        session = self.client.session
+        session['paused_user_id'] = self.user.pk
+        session.save()
+        issue_two_factor_code(self.user, TwoFactorCode.Purpose.REACTIVATE, self.code)
+        response = self.client.post(self.paused_url, {'code': self.code})
+        self.assertRedirects(response, self.login_url, fetch_redirect_response=False)
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.is_active)
+
+    def test_no_code_is_sent_when_an_admin_deactivated_it(self):
+        self.deactivate_by_admin()
+        mail.outbox = []
+        session = self.client.session
+        session['paused_user_id'] = self.user.pk
+        session.save()
+        self.client.get(self.paused_url)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_resend_is_refused_when_an_admin_deactivated_it(self):
+        self.deactivate_by_admin()
+        mail.outbox = []
+        session = self.client.session
+        session['paused_user_id'] = self.user.pk
+        session.save()
+        response = self.client.post(self.paused_url, {'resend': '1'})
+        self.assertRedirects(response, self.login_url, fetch_redirect_response=False)
+        self.assertEqual(len(mail.outbox), 0)
+
+
+class ReactivateAccountTests(TestCase):
+
+    def setUp(self):
+        self.user = create_user(username='test@example.com', email='test@example.com')
+        self.user.is_active = False
+        self.user.deactivated_at = timezone.now()
+        self.user.save()
+
+    def reactivate_url(self, user=None):
+        user = user or self.user
+        return reverse('users:account_reactivate', args=[build_reactivation_token(user)])
+
+    def test_get_shows_confirmation_page(self):
+        response = self.client.get(self.reactivate_url())
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'users/reactivate_account.html')
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.is_active)
+
+    def test_post_reactivates_and_clears_the_audit_trail(self):
+        response = self.client.post(self.reactivate_url())
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('users:login'))
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.is_active)
+        self.assertIsNone(self.user.deactivated_at)
+        self.assertIsNone(self.user.deactivated_by)
+
+    def test_reactivated_user_can_login_again(self):
+        self.client.post(self.reactivate_url())
+        response = self.client.post(reverse('users:login'), {
+            'email': self.user.email,
+            'password': 'pass12345',
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('_auth_user_id', self.client.session)
+
+    def test_token_of_an_admin_deactivated_account_is_refused(self):
+        admin = create_user(
+            username='admin', email='admin@example.com',
+            role=User.Role.ADMIN, is_staff=True,
+        )
+        self.user.deactivated_by = admin
+        self.user.save()
+        response = self.client.post(self.reactivate_url())
+        self.assertContains(response, 'El enlace no es válido')
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.is_active)
+
+    def test_token_stops_working_once_the_account_is_active(self):
+        url = self.reactivate_url()
+        self.client.post(url)
+        response = self.client.post(url)
+        self.assertContains(response, 'El enlace no es válido')
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.is_active)
+
+    def test_forged_token_explains_that_the_link_is_invalid(self):
+        url = reverse('users:account_reactivate', args=['token-falso'])
+        self.assertContains(self.client.get(url), 'El enlace no es válido')
+        self.assertContains(self.client.post(url), 'El enlace no es válido')
+
+    @override_settings(ACCOUNT_REACTIVATION_TIMEOUT=-1)
+    def test_expired_token_explains_that_the_link_is_invalid(self):
+        response = self.client.post(self.reactivate_url())
+        self.assertContains(response, 'El enlace no es válido')
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.is_active)
+
+
+class DashboardDeactivationAuditTests(TestCase):
+
+    def setUp(self):
+        self.admin = create_user(
+            username='admin', email='admin@example.com',
+            role=User.Role.ADMIN, is_staff=True,
+        )
+        self.client_user = create_user()
+        self.toggle_url = reverse('dashboard:user_toggle_active', args=[self.client_user.pk])
+        self.update_url = reverse('dashboard:user_update', args=[self.client_user.pk])
+
+    def test_toggle_records_the_admin_and_notifies(self):
+        mail.outbox = []
+        self.client.force_login(self.admin)
+        response = self.client.post(self.toggle_url)
+        self.assertEqual(response.status_code, 302)
+        self.client_user.refresh_from_db()
+        self.assertFalse(self.client_user.is_active)
+        self.assertEqual(self.client_user.deactivated_by, self.admin)
+        self.assertIsNotNone(self.client_user.deactivated_at)
+        self.assertEqual(len(mail.outbox), 2)
+        self.assertEqual(mail.outbox[0].to, [self.client_user.email])
+        self.assertEqual(mail.outbox[1].to, [settings.CARELY_EMAIL])
+
+    def test_toggle_email_to_user_has_no_reactivation_link(self):
+        mail.outbox = []
+        self.client.force_login(self.admin)
+        self.client.post(self.toggle_url)
+        self.assertNotIn('/accounts/reactivar-cuenta/', mail.outbox[0].body)
+        self.assertIn(settings.CARELY_EMAIL, mail.outbox[0].body)
+
+    def test_edit_form_records_the_admin_and_notifies(self):
+        mail.outbox = []
+        self.client.force_login(self.admin)
+        response = self.client.post(self.update_url, {
+            'first_name': 'Ana',
+            'last_name': 'Restrepo',
+            'email': self.client_user.email,
+            'phone': '',
+            'role': User.Role.CLIENT,
+        })
+        self.assertEqual(response.status_code, 302)
+        self.client_user.refresh_from_db()
+        self.assertFalse(self.client_user.is_active)
+        self.assertEqual(self.client_user.deactivated_by, self.admin)
+        self.assertEqual(len(mail.outbox), 2)
+
+    def test_edit_form_keeps_the_other_edited_fields(self):
+        self.client.force_login(self.admin)
+        self.client.post(self.update_url, {
+            'first_name': 'Ana',
+            'last_name': 'Restrepo',
+            'email': self.client_user.email,
+            'phone': '3001234567',
+            'role': User.Role.CLIENT,
+        })
+        self.client_user.refresh_from_db()
+        self.assertFalse(self.client_user.is_active)
+        self.assertEqual(self.client_user.first_name, 'Ana')
+        self.assertEqual(self.client_user.phone, '3001234567')
+
+    def test_toggle_back_clears_the_audit_trail(self):
+        self.client.force_login(self.admin)
+        self.client.post(self.toggle_url)
+        self.client.post(self.toggle_url)
+        self.client_user.refresh_from_db()
+        self.assertTrue(self.client_user.is_active)
+        self.assertIsNone(self.client_user.deactivated_at)
+        self.assertIsNone(self.client_user.deactivated_by)
 
 
 def register_payload(**overrides):

@@ -5,6 +5,7 @@
 
 {% block extra_css %}
 <link href="{% static 'users/css/profile.css' %}?v=2" rel="stylesheet">
+<link href="{% static 'users/css/code_input.css' %}?v=1" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
@@ -15,7 +16,7 @@
         <div class="profile-header">
             <span class="profile-eyebrow"><i class="bi bi-slash-circle me-1"></i>Zona de peligro</span>
             <h1 class="profile-title">Deshabilitar mi cuenta</h1>
-            <p class="profile-subtitle">Esta acción es permanente. Confirma tu contraseña para continuar.</p>
+            <p class="profile-subtitle">Esta acción es permanente. Confirma tu contraseña y el código que te enviamos al correo {{ user.email }}.</p>
         </div>
 
         <section class="profile-card profile-confirm">
@@ -28,27 +29,46 @@
                 <li><i class="bi bi-x-circle me-2"></i>No podrás realizar pedidos, agregar productos al carrito ni gestionar tus direcciones.</li>
                 <li><i class="bi bi-x-circle me-2"></i>No recibirás promociones, recordatorios de carrito ni comunicaciones comerciales.</li>
                 <li><i class="bi bi-check-circle me-2"></i>Tu historial de pedidos y la información que registraste se conservan y pueden solicitarse escribiendo a {{ carely_email }}.</li>
-                <li><i class="bi bi-info-circle me-2"></i>Puedes solicitar la reactivación de tu cuenta en cualquier momento escribiendo a {{ carely_email }}.</li>
+                <li><i class="bi bi-info-circle me-2"></i>Al confirmar te enviamos un correo con un enlace para reactivar tu cuenta cuando quieras. Ese enlace es la única forma de recuperarla sin escribirnos.</li>
             </ul>
 
             <form method="post" novalidate class="profile-form profile-form--single">
                 {% csrf_token %}
                 {% if form.non_field_errors %}<div class="profile-form-error">{{ form.non_field_errors }}</div>{% endif %}
                 {% for field in form %}
+                {% if field.name == 'code' %}
+                <div class="profile-field profile-field--full">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {% include 'users/_code_input.html' with field=field code_digits=code_digits %}
+                    {% for error in field.errors %}<div class="profile-field-error">{{ error }}</div>{% endfor %}
+                </div>
+                {% elif field.name == 'confirm' %}
+                <div class="profile-field profile-field--full profile-field--check">
+                    <label class="profile-check" for="{{ field.id_for_label }}">{{ field }} {{ field.label }}</label>
+                    {% for error in field.errors %}<div class="profile-field-error">{{ error }}</div>{% endfor %}
+                </div>
+                {% else %}
                 <div class="profile-field profile-field--full">
                     <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                     {{ field }}
                     {% for error in field.errors %}<div class="profile-field-error">{{ error }}</div>{% endfor %}
                 </div>
+                {% endif %}
                 {% endfor %}
                 <div class="profile-form-actions">
                     <a href="{% url 'users:profile' %}" class="c-btn c-btn--outline">Cancelar</a>
                     <button type="submit" class="profile-danger__btn"><i class="bi bi-slash-circle me-1"></i>Deshabilitar mi cuenta</button>
                 </div>
             </form>
+
+            <form method="post" class="profile-form profile-form--single">
+                {% csrf_token %}
+                <button type="submit" name="resend" value="1" class="c-btn c-btn--outline w-100">No me llegó el código: envíamelo otra vez</button>
+            </form>
         </section>
     </div>
 </main>
 
 {% include 'footer.html' %}
+<script src="{% static 'users/js/code_input.js' %}"></script>
 {% endblock %}

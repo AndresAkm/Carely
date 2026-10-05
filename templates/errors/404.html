@@ -1,0 +1,40 @@
+{% extends 'errors/base.html' %}
+
+{% block error_title %}Página no encontrada{% endblock %}
+{% block error_class %}error-page--404{% endblock %}
+
+{% block error_content %}
+<section class="error-main">
+    <span class="error-code" aria-hidden="true">404</span>
+
+    <span class="error-eyebrow"><i class="bi bi-compass me-1"></i>Error 404</span>
+    <h1 class="error-title">Esta página no existe</h1>
+    <p class="error-text">
+        La dirección que buscas no está disponible. Es posible que el enlace haya cambiado,
+        que el producto ya no esté en el catálogo o que la ruta tenga un error de escritura.
+    </p>
+
+    <div class="error-actions">
+        <a href="{% url 'core:home' %}" class="c-btn c-btn--primary c-btn--lg">
+            <i class="bi bi-house me-2"></i>Ir al inicio
+        </a>
+        <a href="{% url 'catalog:home' %}" class="c-btn c-btn--outline c-btn--lg">
+            <i class="bi bi-grid me-2"></i>Ver el catálogo
+        </a>
+    </div>
+
+    <div class="error-search">
+        <label for="error-search-input" class="error-search__label">
+            ¿Buscabas algún producto en particular?
+        </label>
+        <form action="{% url 'catalog:home' %}" method="get" class="error-search__form">
+            <div class="error-search__field">
+                <i class="bi bi-search" aria-hidden="true"></i>
+                <input type="search" id="error-search-input" name="q" class="error-search__input"
+                       placeholder="Escribe el nombre de un producto" aria-label="Buscar en el catálogo">
+            </div>
+            <button type="submit" class="c-btn c-btn--primary">Buscar</button>
+        </form>
+    </div>
+</section>
+{% endblock %}

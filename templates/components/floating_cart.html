@@ -1,0 +1,13 @@
+{% comment %}
+Carrito flotante — mismo destino y mismo contador que el carrito del navbar.
+{% endcomment %}
+{% if user.is_authenticated %}
+{% if not user.is_staff and not user.is_superuser %}
+<div class="float-cart">
+    <a href="{% url 'cart:cart' %}" class="float-cart__btn" aria-label="Mi carrito">
+        <i class="bi bi-cart"></i>
+        <span class="cart-count-badge js-cart-count{% if not cart_count %} is-empty{% endif %}">{{ cart_count }}</span>
+    </a>
+</div>
+{% endif %}
+{% endif %}

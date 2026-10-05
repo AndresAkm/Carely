@@ -201,7 +201,7 @@
 
 /* ── Botón "Cancelar pedido" ─────────────────────────────────────────────── */
 .osf-cancel-order-btn {
-    border: 2px solid var(--accent);
+    border: 2px solid;
     color: var(--accent);
     background: transparent;
     border-radius: 999px;
@@ -211,13 +211,12 @@
     cursor: pointer;
     white-space: nowrap;
     flex-shrink: 0;
-    transition: background .2s var(--ease, cubic-bezier(.4,0,.2,1));
+    transition: transform .2s ease-out;
     line-height: 1.4;
 }
 
 .osf-cancel-order-btn:hover {
-    background: var(--accent);
-    color: #fff;
+    transform: translateY(-3px);
 }
 
 /* ── Badges de estado terminal ────────────────────────────────────────────── */

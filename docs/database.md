@@ -68,7 +68,7 @@ templates, JavaScript ni respuestas API. Las rutas conservan los prefijos
 |-----|---------|
 | `apps.catalog` | `Category`, `Product` |
 | `apps.core` | *(sin modelos)* |
-| `apps.users` | `User`, `Department`, `City`, `Address` |
+| `apps.users` | `User`, `Department`, `City`, `Address`, `TwoFactorCode` |
 | `apps.inventory` | `InventoryMovement` |
 | `apps.cart` | `Cart`, `CartItem` |
 | `apps.orders` | `Coupon`, `Order`, `OrderItem`, `OrderStatusHistory` |
@@ -76,9 +76,18 @@ templates, JavaScript ni respuestas API. Las rutas conservan los prefijos
 
 ### Relaciones principales
 
-- `User` ← `Cart`, `Order`, `Address`, `InventoryMovement`.
+- `User` ← `Cart`, `Order`, `Address`, `InventoryMovement`, `TwoFactorCode`.
 - `Department` ← `City` ← `Address`.
 - `Category` ← `Product` ← `CartItem`, `OrderItem`, `InventoryMovement`.
 - `Cart` ← `CartItem` (único por `cart` + `product`).
 - `Order` ← `OrderItem`, `OrderStatusHistory`, `Payment` (PROTECT), `Coupon` (SET_NULL).
 - `Address` usa borrado lógico (`is_active`); `City` y `Department` están en PROTECT.
+- `User.is_active` es el único interruptor de una cuenta. `deactivated_at` y
+  `deactivated_by` (SET_NULL a `self`) son solo rastro: `deactivated_by` vacío
+  significa que la deshabilitó el titular, y con valor que la deshabilitó un
+  administrador. El enlace de reactivación solo sirve en el primer caso.
+- `TwoFactorCode` guarda códigos de un solo uso con `purpose` (`enable`,
+  `deactivate`, `reactivate`). `code_hash` nunca está en claro: se compara con
+  `django.contrib.auth.hashers.check_password`. Pedir uno nuevo borra los
+  pendientes del mismo uso, así que hay como máximo uno vigente. Los códigos se
+  pueden auditar en el admin, pero no se crean ni se editan a mano.

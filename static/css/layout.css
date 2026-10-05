@@ -267,6 +267,31 @@
   color: #fff !important;
 }
 
+.c-nav__cart-link {
+  position: relative;
+}
+
+.cart-count-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.cart-count-badge.is-empty {
+  display: none;
+}
+
 .c-nav__hamburger {
   display: none;
   flex-direction: column;

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es">
+
+<body style="margin:0;background:#f7f1f6;font-family:Arial,sans-serif;color:#29253a;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+        style="padding:32px 12px;background:#f7f1f6;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                    style="max-width:560px;background:#fff;border-radius:24px;box-shadow:0 16px 40px rgba(66,55,90,.14);overflow:hidden;">
+                    <tr>
+                        <td style="height:7px;background:linear-gradient(90deg,#e8609b,#5b8def);"></td>
+                    </tr>
+                    <tr>
+                        <td style="padding:40px;text-align:center;">
+                            <div
+                                style="margin:0 auto 28px;color:#20202a;font-size:30px;font-weight:700;letter-spacing:-1px;">
+                                Carely
+                            </div>
+                            <h1 style="margin:0 0 12px;font-size:26px;">Tu código de verificación</h1>
+                            <p style="margin:0 0 28px;color:#6f6a7d;font-size:16px;line-height:1.6;">
+                                Hola {{ user.first_name|default:user.email }}, usamos este código para confirmar que
+                                tienes acceso a {{ user.email }}.
+                            </p>
+                            <p
+                                style="margin:0 0 28px;padding:18px;border-radius:16px;background:#f7f1f6;font-size:34px;font-weight:700;letter-spacing:10px;color:#20202a;">
+                                {{ code }}
+                            </p>
+                            <p style="margin:0 0 0;color:#999;font-size:13px;line-height:1.5;">
+                                Vence en {{ minutes }} minutos y solo sirve una vez. Si no lo solicitaste, ignora este
+                                correo: tu cuenta sigue como estaba.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>

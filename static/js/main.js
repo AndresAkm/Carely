@@ -312,12 +312,10 @@ document.addEventListener("DOMContentLoaded", () => {
         .then((r) => r.json())
         .then((data) => {
           if (data.ok) {
-            const badge = document.getElementById("nav-cart-badge");
-            if (badge) {
+            document.querySelectorAll(".js-cart-count").forEach((badge) => {
               badge.textContent = data.cart_count;
-              badge.style.display =
-                data.cart_count > 0 ? "inline-flex" : "none";
-            }
+              badge.classList.toggle("is-empty", data.cart_count <= 0);
+            });
             if (btn) {
               btn.innerHTML = '<i class="bi bi-check2-all"></i> ¡Éxito!';
               btn.style.background = "#4CAF50";

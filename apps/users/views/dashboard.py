@@ -12,6 +12,7 @@ from apps.payments.models import Payment
 
 from ..forms import AddressForm, DashboardAddressForm, DashboardUserCreateForm, DashboardUserForm, ForceDeleteUserForm
 from ..models import Address, User
+from ..services import disable_account, enable_account, notify_deactivation
 
 
 class DashboardUserMixin(LoginRequiredMixin, UserPassesTestMixin):
@@ -66,6 +67,12 @@ class UserUpdateView(DashboardUserMixin, UpdateView):
     template_name = 'users/dashboard/user_form.html'
     success_url = reverse_lazy('dashboard:user_list')
 
+    def post(self, request, *args, **kwargs):
+        # Al validar, el ModelForm ya copió los datos del formulario sobre
+        # self.object, así que el estado anterior hay que leerlo de la base.
+        self.was_active = User.objects.filter(pk=self.kwargs['pk']).values_list('is_active', flat=True).first()
+        return super().post(request, *args, **kwargs)
+
     def form_valid(self, form):
         if self.object == self.request.user and not form.cleaned_data['is_active']:
             form.add_error('is_active', 'No puedes desactivar tu propia cuenta.')
@@ -78,8 +85,16 @@ class UserUpdateView(DashboardUserMixin, UpdateView):
         ):
             form.add_error('role', 'No puedes quitar los permisos del último administrador activo.')
             return self.form_invalid(form)
+        becoming_inactive = self.was_active and not form.cleaned_data['is_active']
+        becoming_active = not self.was_active and form.cleaned_data['is_active']
+        response = super().form_valid(form)
+        if becoming_inactive:
+            disable_account(self.object, self.request.user)
+            notify_deactivation(self.object, self.request.user, self.request)
+        elif becoming_active:
+            enable_account(self.object)
         messages.success(self.request, 'El usuario se actualizó correctamente.')
-        return super().form_valid(form)
+        return response
 
 
 class UserPasswordChangeView(DashboardUserMixin, PasswordChangeView):
@@ -115,11 +130,13 @@ class UserToggleActiveView(DashboardUserMixin, UpdateView):
             messages.error(request, 'No puedes desactivar tu propia cuenta.')
         elif self.object.is_active and self.object.role == User.Role.ADMIN and User.objects.filter(is_active=True, role=User.Role.ADMIN).count() <= 1:
             messages.error(request, 'No puedes desactivar al último administrador activo.')
+        elif self.object.is_active:
+            disable_account(self.object, request.user)
+            notify_deactivation(self.object, request.user, request)
+            messages.success(request, 'Se desactivó el usuario correctamente.')
         else:
-            self.object.is_active = not self.object.is_active
-            self.object.save(update_fields=['is_active', 'updated_at'])
-            action = 'activó' if self.object.is_active else 'desactivó'
-            messages.success(request, f'Se {action} el usuario correctamente.')
+            enable_account(self.object)
+            messages.success(request, 'Se activó el usuario correctamente.')
         return redirect(self.success_url)
 
 

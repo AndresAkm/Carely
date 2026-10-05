@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Reactivar mi cuenta - Carely{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'users/css/auth.css' %}?v=4" rel="stylesheet">
+{% endblock %}
+
+{% block body_class %}auth-page register-page{% endblock %}
+
+{% block content %}
+{% include 'users/_auth_background.html' %}
+
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <div class="auth-header text-center">
+            <img src="{% static 'core/images/carely-logo.svg' %}" alt="Carely" class="auth-logo__image mx-auto mb-4">
+            {% if valid %}
+            <h1 class="auth-title">Reactivar mi cuenta</h1>
+            {% else %}
+            <h1 class="auth-title">El enlace no es válido</h1>
+            {% endif %}
+        </div>
+
+        {% if valid %}
+        <p class="auth-subtitle text-center">
+            Hola {{ paused_user.first_name|default:paused_user.email }}, confirmaste que tienes acceso a
+            {{ paused_user.email }}. Al reactivar tu cuenta recuperas tu historial de pedidos y tus direcciones.
+        </p>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <button class="btn btn-carely-primary w-100">Sí, quiero reactivar mi cuenta</button>
+        </form>
+        <a href="{% url 'users:login' %}" class="btn btn-link w-100 mt-3">Ahora no</a>
+        {% else %}
+        <p class="auth-subtitle text-center">
+            El enlace de reactivación venció, ya se usó o la cuenta ya está activa. Vuelve a iniciar sesión para
+            comprobar el estado de tu cuenta.
+        </p>
+        <a href="{% url 'users:login' %}" class="btn btn-carely-primary w-100 mt-4">Ir a iniciar sesión</a>
+        <p class="auth-subtitle text-center mt-3">
+            Si tu cuenta sigue deshabilitada, escribe a <a href="mailto:{{ carely_email }}">{{ carely_email }}</a> y
+            te ayudamos a recuperarla.
+        </p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
