@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Resultado del pago - Carely{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'payments/css/payment.css' %}?v=1" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+{% include 'navbar.html' %}
+
+<section class="payment-section">
+    <div class="container">
+
+        <div class="mt-5 payment-card">
+
+            {% if payment.is_successful %}
+            <i class="bi bi-check-circle-fill payment-icon payment-icon--ok"></i>
+            <h1 class="payment-title">¡Pago aprobado!</h1>
+            <p class="payment-lead">
+                Tu pago fue confirmado. Ya estamos preparando tu pedido.
+            </p>
+
+            {% elif payment.status == 'rechazado' %}
+            <i class="bi bi-x-circle-fill payment-icon payment-icon--ko"></i>
+            <h1 class="payment-title">Pago rechazado</h1>
+            <p class="payment-lead">
+                La transacción no fue aprobada. No se te cobró nada.
+                Puedes intentar de nuevo con otro medio de pago.
+            </p>
+
+            {% elif payment.status == 'pendiente' %}
+            <i class="bi bi-hourglass-split payment-icon payment-icon--wait"></i>
+            <h1 class="payment-title">Pago en proceso</h1>
+            <p class="payment-lead">
+                Tu pago todavía se está procesando. Te avisamos en cuanto
+                Wompi nos confirme el resultado.
+            </p>
+
+            {% elif payment.is_final %}
+            <i class="bi bi-info-circle-fill payment-icon payment-icon--wait"></i>
+            <h1 class="payment-title">Pago no completado</h1>
+            <p class="payment-lead">
+                La transacción terminó sin completarse. Si crees que es un error,
+                escríbenos y lo revisamos.
+            </p>
+
+            {% else %}
+            <i class="bi bi-exclamation-circle-fill payment-icon payment-icon--wait"></i>
+            <h1 class="payment-title">No pudimos verificar tu pago</h1>
+            <p class="payment-lead">
+                No pudimos confirmarlo con la pasarela. Tu pedido sigue reservado
+                mientras lo revisamos.
+            </p>
+            {% endif %}
+
+            <div class="payment-details">
+                <div class="payment-row">
+                    <span>Pedido</span>
+                    <strong>#{{ payment.order.id }}</strong>
+                </div>
+                <div class="payment-row">
+                    <span>Monto</span>
+                    <strong>COP {{ payment.amount|floatformat:2 }}</strong>
+                </div>
+                <div class="payment-row">
+                    <span>Método</span>
+                    <strong>{{ payment.get_payment_method_display }}</strong>
+                </div>
+                <div class="payment-row">
+                    <span>Estado</span>
+                    <strong>{{ payment.get_status_display }}</strong>
+                </div>
+                <div class="payment-row">
+                    <span>Referencia</span>
+                    <strong class="payment-ref">{{ payment.reference }}</strong>
+                </div>
+                {% if payment.status_message %}
+                <div class="payment-row">
+                    <span>Detalle de la pasarela</span>
+                    <strong>{{ payment.status_message }}</strong>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="payment-actions">
+                {% if not payment.is_final %}
+                <form method="post" action="{% url 'payments:start' payment.order.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="c-btn c-btn--primary">
+                        <i class="bi bi-arrow-repeat"></i>
+                        Intentar pagar de nuevo
+                    </button>
+                </form>
+                {% endif %}
+
+                <a href="{% url 'orders:order_detail' payment.order.id %}" class="c-btn c-btn--outline">
+                    <i class="bi bi-receipt"></i>
+                    Ver mi pedido
+                </a>
+
+                <a href="{% url 'catalog:home' %}" class="c-btn c-btn--outline">
+                    <i class="bi bi-shop"></i>
+                    Seguir comprando
+                </a>
+            </div>
+
+            <p class="payment-note">
+                {% if payment.is_successful %}
+                Tu pedido está confirmado. Puedes seguirlo desde la sección de pedidos.
+                {% else %}
+                Si ya hiciste el pago, no repitas la operación: el estado se actualiza
+                solo cuando la pasarela nos confirma.
+                {% endif %}
+            </p>
+
+        </div>
+
+    </div>
+</section>
+
+{% include 'footer.html' %}
+
+{% endblock %}

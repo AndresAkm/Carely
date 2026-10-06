@@ -3,6 +3,10 @@
 
 {% block title %}Mis Pedidos - Carely{% endblock %}
 
+{% block extra_css %}
+<link href="{% static 'orders/css/order_list.css' %}?v=2" rel="stylesheet">
+{% endblock %}
+
 {% block content %}
 {% include 'navbar.html' %}
 
@@ -29,9 +33,18 @@
                             ">{{order.get_status_display}}</span><br>
                         <div class="mt-2" style="font-weight: 600;">Total: COP {{order.total|floatformat:2}}</div>
                     </div>
-                    <div class="w-100 mt-3 text-end"
-                        style="border-top: 1px dashed var(--clr-border); padding-top: 1rem;">
-                        <a href="{% url 'orders:order_detail' order.id %}" class="c-btn c-btn--outline c-btn--sm">Ver
+                    <div class="order-row">
+                        {% for item in order.items.all %}
+                        <a href="{% url 'catalog:product_detail' item.product.slug %}" class="order-thumb"
+                            title="{{ item.product_name }}">
+                            {% if item.product.image %}
+                            <img src="{{ item.product.image.url }}" alt="{{ item.product_name }}" loading="lazy">
+                            {% else %}
+                            <i class="bi bi-box"></i>
+                            {% endif %}
+                        </a>
+                        {% endfor %}
+                        <a href="{% url 'orders:order_detail' order.id %}" class="c-btn c-btn--outline c-btn--sm ms-auto">Ver
                             detalle</a>
                     </div>
                 </div>

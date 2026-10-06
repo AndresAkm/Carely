@@ -91,3 +91,24 @@ templates, JavaScript ni respuestas API. Las rutas conservan los prefijos
   `django.contrib.auth.hashers.check_password`. Pedir uno nuevo borra los
   pendientes del mismo uso, así que hay como máximo uno vigente. Los códigos se
   pueden auditar en el admin, pero no se crean ni se editan a mano.
+
+### Payment
+
+`amount` es una instantánea: nunca se recalcula desde el pedido, porque es lo
+que se mandó a la pasarela y lo que un webhook vuelve a contrastar.
+
+| Campo | Para qué |
+|-------|----------|
+| `gateway` | Qué pasarela atendió el cobro (`wompi`, `simulado`) |
+| `reference` | Referencia única en la pasarela, `CARELY-<hex>`, generada al crear |
+| `transaction_id` | Identificador que asigna Wompi; único y nullable mientras no existe |
+| `status`, `status_message` | Último veredicto conocido y el texto de la pasarela |
+| `metadata` | Datos no sensibles de la respuesta, filtrados antes de guardar |
+| `processed_at` | Momento en que la transacción llegó a un estado final |
+
+`reference` y `transaction_id` son únicos. `transaction_id` admite `NULL` a
+propósito: en MySQL un `unique` sobre cadenas vacías colisionaría en cuanto
+hubiera dos pagos sin transacción todavía.
+
+`metadata` nunca guarda número de tarjeta, CVV, tokens ni el bloque de firma.
+El modelo no tiene ningún campo para ellos: la pasarela no los entrega.

@@ -21,6 +21,7 @@ urlpatterns = [
     path('catalogo/', include('apps.catalog.urls')),
     path('carrito/', include('apps.cart.urls')),
     path('pedidos/', include('apps.orders.urls')),
+    path('pagos/', include('apps.payments.urls')),
 
     # API
 

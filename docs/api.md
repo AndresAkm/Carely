@@ -34,7 +34,7 @@ ViewSets registrados en `config/api_router.py`, bajo el prefijo `/api/v1/`:
 | `carrito/items/` | `CartItemViewSet` | `IsAuthenticatedOrAdminReadOnly` | Único por carrito + producto |
 | `pedidos/pedidos/` | `OrderViewSet` | `IsAuthenticatedOrAdminReadOnly` | CRUD |
 | `pedidos/items/` | `OrderItemViewSet` | `IsAuthenticatedOrAdminReadOnly` | CRUD |
-| `pagos/` | `PaymentViewSet` | `IsAuthenticatedOrAdminReadOnly` | CRUD |
+| `pagos/` | `PaymentViewSet` | `IsAuthenticatedOrAdminReadOnly` | Solo lectura |
 
 ## Rutas web
 
@@ -99,6 +99,33 @@ responden JSON, lo que consume `static/js/main.js` para el carrito AJAX.
 | GET | `/pedidos/` | `order_list_view` |
 | GET | `/pedidos/<order_id>/` | `order_detail_view` |
 | GET | `/pedidos/cupones/validar/` | `validate_coupon_ajax` (JSON) |
+
+Al confirmar el checkout se crea el pedido y de inmediato se redirige al
+checkout de la pasarela. Si la pasarela no arranca, el pedido queda registrado
+como pendiente de pago y el usuario reintenta desde su detalle.
+
+### Pagos (Wompi)
+
+| Método | URL | Vista | Notas |
+|--------|-----|-------|-------|
+| POST | `/pagos/pedido/<order_id>/iniciar/` | `payment_start_view` | Crea o reutiliza el pago y redirige al checkout |
+| GET | `/pagos/retorno/<payment_id>/` | `payment_return_view` | Destino de `redirect-url`; revalida contra la API |
+| GET | `/pagos/estado/<payment_id>/` | `payment_status_view` | JSON de solo lectura |
+| POST | `/pagos/webhook/wompi/` | `wompi_webhook_view` | `transaction.updated`, sin CSRF |
+| GET | `/pagos/simulado/<reference>/` | `simulated_checkout_view` | Solo con `PAYMENT_GATEWAY=simulado` |
+| POST | `/pagos/simulado/<reference>/resolver/` | `simulated_result_view` | Emite un evento con forma de Wompi |
+
+El webhook solo acepta `transaction.updated` y exige que el checksum de
+`X-Event-Checksum` (o `signature.checksum`) case con `WOMPI_EVENTS_SECRET`.
+Responde 200 también cuando la referencia no existe o el pago ya estaba
+cerrado, para que Wompi no reintente; solo 400 con firma inválida o cuerpo
+ilegible.
+
+El identificador de transacción que llega en la URL de retorno nunca decide el
+estado: se usa para preguntar a la API de Wompi y creerle a la respuesta.
+
+La variable `PAYMENT_GATEWAY` elige la implementación (`wompi` o `simulado`).
+`PaymentService` no cambia en ninguno de los dos casos.
 
 ### Dashboard (solo administradores)
 

@@ -1,0 +1,39 @@
+/* Miniaturas de los productos en la lista de pedidos. */
+
+.order-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem;
+    width: 100%;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--clr-border);
+}
+
+.order-thumb {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 56px;
+    height: 56px;
+    overflow: hidden;
+    border: 1px solid var(--clr-border);
+    border-radius: 10px;
+    background: var(--clr-bg-2);
+    color: var(--clr-text-2);
+    font-size: 1.25rem;
+    text-decoration: none;
+    transition: border-color .2s ease;
+}
+
+.order-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.order-thumb:hover {
+    border-color: var(--accent);
+}

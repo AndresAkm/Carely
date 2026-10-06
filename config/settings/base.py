@@ -287,3 +287,24 @@ CARELY_SOCIALS = {
     'instagram': os.environ.get('CARELY_SOCIAL_INSTAGRAM', ''),
     'whatsapp': os.environ.get('CARELY_SOCIAL_WHATSAPP', ''),
 }
+
+# ── Pasarela de pagos (Wompi) ─────────────────────────────────────────────────
+# El ambiente se elige con WOMPI_API_URL y las llaves deben coincidir con él:
+# sandbox usa pub_test_/prv_test_ y producción pub_prod_/prv_prod_.
+WOMPI_PUBLIC_KEY = os.environ.get('WOMPI_PUBLIC_KEY', '')
+# Solo backend. Nunca se expone en templates, serializer ni respuestas JSON.
+WOMPI_PRIVATE_KEY = os.environ.get('WOMPI_PRIVATE_KEY', '')
+WOMPI_API_URL = os.environ.get('WOMPI_API_URL', 'https://sandbox.wompi.co/v1')
+WOMPI_CHECKOUT_URL = os.environ.get('WOMPI_CHECKOUT_URL', 'https://checkout.wompi.co/p/')
+# Secreto de integridad (prefijo test_integrity_ o prod_integrity_). Firma el
+# monto y la referencia para que Wompi no acepte cantidades alteradas.
+WOMPI_INTEGRITY_SECRET = os.environ.get('WOMPI_INTEGRITY_SECRET', '')
+# Secreto de eventos (prefijo test_events_ o prod_events_). Valida el checksum
+# de los webhooks. Es distinto de la llave privada.
+WOMPI_EVENTS_SECRET = os.environ.get('WOMPI_EVENTS_SECRET', '')
+WOMPI_CURRENCY = os.environ.get('WOMPI_CURRENCY', 'COP')
+WOMPI_HTTP_TIMEOUT = int(os.environ.get('WOMPI_HTTP_TIMEOUT', 15))
+
+# Pasarela activa: 'wompi' para la integración real, 'simulado' para desarrollo
+# y pruebas sin salir a internet. Cambiarla no requiere tocar el código.
+PAYMENT_GATEWAY = os.environ.get('PAYMENT_GATEWAY', 'wompi')

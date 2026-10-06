@@ -91,6 +91,31 @@
             color: #29253a;
         }
 
+        /* Miniatura del producto en el correo. Se declara en atributo style
+           además de la clase porque varios clientes de correo ignoran el CSS
+           externo y las reglas de <style>. */
+        .mail-thumb {
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            border: 1px solid #efeef4;
+            background: #f7f1f6;
+            object-fit: cover;
+            display: block;
+        }
+
+        .mail-thumb--empty {
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            border: 1px solid #efeef4;
+            background: #f7f1f6;
+            color: #b9b4c4;
+            font-size: 15px;
+            text-align: center;
+            line-height: 44px;
+        }
+
         .products-table td {
             padding: 12px 8px;
             border-bottom: 1px solid #efeef4;
@@ -181,14 +206,24 @@
                             <table role="presentation" class="products-table">
                                 <thead>
                                     <tr>
-                                        <th>Producto</th>
+                                        <th colspan="2">Producto</th>
                                         <th style="text-align: center;">Cant</th>
                                         <th style="text-align: right;">Total</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {%for item in order.items.all %}
+                                    {%for item in items %}
                                     <tr>
+                                        <td style="width: 44px; padding: 12px 12px 12px 8px;">
+                                            {%if item.image_url %}
+                                            <img class="mail-thumb" style="width:44px;height:44px;border-radius:8px;"
+                                                src="{{item.image_url}}" alt="{{item.product_name}}">
+                                            {%else %}
+                                            <span
+                                                class="mail-thumb--empty"
+                                                style="width:44px;height:44px;border-radius:8px;">&#9634;</span>
+                                            {%endif %}
+                                        </td>
                                         <td>{{item.product_name}}<br><small style="color: #999;">COP
                                                 {{item.unit_price|floatformat:2}}</small></td>
                                         <td style="text-align: center;">x{{item.quantity}}</td>

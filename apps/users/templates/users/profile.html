@@ -4,7 +4,7 @@
 {% block title %}Mi perfil - Carely{% endblock %}
 
 {% block extra_css %}
-<link href="{% static 'users/css/profile.css' %}?v=1" rel="stylesheet">
+<link href="{% static 'users/css/profile.css' %}?v=6" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
@@ -12,56 +12,162 @@
 
 <main class="profile-page">
     <div class="container">
-        <div class="profile-header">
-            <span class="profile-eyebrow"><i class="bi bi-person-circle me-1"></i>Mi cuenta</span>
-            <h1 class="profile-title">Configura tu perfil</h1>
-            <p class="profile-subtitle">Mantén actualizados tus datos para disfrutar mejor tu experiencia en Carely.</p>
-        </div>
+        <div class="profile-layout">
 
-        <div class="row g-4 g-lg-5 align-items-start">
-            <div class="col-lg-4">
-                <aside class="profile-summary">
-                    <div class="profile-avatar">{{ profile_user.first_name|first|upper }}{{ profile_user.last_name|first|upper }}</div>
-                    <h2>{{ profile_user.get_full_name|default:profile_user.email }}</h2>
-                    <p class="profile-summary-email">{{ profile_user.email }}</p>
-                    <span class="profile-role"><i class="bi bi-heart-fill me-1"></i>Cliente Carely</span>
-                    <dl class="profile-summary-details">
-                        <div><dt>Miembro desde</dt><dd>{{ profile_user.created_at|date:'d/m/Y' }}</dd></div>
-                        <div><dt>Teléfono</dt><dd>{{ profile_user.phone|default:'No agregado' }}</dd></div>
-                    </dl>
-                    <a href="{% url 'users:password_change' %}" class="profile-password-link"><i class="bi bi-lock me-2"></i>Cambiar contraseña</a>
-                    <a href="{% url 'users:two_factor_setup' %}" class="profile-password-link"><i class="bi bi-shield-lock me-2"></i>Verificación en dos pasos{% if profile_user.two_factor_enabled %} (activada){% else %} (no activada){% endif %}</a>
-                </aside>
-                <a href="{% url 'users:address_list' %}" class="c-btn c-btn--outline w-100 mt-3" style="text-align:center;"><i class="bi bi-geo-alt me-2"></i>Mis direcciones</a>
-            </div>
-            <div class="col-lg-8">
-                <section class="profile-card">
-                    <div class="profile-card-header"><h2>Información personal</h2><p>Estos datos se utilizarán para identificarte en tu cuenta.</p></div>
-                    <form method="post" novalidate class="profile-form">
+            <aside class="profile-side">
+                <nav class="profile-subnav" aria-label="Opciones de mi cuenta">
+                    <span class="profile-subnav__title">Mi cuenta</span>
+                    <ul class="profile-subnav__list">
+                        <li><a href="#perfil-resumen" class="profile-subnav__item is-active"><i class="bi bi-grid"></i><span>Resumen</span></a></li>
+                        <li><a href="#perfil-datos" class="profile-subnav__item"><i class="bi bi-person"></i><span>Informacion personal</span></a></li>
+                        <li><a href="#perfil-seguridad" class="profile-subnav__item"><i class="bi bi-shield-lock"></i><span>Seguridad</span></a></li>
+                        <li><a href="#perfil-apariencia" class="profile-subnav__item"><i class="bi bi-palette"></i><span>Apariencia</span></a></li>
+                    </ul>
+                    <span class="profile-subnav__label">Ir a</span>
+                    <ul class="profile-subnav__list">
+                        <li><a href="{% url 'orders:order_list' %}" class="profile-subnav__item profile-subnav__item--out"><i class="bi bi-box-seam"></i><span>Pedidos</span><i class="bi bi-arrow-up-right profile-subnav__out"></i></a></li>
+                        <li><a href="{% url 'cart:cart' %}" class="profile-subnav__item profile-subnav__item--out"><i class="bi bi-bag"></i><span>Carrito</span>{% if cart_count %}<span class="profile-subnav__count">{{ cart_count }}</span>{% endif %}</a></li>
+                        <li><a href="{% url 'users:address_list' %}" class="profile-subnav__item profile-subnav__item--out"><i class="bi bi-geo-alt"></i><span>Direcciones</span><i class="bi bi-arrow-up-right profile-subnav__out"></i></a></li>
+                    </ul>
+                    <form method="post" action="{% url 'users:logout' %}" class="profile-subnav__exit-form">
                         {% csrf_token %}
-                        {% if form.non_field_errors %}<div class="profile-form-error">{{ form.non_field_errors }}</div>{% endif %}
-                        {% for field in form %}
-                        <div class="profile-field {% if field.name == 'email' %}profile-field--full{% endif %}">
-                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                            {{ field }}
-                            {% for error in field.errors %}<div class="profile-field-error">{{ error }}</div>{% endfor %}
-                        </div>
-                        {% endfor %}
-                        <div class="profile-form-actions"><a href="{% url 'catalog:home' %}" class="c-btn c-btn--outline">Cancelar</a><button type="submit" class="c-btn c-btn--primary"><i class="bi bi-check2 me-1"></i>Guardar cambios</button></div>
+                        <button type="submit" class="profile-subnav__item profile-subnav__item--exit"><i class="bi bi-box-arrow-right"></i><span>Cerrar sesion</span></button>
                     </form>
+                </nav>
+            </aside>
+
+            <div class="profile-content">
+
+                <section class="profile-hero">
+                    <div class="profile-hero__bg"></div>
+                    <div class="profile-hero__body">
+                        <div class="profile-hero__avatar">{{ profile_user.first_name|first|upper }}{{ profile_user.last_name|first|upper }}</div>
+                        <div class="profile-hero__info">
+                            <span class="profile-eyebrow"><i class="bi bi-person-circle me-1"></i>Mi cuenta</span>
+                            <h1 class="profile-hero__name">{{ profile_user.get_full_name|default:profile_user.email }}</h1>
+                            <p class="profile-hero__email">{{ profile_user.email }}</p>
+                            <div class="profile-chips">
+                                <span class="profile-chip"><i class="bi bi-heart-fill"></i>Cliente Carely</span>
+                                <span class="profile-chip"><i class="bi bi-calendar3"></i>Miembro desde el {{ profile_user.created_at|date:'d/m/Y' }}</span>
+                                <span class="profile-chip{% if profile_user.two_factor_enabled %} is-ok{% endif %}"><i class="bi bi-shield-lock"></i>Verificacion en dos pasos {% if profile_user.two_factor_enabled %}activada{% else %}pendiente{% endif %}</span>
+                            </div>
+                        </div>
+                    </div>
                 </section>
 
-                <section class="profile-card profile-danger mt-4">
-                    <div class="profile-card-header">
-                        <h2><i class="bi bi-exclamation-triangle me-2"></i>Zona de peligro</h2>
-                        <p>Las acciones de esta sección son definitivas.</p>
+                <section id="perfil-resumen" class="profile-section">
+                    <h2 class="profile-section__title">Resumen</h2>
+                    <p class="profile-section__lead">Todo lo que haces en Carely, en un solo lugar.</p>
+                    <div class="profile-quick">
+                        <a href="{% url 'orders:order_list' %}" class="profile-quick__card">
+                            <span class="profile-quick__icon"><i class="bi bi-box-seam"></i></span>
+                            <span class="profile-quick__body">
+                                <strong>Mis pedidos</strong>
+                                <span>Consulta el estado y el historial de tus compras.</span>
+                            </span>
+                            <i class="bi bi-chevron-right profile-quick__arrow"></i>
+                        </a>
+                        <a href="{% url 'cart:cart' %}" class="profile-quick__card">
+                            <span class="profile-quick__icon"><i class="bi bi-bag"></i></span>
+                            <span class="profile-quick__body">
+                                <strong>Mi carrito</strong>
+                                <span>{% if cart_count %}{{ cart_count }} producto{{ cart_count|pluralize }} listo{{ cart_count|pluralize }} para pedir.{% else %}Tu carrito está vacío.{% endif %}</span>
+                            </span>
+                            <i class="bi bi-chevron-right profile-quick__arrow"></i>
+                        </a>
+                        <a href="{% url 'users:address_list' %}" class="profile-quick__card">
+                            <span class="profile-quick__icon"><i class="bi bi-geo-alt"></i></span>
+                            <span class="profile-quick__body">
+                                <strong>Mis direcciones</strong>
+                                <span>Agrega o edita las direcciones donde quieres recibir tus pedidos.</span>
+                            </span>
+                            <i class="bi bi-chevron-right profile-quick__arrow"></i>
+                        </a>
                     </div>
-                    <div class="profile-danger__body">
-                        <div>
-                            <h3>Deshabilitar mi cuenta</h3>
-                            <p>Deja tu cuenta deshabilitada de forma permanente desde el sitio. Necesitarás tener la verificación en dos pasos activada y un código de tu correo. Perderás el acceso para iniciar sesión, comprar y gestionar tus datos. Tu historial de pedidos se conserva y puedes solicitar la reactivación escribiendo a {{ carely_email }}.</p>
+                </section>
+
+                <section id="perfil-datos" class="profile-section">
+                    <div class="profile-card">
+                        <div class="profile-card-header">
+                            <h2>Información personal</h2>
+                            <p>Estos datos se utilizarán para identificarte en tu cuenta y para emitir tus comprobantes.</p>
                         </div>
-                        <a href="{% url 'users:account_deactivate' %}" class="profile-danger__btn"><i class="bi bi-slash-circle me-2"></i>Deshabilitar cuenta</a>
+                        <form method="post" novalidate class="profile-form">
+                            {% csrf_token %}
+                            {% if form.non_field_errors %}<div class="profile-form-error">{{ form.non_field_errors }}</div>{% endif %}
+                            {% for field in form %}
+                            <div class="profile-field {% if field.name == 'email' %}profile-field--full{% endif %}">
+                                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                {{ field }}
+                                {% for error in field.errors %}<div class="profile-field-error">{{ error }}</div>{% endfor %}
+                            </div>
+                            {% endfor %}
+                            <div class="profile-form-actions"><a href="#perfil-resumen" class="c-btn c-btn--outline">Cancelar</a><button type="submit" class="c-btn c-btn--primary"><i class="bi bi-check2 me-1"></i>Guardar cambios</button></div>
+                        </form>
+                    </div>
+                </section>
+
+                <section id="perfil-seguridad" class="profile-section">
+                    <h2 class="profile-section__title">Seguridad</h2>
+                    <p class="profile-section__lead">La contraseña y la verificación en dos pasos protegen tu cuenta.</p>
+                    <div class="profile-card">
+                        <div class="profile-row">
+                            <span class="profile-row__icon"><i class="bi bi-key"></i></span>
+                            <span class="profile-row__body">
+                                <strong>Contraseña</strong>
+                                <span>Cambia tu contraseña si crees que alguien más la conoce.</span>
+                            </span>
+                            <a href="{% url 'users:password_change' %}" class="c-btn c-btn--outline">Cambiar</a>
+                        </div>
+                        <div class="profile-row">
+                            <span class="profile-row__icon{% if profile_user.two_factor_enabled %} is-ok{% endif %}"><i class="bi bi-shield-lock"></i></span>
+                            <span class="profile-row__body">
+                                <strong>Verificación en dos pasos</strong>
+                                <span>
+                                    {% if profile_user.two_factor_enabled %}Activada desde el {{ profile_user.two_factor_enabled_at|date:'d/m/Y' }}. La usamos para confirmar las acciones sensibles.
+                                    {% else %}No está activada. Te pedimos un código por correo solo en las acciones sensibles, no al iniciar sesión.{% endif %}
+                                </span>
+                            </span>
+                            <a href="{% url 'users:two_factor_setup' %}" class="c-btn c-btn--outline">{% if profile_user.two_factor_enabled %}Gestionar{% else %}Activar{% endif %}</a>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="perfil-apariencia" class="profile-section">
+                    <h2 class="profile-section__title">Apariencia</h2>
+                    <p class="profile-section__lead">Elige el color que quieres ver en Carely. Lo guardamos en este navegador.</p>
+                    <div class="profile-card">
+                        <div class="profile-themes">
+                            <button type="button" class="theme-btn profile-swatch" data-theme="azul">
+                                <span class="profile-swatch__dot profile-swatch__dot--azul"></span>
+                                <span class="profile-swatch__label">Azul</span>
+                            </button>
+                            <button type="button" class="theme-btn profile-swatch" data-theme="rosa">
+                                <span class="profile-swatch__dot profile-swatch__dot--rosa"></span>
+                                <span class="profile-swatch__label">Rosa</span>
+                            </button>
+                            <button type="button" class="theme-btn profile-swatch" data-theme="amber">
+                                <span class="profile-swatch__dot profile-swatch__dot--amber"></span>
+                                <span class="profile-swatch__label">Ámbar</span>
+                            </button>
+                        </div>
+                        <p class="profile-themes__note"><i class="bi bi-info-circle me-1"></i>El color se aplica al instante y también queda disponible desde el botón de paleta flotante.</p>
+                    </div>
+                </section>
+
+                <section class="profile-section">
+                    <div class="profile-card profile-danger">
+                        <div class="profile-card-header">
+                            <h2><i class="bi bi-exclamation-triangle me-2"></i>Zona de peligro</h2>
+                            <p>Las acciones de esta sección son definitivas.</p>
+                        </div>
+                        <div class="profile-danger__body">
+                            <div>
+                                <h3>Deshabilitar mi cuenta</h3>
+                                <p>Deja tu cuenta deshabilitada de forma permanente desde el sitio. Necesitarás tener la verificación en dos pasos activada y un código de tu correo. Perderás el acceso para iniciar sesión, comprar y gestionar tus datos. Tu historial de pedidos se conserva y puedes solicitar la reactivación escribiendo a {{ carely_email }}.</p>
+                            </div>
+                            <a href="{% url 'users:account_deactivate' %}" class="profile-danger__btn"><i class="bi bi-slash-circle me-2"></i>Deshabilitar cuenta</a>
+                        </div>
                     </div>
                 </section>
             </div>
@@ -70,4 +176,8 @@
 </main>
 
 {% include 'footer.html' %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'users/js/profile.js' %}?v=5"></script>
 {% endblock %}

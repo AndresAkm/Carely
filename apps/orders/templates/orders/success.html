@@ -22,8 +22,16 @@
                 <p class="mb-0"><strong>Dirección de entrega:</strong><br><small>{{order.shipping_address|linebreaksbr}}</small></p>
             </div>
 
-            <div class="mt-5">
-                <a href="{% url 'catalog:home' %}" class="c-btn c-btn--primary">
+            <div class="mt-5 d-flex flex-wrap gap-2 justify-content-center">
+                {% if order.puede_pagarse %}
+                <form method="post" action="{% url 'payments:start' order.id %}" class="m-0">
+                    {% csrf_token %}
+                    <button type="submit" class="c-btn c-btn--primary">
+                        <i class="bi bi-credit-card"></i> Pagar COP {{ order.total|floatformat:2 }}
+                    </button>
+                </form>
+                {% endif %}
+                <a href="{% url 'catalog:home' %}" class="c-btn c-btn--outline">
                     <i class="bi bi-shop"></i> Seguir Comprando
                 </a>
             </div>

@@ -29,3 +29,10 @@ PASSWORD_HASHERS = [
 ]
 
 DEFAULT_FILE_STORAGE = 'django.core.files.storage.InMemoryStorage'
+
+# `django.core.handlers.base` rechaza con DisallowedHost cualquier host que no
+# esté en la lista, y Django solo añade `testserver` por su cuenta. Los pagos
+# exigen un host real porque Wompi rechaza `redirect-url` de loopback, así que
+# los tests de checkout pasan por `carely.example.com`; el caso que reproduce
+# el 403 de Wompi necesita `localhost` declarado explícitamente.
+ALLOWED_HOSTS = ['testserver', 'carely.example.com', 'localhost']

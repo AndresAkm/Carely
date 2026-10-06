@@ -1,4 +1,5 @@
 from datetime import timedelta
+from pathlib import Path
 import re
 from unittest.mock import patch
 
@@ -1389,6 +1390,222 @@ class DepartmentCitiesApiTests(TestCase):
         url = reverse('users:department_cities_api', args=[999999])
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
+
+
+class CargarColombiaCommandTests(TestCase):
+    """La carga desde api-colombia.com y la unificación de duplicados."""
+
+    DEPARTAMENTOS = [
+        {'id': 1, 'name': 'Antioquia'},
+        {'id': 2, 'name': 'Cundinamarca'},
+    ]
+    CIUDADES = [
+        {'id': 10, 'name': 'Amagá', 'departmentId': 1},
+        {'id': 11, 'name': 'Medellín', 'departmentId': 1},
+        {'id': 20, 'name': 'Bogotá', 'departmentId': 2},
+    ]
+
+    def _carga(self, departamentos=None, ciudades=None):
+        from django.core.management import call_command
+
+        with patch(
+            'apps.users.management.commands.cargar_colombia._fetch_json',
+            side_effect=[
+                self.DEPARTAMENTOS if departamentos is None else departamentos,
+                self.CIUDADES if ciudades is None else ciudades,
+            ],
+        ):
+            # verbosity=0 silencia el output: si no, cada test ensucia el
+            # reporte de la suite.
+            call_command('cargar_colombia', verbosity=0)
+
+    def test_carga_departamentos_y_municipios(self):
+        self._carga()
+
+        self.assertEqual(Department.objects.count(), 2)
+        self.assertEqual(City.objects.count(), 3)
+        antioquia = Department.objects.get(name='Antioquia')
+        self.assertEqual(antioquia.api_id, 1)
+        self.assertEqual(
+            set(City.objects.filter(department=antioquia).values_list('name', flat=True)),
+            {'Amagá', 'Medellín'},
+        )
+
+    def test_no_duplica_al_cargar_dos_veces(self):
+        # La carga es idempotente: correrla de nuevo no debe duplicar filas.
+        self._carga()
+        self._carga()
+
+        self.assertEqual(Department.objects.count(), 2)
+        self.assertEqual(City.objects.count(), 3)
+
+    def test_ignora_ciudades_de_departamentos_inexistentes(self):
+        # Un municipio sin departamento en la respuesta no se puede guardar
+        # porque department_id es obligatorio.
+        self._carga(
+            departamentos=[self.DEPARTAMENTOS[0]],
+            ciudades=[
+                {'id': 10, 'name': 'Amagá', 'departmentId': 1},
+                {'id': 99, 'name': 'Fantasma', 'departmentId': 12345},
+            ],
+        )
+
+        self.assertEqual(City.objects.count(), 1)
+        self.assertFalse(City.objects.filter(name='Fantasma').exists())
+
+    def test_unifica_el_seed_manual_con_api_id_negativo(self):
+        # El seed anterior usaba api_id = -1. Como Address apunta con PROTECT,
+        # la fila vieja no se puede borrar: hay que moverle las direcciones.
+        user = User.objects.create_user(
+            username='seed', email='seed@carely.co', password='x',
+        )
+        manual = Department.objects.create(api_id=-1, name='Antioquia')
+        manual_city = City.objects.create(api_id=-1, name='Amagá', department=manual)
+        address = Address.objects.create(
+            user=user,
+            recipient_name='Pedro',
+            address_line='Calle 123',
+            department=manual,
+            city=manual_city,
+        )
+
+        self._carga()
+
+        self.assertFalse(Department.objects.filter(api_id=-1).exists())
+        self.assertFalse(City.objects.filter(api_id=-1).exists())
+        # El nombre no puede quedar repetido en los selectores.
+        self.assertEqual(Department.objects.filter(name='Antioquia').count(), 1)
+        self.assertEqual(City.objects.filter(name='Amagá').count(), 1)
+
+        address.refresh_from_db()
+        self.assertEqual(address.department.api_id, 1)
+        self.assertEqual(address.city.api_id, 10)
+
+    def test_no_toca_un_departamento_negativo_sin_equivalente_en_la_api(self):
+        # Si la API no trae ese nombre, borrarlo dejaría direcciones sin
+        # departamento válido. Se conserva.
+        Department.objects.create(api_id=-1, name='Isla del Marquesado')
+
+        self._carga()
+
+        self.assertTrue(Department.objects.filter(name='Isla del Marquesado').exists())
+
+
+class ProfilePageTests(TestCase):
+
+    def setUp(self):
+        self.user = create_user(first_name='Ana', last_name='Restrepo')
+        self.url = reverse('users:profile')
+
+    def test_requires_login(self):
+        self.assertEqual(self.client.get(self.url).status_code, 302)
+
+    def test_subnav_links_to_orders_cart_and_addresses(self):
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        self.assertContains(response, reverse('orders:order_list'))
+        self.assertContains(response, reverse('cart:cart'))
+        self.assertContains(response, reverse('users:address_list'))
+
+    def test_subnav_anchors_match_existing_sections(self):
+        self.client.force_login(self.user)
+        html = self.client.get(self.url).content.decode()
+        subnav = re.search(r'<nav class="profile-subnav".*?</nav>', html, re.S).group()
+        anchors = re.findall(r'href="#([\w-]+)"', subnav)
+        self.assertTrue(anchors)
+        for anchor in anchors:
+            self.assertIn(f'id="{anchor}"', html)
+
+    def test_offers_the_three_theme_presets(self):
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        for theme in ('azul', 'rosa', 'amber'):
+            self.assertContains(response, f'data-theme="{theme}"')
+
+    def test_subnav_lives_in_a_sidebar_next_to_the_content(self):
+        self.client.force_login(self.user)
+        html = self.client.get(self.url).content.decode()
+        layout = re.search(r'<div class="profile-layout">(.*)</div>\s*</div>\s*</main>', html, re.S).group(1)
+        self.assertLess(layout.index('class="profile-side"'), layout.index('class="profile-content"'))
+        self.assertLess(
+            layout.index('class="profile-side"'),
+            layout.index('id="perfil-resumen"'),
+        )
+
+    def test_sidebar_is_fixed_so_it_stays_visible_while_scrolling(self):
+        # `.page-wrapper { overflow: hidden }` rompe `sticky`, así que la lateral
+        # tiene que ser `fixed` y el hueco lo reserva el margen del contenido.
+        self.client.force_login(self.user)
+        css = (
+            Path(__file__).resolve().parent / 'static' / 'users' / 'css' / 'profile.css'
+        ).read_text(encoding='utf-8')
+        side = re.search(r'\.profile-side \{(.*?)\}', css, re.S).group(1)
+        self.assertIn('position: fixed', side)
+        self.assertNotIn('sticky', side)
+
+        content = re.search(r'\.profile-content \{(.*?)\}', css, re.S).group(1)
+        self.assertIn('margin-left', content)
+
+        # Al ser `fixed` la lateral se monta sobre el footer, así que necesita
+        # un estado que profile.js le pone cuando el footer le alcanza.
+        self.assertIn('.profile-side.is-hidden', css)
+
+    def test_options_that_leave_the_page_are_grouped_and_marked(self):
+        # Sin factor diferenciador, "Pedidos" parece una sección más y el
+        # usuario espera un scroll que no va a ocurrir.
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        self.assertContains(response, 'profile-subnav__label')
+        self.assertContains(response, 'profile-subnav__item--out')
+        self.assertContains(response, 'profile-subnav__out')
+
+        nav = re.search(r'<nav class="profile-subnav".*?</nav>', response.content.decode(), re.S).group(0)
+        label_at = nav.index('profile-subnav__label')
+        # Las opciones que van a otra página van después del separador, las
+        # anclas antes, y nunca mezcladas.
+        for href in ('#perfil-resumen', '#perfil-datos', '#perfil-seguridad', '#perfil-apariencia'):
+            self.assertLess(nav.index(f'href="{href}"'), label_at)
+        for name in ('orders:order_list', 'cart:cart', 'users:address_list'):
+            path = reverse(name)
+            at = nav.index(path)
+            self.assertGreater(at, label_at)
+            self.assertIn('profile-subnav__item--out', nav[at:at + 200])
+
+    def test_sections_keep_scroll_margin_so_the_active_option_is_not_off_by_one(self):
+        # profile.js lee `scroll-margin-top` para dibujar la línea de lectura.
+        # Sin esto, al pulsar un enlace la sección queda por debajo de la línea y
+        # el subnav sigue marcando la anterior.
+        self.client.force_login(self.user)
+        css = (
+            Path(__file__).resolve().parent / 'static' / 'users' / 'css' / 'profile.css'
+        ).read_text(encoding='utf-8')
+        section = re.search(r'\.profile-section \{(.*?)\}', css, re.S).group(1)
+        self.assertIn('scroll-margin-top', section)
+
+    def test_shows_two_factor_state(self):
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        self.assertContains(response, 'Verificacion en dos pasos pendiente')
+
+        self.user.two_factor_enabled = True
+        self.user.two_factor_enabled_at = timezone.now()
+        self.user.save()
+        response = self.client.get(self.url)
+        self.assertContains(response, 'Verificacion en dos pasos activada')
+
+    def test_saves_the_profile(self):
+        self.client.force_login(self.user)
+        response = self.client.post(self.url, {
+            'first_name': 'Ana María',
+            'last_name': 'Restrepo',
+            'email': self.user.email,
+            'phone': '3001234567',
+        })
+        self.assertRedirects(response, self.url)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.first_name, 'Ana María')
+        self.assertEqual(self.user.phone, '3001234567')
+        self.assertEqual(self.user.username, self.user.email)
 
 
 class AddressFormTests(TestCase):

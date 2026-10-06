@@ -5,7 +5,7 @@
 {% block title %}Pedido #{{ order.id }} - Carely{% endblock %}
 
 {% block extra_css %}
-<link href="{% static 'orders/css/order_detail.css' %}?v=1" rel="stylesheet">
+<link href="{% static 'orders/css/order_detail.css' %}?v=2" rel="stylesheet">
 {% endblock %}
 
 
@@ -28,6 +28,38 @@
 
             </a>
 
+        </div>
+
+
+        <!-- ========================= -->
+        <!-- DESTINO E INSTRUCCIONES -->
+        <!-- ========================= -->
+
+        <!-- Va sobre las columnas y no dentro de la izquierda: son los dos
+             datos que transportan el paquete. La dirección es además el único
+             motivo por el que el cliente vuelve a esta pantalla, así que
+             tenerla en el pliegue es lo razonable. -->
+
+        <div class="order-ship">
+            <div class="order-ship__cell order-ship__cell--addr">
+                <span class="order-ship__label">
+                    <i class="bi bi-geo-alt"></i>
+                    Se entrega en
+                </span>
+                <p class="order-ship__value">
+                    {{ order.shipping_address|linebreaksbr }}
+                </p>
+            </div>
+
+            <div class="order-ship__cell">
+                <span class="order-ship__label">
+                    <i class="bi bi-chat-left-text"></i>
+                    Instrucciones
+                </span>
+                <p class="order-ship__value order-ship__value--muted">
+                    {{ order.notes|linebreaksbr }}
+                </p>
+            </div>
         </div>
 
 
@@ -101,18 +133,17 @@
 
                     </p>
 
+                    <!-- Reintento de pago. Sin esto, un cobro que no llegó a
+                         abrirse deja el pedido pendiente sin forma de pagarlo. -->
+                    {% if order.puede_pagarse %}
 
-                    <!-- Notas ingresadas durante checkout -->
-                    {% if order.notes %}
-
-                        <p class="mb-2">
-
-                            <strong>Notas del pedido:</strong>
-                            <br>
-
-                            {{ order.notes }}
-
-                        </p>
+                        <form method="post" action="{% url 'payments:start' order.id %}" class="mb-3">
+                            {% csrf_token %}
+                            <button type="submit" class="mt-2 c-btn c-btn--primary">
+                                <i class="bi bi-credit-card me-1"></i>
+                                Pagar COP {{ order.total|floatformat:2 }}
+                            </button>
+                        </form>
 
                     {% endif %}
 
@@ -197,43 +228,6 @@
                         {% endfor %}
 
                     </div>
-
-                </div>
-
-
-                <!-- ========================= -->
-                <!-- DIRECCIÓN DE ENVÍO -->
-                <!-- ========================= -->
-
-                <div
-                    style="
-                        background: #fff;
-                        padding: 1.5rem;
-                        border-radius: var(--r-md);
-                        box-shadow: var(--sh-sm);
-                        border: 1px solid var(--clr-border);
-                    "
-                >
-
-                    <h3
-                        style="
-                            font-family: var(--ff-serif);
-                            font-size: 1.1rem;
-                            border-bottom: 1px solid var(--clr-border);
-                            padding-bottom: 1rem;
-                            margin-bottom: 1rem;
-                        "
-                    >
-                        Destino
-                    </h3>
-
-
-                    <p
-                        style="font-size: .9rem; line-height: 1.5;"
-                        class="mb-0"
-                    >
-                        {{ order.shipping_address }}
-                    </p>
 
                 </div>
 

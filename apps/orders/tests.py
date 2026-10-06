@@ -6,7 +6,7 @@ from django.urls import reverse
 from apps.catalog.models import Category, Product
 from apps.cart.models import Cart, CartItem
 from apps.users.models import Address, City, Department
-from apps.orders.models import Order, OrderItem
+from apps.orders.models import NOTAS_POR_DEFECTO, Order, OrderItem
 from apps.inventory.services import InventoryService, InsufficientStockError
 from apps.orders.services import checkout_cart, EmptyCartError, InvalidAddressError
 from unittest.mock import patch
@@ -34,18 +34,21 @@ def make_product(name='Proc', price='10.0', stock=10):
         InventoryService.add_stock(product=p, quantity=stock, reason='init')
     return p
 
-def make_address(user, recipient_name='T', address_line='Q', active=True):
+def make_address(user, recipient_name='T', address_line='Q', active=True,
+                 postal_code='123', phone='1234567', instructions='Inst',
+                 address_line2=''):
     dept, _ = Department.objects.get_or_create(api_id=99, defaults={'name': 'Dept'})
     city, _ = City.objects.get_or_create(api_id=99, defaults={'name': 'City', 'department': dept})
     return Address.objects.create(
         user=user, 
         recipient_name=recipient_name, 
         address_line=address_line,
+        address_line2=address_line2,
         city=city,
         department=dept,
-        postal_code='123',
-        phone='1234567',
-        instructions='Inst',
+        postal_code=postal_code,
+        phone=phone,
+        instructions=instructions,
         is_active=active
     )
 
@@ -88,6 +91,18 @@ class CheckoutServiceTests(TestCase):
         self.prod2.refresh_from_db()
         self.assertEqual(self.prod2.stock, 4)
         
+    def test_sin_notas_guarda_un_texto_por_defecto(self):
+        # El campo se muestra al cliente: un hueco en blanco se lee como un dato
+        # perdido, no como "no pidió nada".
+        order = checkout_cart(self.user, self.address.id, '')
+        self.assertEqual(order.notes, NOTAS_POR_DEFECTO)
+
+        # `checkout_cart` vacía el carrito, así que el segundo caso necesita
+        # reponerlo.
+        CartItem.objects.create(cart=self.cart, product=self.prod1, quantity=1)
+        order = checkout_cart(self.user, self.address.id, '   ')
+        self.assertEqual(order.notes, NOTAS_POR_DEFECTO)
+
     def test_snapshot_direccion(self):
         order = checkout_cart(self.user, self.address.id)
         # Cambiamos la direccion después
@@ -100,6 +115,39 @@ class CheckoutServiceTests(TestCase):
         self.assertNotIn('Juan', order.shipping_address)
         self.assertIn('Calle 123', order.shipping_address)
         self.assertIn('City, Dept', order.shipping_address)
+
+    def test_snapshot_omite_los_campos_opcionales_vacios(self):
+        # Con `CP:` o `Tel:` sin nada detrás, la pantalla mostraba renglones que
+        # parecían datos perdidos en vez de campos que la persona no llenó.
+        self.address.postal_code = ''
+        self.address.phone = ''
+        self.address.instructions = ''
+        self.address.address_line2 = ''
+        self.address.save()
+
+        order = checkout_cart(self.user, self.address.id)
+
+        self.assertEqual(
+            order.shipping_address,
+            'Pedro\nCalle 123\nCity, Dept',
+        )
+        self.assertNotIn('CP:', order.shipping_address)
+        self.assertNotIn('Tel:', order.shipping_address)
+        self.assertNotIn('Instrucciones:', order.shipping_address)
+
+    def test_snapshot_conserva_los_campos_opcionales_que_si_llenaron(self):
+        self.address.postal_code = '050015'
+        self.address.phone = '3232273483'
+        self.address.instructions = 'Tocar el timbre dos veces'
+        self.address.address_line2 = 'Apartamento 401'
+        self.address.save()
+
+        order = checkout_cart(self.user, self.address.id)
+
+        self.assertIn('CP: 050015', order.shipping_address)
+        self.assertIn('Tel: 3232273483', order.shipping_address)
+        self.assertIn('Instrucciones: Tocar el timbre dos veces', order.shipping_address)
+        self.assertIn('Apartamento 401', order.shipping_address)
 
     def test_carrito_vacio(self):
         self.cart.items.all().delete()
@@ -163,6 +211,56 @@ class CheckoutServiceTests(TestCase):
         self.assertIn(self.address.address_line, email.body)
         self.assertEqual(order.user.email, self.user.email)
 
+    def test_correo_las_imagenes_van_absolutas(self):
+        # El cliente de correo no resuelve rutas relativas: sin el dominio
+        # delante la miniatura sale como imagen rota.
+        from django.core import mail
+
+        mail.outbox = []
+        # `make_product` deja el objeto en memoria con stock=0 porque el stock
+        # lo sube InventoryService sobre otra instancia. Un `save()` a secas
+        # escribiría ese 0 de vuelta y el checkout fallaría por stock.
+        self.prod1.image = 'products/crema.png'
+        self.prod1.save(update_fields=['image'])
+
+        with self.captureOnCommitCallbacks(execute=True):
+            checkout_cart(self.user, self.address.id, site_url='http://localhost:8000')
+
+        html = mail.outbox[0].alternatives[0][0]
+        self.assertIn('http://localhost:8000' + self.prod1.image.url, html)
+        # El que no tiene imagen cae al ícono, no a un <img> sin src.
+        self.assertIn('mail-thumb--empty', html)
+
+    def test_correo_sin_site_url_no_inventa_imagenes(self):
+        # Sin dominio no hay URL que armar, así que el item llega sin imagen en
+        # vez de con una ruta que el correo no va a poder resolver.
+        from apps.orders.services import build_mail_items
+
+        self.prod1.image = 'products/crema.png'
+        self.prod1.save(update_fields=['image'])
+
+        order = checkout_cart(self.user, self.address.id)
+
+        filas = build_mail_items(order, site_url='')
+
+        self.assertEqual(len(filas), 2)
+        self.assertEqual(filas[0]['image_url'], '')
+        self.assertEqual(filas[0]['product_name'], self.prod1.name)
+
+    def test_correo_site_url_con_barra_final_no_la_duplica(self):
+        from apps.orders.services import build_mail_items
+
+        self.prod1.image = 'products/crema.png'
+        self.prod1.save(update_fields=['image'])
+
+        order = checkout_cart(self.user, self.address.id)
+        filas = build_mail_items(order, site_url='https://carely.co/')
+
+        self.assertEqual(
+            filas[0]['image_url'],
+            'https://carely.co' + self.prod1.image.url,
+        )
+
     def test_checkout_error_correo_no_revierte_pedido(self):
         from unittest.mock import patch
         
@@ -203,12 +301,103 @@ class OrderViewsTests(TestCase):
         self.assertContains(res, 'Snapshot de dirección')
         self.assertContains(res, 'Producto X')
         
+    def test_lista_muestra_las_imagenes_de_los_productos(self):
+        # La miniatura es lo único que distingue un pedido de otro en la lista,
+        # así que tiene que salir del producto real y no del snapshot de texto.
+        order = Order.objects.create(user=self.user, total=Decimal('100'))
+        con_foto = make_product('Con foto')
+        con_foto.image = 'products/test.png'
+        con_foto.save()
+        order.items.create(
+            product=con_foto, product_name='Con foto',
+            unit_price=Decimal('100'), quantity=1,
+        )
+        order.items.create(
+            product=make_product('Sin foto'), product_name='Sin foto',
+            unit_price=Decimal('100'), quantity=1,
+        )
+
+        self.client.force_login(self.user)
+        res = self.client.get(reverse('orders:order_list'))
+
+        self.assertContains(res, 'order-thumb')
+        self.assertContains(res, con_foto.image.url)
+        self.assertContains(res, reverse('catalog:product_detail', args=[con_foto.slug]))
+        # Sin imagen no debe romperse el enlace: cae al icono de la caja.
+        self.assertContains(res, 'bi-box')
+
     def test_aislamiento_pedido_ajeno(self):
         order = Order.objects.create(user=self.user2, total=Decimal('10'))
 
         self.client.force_login(self.user)
         res = self.client.get(reverse('orders:order_detail', args=[order.id]))
         self.assertEqual(res.status_code, 404)
+
+    def test_destino_e_instrucciones_van_en_una_franja_arriba(self):
+        # Dirección y notas son los datos que viajan con el paquete, así que
+        # van sobre las columnas y no como una tarjeta más en la izquierda.
+        order = Order.objects.create(
+            user=self.user,
+            total=Decimal('50000'),
+            shipping_address='Carrera 7 #32-16, Bogotá',
+            notes='Entregar en recepción',
+        )
+
+        self.client.force_login(self.user)
+        html = self.client.get(
+            reverse('orders:order_detail', args=[order.id]),
+        ).content.decode()
+
+        # La franja existe y está antes del grid de columnas.
+        self.assertIn('order-ship', html)
+        self.assertLess(html.index('order-ship'), html.index('row g-4'))
+
+        self.assertIn('Carrera 7 #32-16', html)
+        self.assertIn('Entregar en recepción', html)
+        # Las notas ya no viven dentro de la tarjeta de información.
+        self.assertNotIn('Notas del pedido', html)
+
+    def test_pedido_pendiente_ofrece_pagar_en_detalle_y_exito(self):
+        # El aviso de fallo de la pasarela manda a "reintentar desde el detalle
+        # del pedido". Si ahí no hay botón, un cobro caído deja la compra muerta.
+        order = Order.objects.create(user=self.user, total=Decimal('50000'))
+        self.assertTrue(order.puede_pagarse)
+
+        self.client.force_login(self.user)
+        start = reverse('payments:start', args=[order.id])
+        detalle = self.client.get(reverse('orders:order_detail', args=[order.id]))
+        exito = self.client.get(reverse('orders:success', args=[order.id]))
+
+        self.assertContains(detalle, start)
+        # `floatformat` usa coma decimal: 50000 -> 50000,00
+        self.assertContains(detalle, 'Pagar COP 50000,00')
+        self.assertContains(exito, start)
+
+    def test_pedido_pagado_no_ofrece_pagar(self):
+        order = Order.objects.create(
+            user=self.user,
+            total=Decimal('50000'),
+            status=Order.Status.CONFIRMADO,
+        )
+        self.assertFalse(order.puede_pagarse)
+
+        self.client.force_login(self.user)
+        res = self.client.get(reverse('orders:order_detail', args=[order.id]))
+        self.assertNotContains(res, reverse('payments:start', args=[order.id]))
+
+    def test_pago_pendiente_se_reutiliza_en_el_reintento(self):
+        # `puede_pagarse` no filtra por pago activo: la vista reutiliza el pago
+        # y regenera el checkout, así que volver a pulsar es el reintento.
+        from apps.payments.models import Payment
+        order = Order.objects.create(user=self.user, total=Decimal('50000'))
+        Payment.objects.create(order=order, amount=order.total)
+
+        self.assertTrue(order.puede_pagarse)
+        self.client.force_login(self.user)
+        self.assertContains(
+            self.client.get(reverse('orders:order_detail', args=[order.id])),
+            reverse('payments:start', args=[order.id]),
+        )
 
 
 # ─────────────────────────────────────────────────────────────────────────────

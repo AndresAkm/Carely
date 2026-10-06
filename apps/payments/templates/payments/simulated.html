@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Checkout simulado - Carely{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'payments/css/payment.css' %}?v=1" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+{% include 'navbar.html' %}
+
+<section class="payment-section">
+    <div class="container">
+
+        <div class="mt-5 payment-card">
+
+            <i class="bi bi-tools payment-icon payment-icon--wait"></i>
+            <h1 class="payment-title">Checkout simulado</h1>
+            <p class="payment-lead">
+                Estás en la pasarela de desarrollo: no se llama a Wompi ni se mueve
+                dinero. Pulsa un botón para generar el evento que Wompi mandaría.
+            </p>
+
+            <div class="payment-details">
+                <div class="payment-row">
+                    <span>Pedido</span>
+                    <strong>#{{ payment.order.id }}</strong>
+                </div>
+                <div class="payment-row">
+                    <span>Monto</span>
+                    <strong>COP {{ payment.amount|floatformat:2 }}</strong>
+                </div>
+                <div class="payment-row">
+                    <span>Referencia</span>
+                    <strong class="payment-ref">{{ payment.reference }}</strong>
+                </div>
+            </div>
+
+            <div class="payment-actions">
+                <form method="post" action="{% url 'payments:simulated_result' payment.reference %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="resultado" value="aprobado">
+                    <button type="submit" class="c-btn c-btn--primary">
+                        <i class="bi bi-check-circle"></i>
+                        Aprobar pago
+                    </button>
+                </form>
+
+                <form method="post" action="{% url 'payments:simulated_result' payment.reference %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="resultado" value="rechazado">
+                    <button type="submit" class="c-btn c-btn--outline">
+                        <i class="bi bi-x-circle"></i>
+                        Rechazar pago
+                    </button>
+                </form>
+            </div>
+
+        </div>
+
+    </div>
+</section>
+
+{% include 'footer.html' %}
+
+{% endblock %}

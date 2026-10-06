@@ -14,7 +14,7 @@
 <section class="checkout-section">
     <div class="container">
 
-        <h1 class="mb-4" style="font-family: var(--ff-serif);">Completar pedido</h1>
+        <h1 class="my-4" style="font-family: var(--ff-serif);">Completar pedido</h1>
 
         <!-- Mensajes Django -->
         {% if messages %}
@@ -190,6 +190,17 @@
                     </form>
                 </div>
 
+            <!-- 4. Pago -->
+                <div class="checkout-card">
+                    <h2>4. Pago</h2>
+
+                    <p class="text-muted mb-0" style="font-size:0.9rem;">
+                        Te llevamos al checkout seguro de Wompi para completar el pago.
+                        Solo se transfieren los datos que la pasarela te pida; en Carely
+                        nunca guardamos número de tarjeta ni clave.
+                    </p>
+                </div>
+
             </div>
 
             <!-- Columna derecha: resumen -->
@@ -336,8 +347,8 @@
                             id="btnConfirm"
                             {% if not addresses %}disabled{% endif %}
                         >
-                            <i class="bi bi-check-circle"></i>
-                            Confirmar Pedido
+                            <i class="bi bi-credit-card"></i>
+                            Pagar con Wompi
                         </button>
                     </form>
 
@@ -345,8 +356,7 @@
                         class="text-muted text-center mt-3"
                         style="font-size:0.8rem;"
                     >
-                        Al confirmar, aceptas finalizar tu compra.
-                        (El pago será procesado próximamente).
+                        Confirmas el pedido y pasas a la pasarela de pago segura de Wompi.
                     </p>
 
                 </div>
@@ -471,7 +481,7 @@
         btn.disabled = true;
 
         btn.innerHTML =
-            '<i class="bi bi-hourglass-split"></i> Procesando...';
+            '<i class="bi bi-hourglass-split"></i> Redirigiendo a Wompi...';
     });
 </script>
 {% endblock %}

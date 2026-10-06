@@ -5,7 +5,13 @@ from django.db import transaction
 
 from apps.users.models import Address
 from apps.cart.models import Cart, CartItem
-from apps.orders.models import Coupon, Order, OrderItem, OrderStatusHistory
+from apps.orders.models import (
+    NOTAS_POR_DEFECTO,
+    Coupon,
+    Order,
+    OrderItem,
+    OrderStatusHistory,
+)
 from apps.inventory.services import (
     InventoryService,
     InsufficientStockError,
@@ -30,6 +36,69 @@ class InvalidAddressError(Exception):
 
 class InvalidCouponError(Exception):
     pass
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Dirección de envío
+# ─────────────────────────────────────────────────────────────────────────────
+
+def build_address_snapshot(address) -> str:
+    """
+    Arma el texto de la dirección que se guarda en el pedido.
+
+    Solo incluye las partes que tienen contenido. Interpolar los campos
+    opcionales sin filtrar dejaba renglones como `CP:` o `Tel:` con nada
+    detrás, y en pantalla se leían como datos que faltaban en vez de campos
+    que la persona no llenó.
+
+    El snapshot se copia en el pedido y no se vuelve a leer de la dirección: si
+    esta lista cambia, los pedidos históricos conservan el texto con el que se
+    crearon.
+    """
+    partes = [
+        address.recipient_name,
+        address.address_line,
+        address.address_line2,
+        f"{address.city.name}, {address.department.name}",
+    ]
+    # Los prefijos se comprueban sobre el dato, no sobre el texto ya prefijado:
+    # filtrar después dejaría un `CP:` pelado, que es justo lo que se quería
+    # eliminar.
+    etiquetadas = [
+        (address.postal_code, 'CP:'),
+        (address.phone, 'Tel:'),
+        (address.instructions, 'Instrucciones:'),
+    ]
+    partes.extend(
+        f'{prefijo} {valor.strip()}'
+        for valor, prefijo in etiquetadas
+        if valor and valor.strip()
+    )
+    return '\n'.join(parte.strip() for parte in partes if parte and parte.strip())
+
+
+def build_mail_items(order, site_url: str = '') -> list:
+    """
+    Prepara las filas de producto del correo de confirmación.
+
+    La imagen se devuelve ya absoluta. El correo se lee fuera del navegador, en
+    un cliente que no tiene contexto del sitio: una ruta como `/media/...` no
+    resuelve y sale el ícono de imagen rota. Sin `site_url` no hay forma de
+    armarla, así que el item llega sin imagen y la plantilla cae al ícono.
+    """
+    filas = []
+    for item in order.items.select_related('product'):
+        imagen = ''
+        if site_url and item.product.image:
+            imagen = f'{site_url.rstrip("/")}{item.product.image.url}'
+        filas.append({
+            'product_name': item.product_name,
+            'unit_price': item.unit_price,
+            'quantity': item.quantity,
+            'subtotal': item.subtotal,
+            'image_url': imagen,
+        })
+    return filas
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -116,15 +185,7 @@ def checkout_cart(
                 'La dirección seleccionada no es válida o no pertenece al usuario.'
             )
 
-        address_snapshot = (
-            f"{address.recipient_name}\n"
-            f"{address.address_line}\n"
-            f"{address.address_line2}\n"
-            f"{address.city.name}, {address.department.name}\n"
-            f"CP: {address.postal_code}\n"
-            f"Tel: {address.phone}\n"
-            f"Instrucciones: {address.instructions}"
-        ).strip()
+        address_snapshot = build_address_snapshot(address)
 
         # ─────────────────────────────────────────────
         # 2. Obtener carrito
@@ -184,7 +245,10 @@ def checkout_cart(
             user=user,
             status=Order.Status.PENDIENTE,
             shipping_address=address_snapshot,
-            notes=notes.strip(),
+            # `blank=True` deja pasar cadena vacía, y el `default` del modelo no
+            # se aplicaría: se decide aquí para que el texto llegue a guardarse
+            # y no dependa de que la vista siga mostrándolo o no.
+            notes=notes.strip() or NOTAS_POR_DEFECTO,
             total=Decimal('0.00'),
             coupon=coupon_obj,
             coupon_code=coupon_code_snapshot,
@@ -260,6 +324,7 @@ def checkout_cart(
                 context = {
                     'order': order,
                     'site_url': site_url if site_url else '',
+                    'items': build_mail_items(order, site_url),
                 }
                 GmailService.send_message(
                     subject=f'¡Tu pedido #{order.id} está confirmado!',

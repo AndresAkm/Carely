@@ -1,4 +1,6 @@
 import json
+import logging
+
 from decimal import Decimal
 
 from django.contrib import messages
@@ -17,7 +19,12 @@ from apps.orders.services import (
     validate_coupon,
 )
 from apps.inventory.services import InsufficientStockError
+from apps.payments.gateways import GatewayError
+from apps.payments.services import PaymentError, PaymentService, find_active_payment
 from apps.users.models import Address
+
+
+logger = logging.getLogger(__name__)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -120,11 +127,10 @@ def _handle_confirm(request, context, addresses):
         # Limpiar cupón de sesión al crear el pedido exitosamente.
         request.session.pop('applied_coupon_code', None)
 
-        messages.success(
-            request,
-            f'¡Pedido #{order.id} confirmado con éxito!'
-        )
-        return redirect('orders:success', order_id=order.id)
+        # Sale del try a propósito: el pedido ya existe y el stock ya se
+        # descontó, así que un fallo al cobrar no debe re-renderizar el
+        # checkout ni tentar de crear otro pedido.
+        return _iniciar_pago(request, order)
 
     except InvalidAddressError as e:
         messages.error(request, str(e))
@@ -154,6 +160,30 @@ def _handle_confirm(request, context, addresses):
     context.update(_coupon_context(request, context['cart_total']))
     context['addresses'] = addresses
     return render(request, 'orders/checkout.html', context)
+
+
+def _iniciar_pago(request, order):
+    """
+    Abre el pago del pedido y devuelve al cliente al checkout de la pasarela.
+
+    Nunca propaga errores: si la pasarela no está configurada o no responde, el
+    pedido queda registrado y pendiente de pago, y el usuario ve un aviso con la
+    ruta para reintentar en lugar de perder la compra.
+    """
+    try:
+        payment = find_active_payment(order) or PaymentService.create_payment(order)
+        checkout_url = PaymentService.start_checkout(payment, request)
+    except (GatewayError, PaymentError) as error:
+        logger.error('No se pudo iniciar el pago del pedido #%s: %s', order.id, error)
+        messages.warning(
+            request,
+            f'Creamos tu pedido #{order.id}, pero no pudimos abrir el pago: {error} '
+            'Puedes intentarlo de nuevo desde el detalle del pedido.',
+        )
+        return redirect('orders:success', order_id=order.id)
+
+    messages.success(request, f'¡Pedido #{order.id} confirmado! Completa el pago.')
+    return redirect(checkout_url)
 
 
 def _coupon_context(request, cart_total: Decimal) -> dict:
@@ -238,7 +268,7 @@ def order_list_view(request):
     """Lista todos los pedidos propios del usuario autenticado."""
     orders = Order.objects.filter(
         user=request.user
-    ).order_by('-created_at').prefetch_related('items')
+    ).order_by('-created_at').prefetch_related('items__product')
     return render(request, 'orders/order_list.html', {'orders': orders})
 
 

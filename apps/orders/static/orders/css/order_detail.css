@@ -58,3 +58,52 @@
     font-size: .85rem;
     color: var(--clr-text-2);
 }
+
+/* Franja de destino e instrucciones. Va sobre las columnas porque describe el
+   paquete, no el pedido: la dirección y las notas viajan con la mercancía. */
+.order-ship {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1px;
+    margin-bottom: 2rem;
+    border: 1px solid var(--clr-border);
+    border-radius: var(--r-md);
+    background: var(--clr-border);
+    box-shadow: var(--sh-sm);
+    overflow: hidden;
+}
+
+.order-ship__cell {
+    flex: 1 1 240px;
+    padding: 1.25rem 1.5rem;
+    background: var(--clr-card, #fff);
+}
+
+.order-ship__cell--addr {
+    background: color-mix(in srgb, var(--accent) 6%, var(--clr-card, #fff));
+}
+
+.order-ship__label {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    margin-bottom: .4rem;
+    color: var(--clr-text-2);
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.order-ship__value {
+    margin: 0;
+    color: var(--clr-text);
+    font-size: .95rem;
+    line-height: 1.5;
+}
+
+/* Las notas del cliente son un dato accesorio; la dirección es la que hay que
+   poder leer de un vistazo. */
+.order-ship__value--muted {
+    color: var(--clr-text-2);
+}

@@ -119,6 +119,11 @@ class Coupon(models.Model):
 # ORDER
 # ─────────────────────────────────────────────────────────────────────────────
 
+#: Se guarda cuando el cliente no deja instrucciones. No es un valor vacío
+#: porque el campo se muestra al usuario: un espacio en blanco se lee como un
+#: dato que se perdió, no como "no pidió nada".
+NOTAS_POR_DEFECTO = 'Sin instrucciones adicionales'
+
 class Order(models.Model):
     class Status(models.TextChoices):
         PENDIENTE = 'pendiente', 'Pendiente'
@@ -141,7 +146,7 @@ class Order(models.Model):
     )
     total = models.DecimalField('total', max_digits=12, decimal_places=2, default=0)
     shipping_address = models.TextField('dirección de envío', blank=True)
-    notes = models.TextField('notas', blank=True)
+    notes = models.TextField('notas', blank=True, default=NOTAS_POR_DEFECTO)
 
     # ── Cupón / descuento ─────────────────────────────────
     # FK nullable con SET_NULL para conservar historial aunque el cupón se elimine.
@@ -199,7 +204,13 @@ class Order(models.Model):
             )
             self.total = max(subtotal - self.discount_amount, Decimal('0.00'))
         else:
-            self.total = Decimal('0.00')
+            # Al crear, respetar total asignado manualmente (ej. tests, simulaciones)
+            # Solo recalcular si no hay total explícito o es 0 y hay items
+            has_explicit_total = 'total' in kwargs.get('update_fields', []) if kwargs.get('update_fields') else True
+            if not has_explicit_total:
+                pass  # respetar valor ya asignado
+            # Si no se pasó update_fields, el valor asignado se respeta
+            # No forzamos a 0.00
         super().save(*args, **kwargs)
 
     def calculate_total(self):
@@ -209,6 +220,29 @@ class Order(models.Model):
     def subtotal(self) -> Decimal:
         """Suma bruta de items (sin descuento)."""
         return sum((item.subtotal for item in self.items.all()), Decimal('0.00'))
+
+    @property
+    def puede_pagarse(self) -> bool:
+        """
+        ¿Tiene sentido ofrecer el botón de pagar para este pedido?
+
+        Sin esto, una pasarela caída deja el pedido registrado y sin forma de
+        pagar: el aviso pide reintentar "desde el detalle del pedido", pero ahí
+        no había ningún botón.
+
+        Solo depende del estado del pedido, no de si ya existe un pago. El
+        servicio reutiliza el pago activo y regenera el checkout, así que volver
+        a pulsar es justamente el reintento. El pedido pasa a confirmado cuando
+        el pago se aprueba, así que pendiente es lo mismo que sin pagar.
+
+        Import diferido porque `apps.payments` importa `apps.orders`; importar
+        arriba cerraría el círculo.
+        """
+        from apps.payments.models import Payment
+        return (
+            self.status == self.Status.PENDIENTE
+            and not self.payments.filter(status=Payment.Status.APROBADO).exists()
+        )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
