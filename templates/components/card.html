@@ -13,6 +13,9 @@
             {% if product.featured %}
             <span class="product-card__badge">Destacado</span>
             {% endif %}
+            {% if product.discount_percent|floatformat:0|add:0 > 0 %}
+            <span class="product-card__discount-badge">-{{ product.discount_percent|floatformat:0 }}%</span>
+            {% endif %}
         </div>
         <div class="product-card__body">
             <span class="product-card__cat">{{ product.category.name }}</span>
@@ -21,7 +24,15 @@
             <p class="product-card__desc">{{ product.description|truncatechars:80 }}</p>
             {% endif %}
             <div class="product-card__footer">
-                <span class="product-card__price">COP {{ product.price|floatformat:2 }}</span>
+                {% load humanize %}
+                {% if product.discount_percent|floatformat:0|add:0 > 0 %}
+                <span class="product-card__price">
+                    <span class="product-card__price--original">COP {{ product.price|floatformat:0 }}</span>
+                    <span class="product-card__price--final">COP {{ product.discounted_price|floatformat:0 }}</span>
+                </span>
+                {% else %}
+                <span class="product-card__price">COP {{ product.price|floatformat:0 }}</span>
+                {% endif %}
                 {% if product.stock > 0 %}
                 <span class="product-card__stock in-stock"><i class="bi bi-check-circle-fill"></i> En stock</span>
                 {% else %}

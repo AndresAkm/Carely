@@ -21,6 +21,15 @@ class CatalogView(ListView):
         context['categories'] = Category.objects.filter(is_active=True)
         context['current_category'] = self.request.GET.get('category', '')
         context['filter'] = getattr(self, 'filter', ProductFilter(self.request.GET, queryset=self.get_queryset()))
+        context['product_filter_form'] = self.filter.form
+        # Calcular precio con descuento para cada producto
+        from decimal import Decimal
+        for product in context.get('products', []):
+            if product.discount_percent and product.discount_percent > 0:
+                discount_amount = (product.price * product.discount_percent) / Decimal('100')
+                product.discounted_price = product.price - discount_amount
+            else:
+                product.discounted_price = product.price
         # Para paginación genérica que preserve TODOS los parámetros
         query = self.request.GET.copy()
         query.pop('page', None)
@@ -43,9 +52,16 @@ class ProductDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        product = self.object
+        from decimal import Decimal
+        if product.discount_percent and product.discount_percent > 0:
+            discount_amount = (product.price * product.discount_percent) / Decimal('100')
+            product.discounted_price = product.price - discount_amount
+        else:
+            product.discounted_price = product.price
         context['related_products'] = Product.objects.filter(
-            category=self.object.category,
+            category=product.category,
             is_active=True,
             category__is_active=True,
-        ).exclude(pk=self.object.pk).select_related('category')[:4]
+        ).exclude(pk=product.pk)[:4]
         return context

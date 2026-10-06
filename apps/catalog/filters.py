@@ -21,6 +21,9 @@ class ProductFilter(django_filters.FilterSet):
     )
     brand = django_filters.CharFilter(lookup_expr='iexact', label='Marca')
     featured = django_filters.BooleanFilter(label='Destacado')
+    has_discount = django_filters.BooleanFilter(method='filter_has_discount', label='Con descuento')
+    min_discount = django_filters.NumberFilter(field_name='discount_percent', lookup_expr='gte', label='Descuento mínimo (%)')
+    max_discount = django_filters.NumberFilter(field_name='discount_percent', lookup_expr='lte', label='Descuento máximo (%)')
     in_stock = django_filters.BooleanFilter(method='filter_in_stock', label='Solo en stock')
 
     # Orden configurable
@@ -46,6 +49,11 @@ class ProductFilter(django_filters.FilterSet):
         if not value or not value.strip():
             return queryset
         return queryset.filter(Q(name__icontains=value) | Q(description__icontains=value))
+
+    def filter_has_discount(self, queryset, name, value):
+        if value:
+            return queryset.filter(discount_percent__gt=0)
+        return queryset
 
     def filter_in_stock(self, queryset, name, value):
         if value:

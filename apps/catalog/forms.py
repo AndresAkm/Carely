@@ -41,7 +41,7 @@ class ProductForm(DashboardFormMixin, forms.ModelForm):
 
     class Meta:
         model = Product
-        fields = ['category', 'name', 'description', 'price', 'image', 'stock', 'is_active', 'featured', 'brand']
+        fields = ['category', 'name', 'description', 'price', 'image', 'stock', 'is_active', 'featured', 'brand', 'discount_percent']
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4}),
             'image': forms.ClearableFileInput(),

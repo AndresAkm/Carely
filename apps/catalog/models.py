@@ -1,3 +1,6 @@
+from decimal import Decimal
+
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils.text import slugify
 
@@ -38,6 +41,15 @@ class Product(models.Model):
     is_active = models.BooleanField('activo', default=True)
     featured = models.BooleanField('destacado', default=False)
     brand = models.CharField('marca', max_length=100, blank=True, db_index=True)
+    discount_percent = models.DecimalField(
+        'descuento (%)',
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00')), MaxValueValidator(Decimal('100.00'))],
+        help_text='Descuento en porcentaje (0-100)',
+        db_index=True,
+    )
     created_at = models.DateTimeField('creado', auto_now_add=True)
     updated_at = models.DateTimeField('actualizado', auto_now=True)
 

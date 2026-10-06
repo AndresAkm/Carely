@@ -33,7 +33,14 @@
                 <div class="product-detail-info">
                     <span class="product-detail-category">{{ product.category.name }}</span>
                     <h1 class="product-detail-title">{{ product.name }}</h1>
-                    <p class="product-detail-price">COP {{ product.price|floatformat:2 }}</p>
+                    {% if product.discount_percent|floatformat:0|add:0 > 0 %}
+                    <p class="product-detail-price">
+                        <span class="product-card__price--original" style="font-size: 1rem;">COP {{ product.price|floatformat:0 }}</span>
+                        <span class="text-primary fw-bold">COP {{ product.discounted_price|floatformat:0 }}</span>
+                    </p>
+                    {% else %}
+                    <p class="product-detail-price">COP {{ product.price|floatformat:0 }}</p>
+                    {% endif %}
                     {% if product.stock > 0 %}
                     <span class="product-detail-stock"><i class="bi bi-check-circle-fill"></i> Disponible · {{ product.stock }} unidades</span>
                     {% else %}
