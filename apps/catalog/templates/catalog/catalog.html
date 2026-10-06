@@ -73,8 +73,8 @@
                             <option value="500000" {% if request.GET.max_price == '500000' %}selected{% endif %}>$500.000</option>
                         </select>
                     </div>
-                    <div class="col-md-6 col-lg-1">
-                        <div class="form-check form-switch mt-4">
+                    <div class="col-md-6 col-lg-2 d-flex align-items-center">
+                        <div class="form-check form-switch mb-0">
                             <input class="form-check-input" type="checkbox" role="switch" name="has_discount" id="has_discount" value="true" {% if request.GET.has_discount == 'true' %}checked{% endif %}>
                             <label class="form-check-label" for="has_discount">Con descuento</label>
                         </div>
