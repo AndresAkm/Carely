@@ -47,12 +47,12 @@
             <ul class="pagination justify-content-center gap-1">
                 {% if page_obj.has_previous %}
                 <li class="page-item">
-                    <a class="page-link" href="?{% if current_category %}category={{ current_category }}&{% endif %}page=1" aria-label="Primera">
+                    <a class="page-link" href="?{% if filter_query %}{{ filter_query }}&{% endif %}page=1" aria-label="Primera">
                         <i class="bi bi-chevron-double-left"></i>
                     </a>
                 </li>
                 <li class="page-item">
-                    <a class="page-link" href="?{% if current_category %}category={{ current_category }}&{% endif %}page={{ page_obj.previous_page_number }}" aria-label="Anterior">
+                    <a class="page-link" href="?{% if filter_query %}{{ filter_query }}&{% endif %}page={{ page_obj.previous_page_number }}" aria-label="Anterior">
                         <i class="bi bi-chevron-left"></i>
                     </a>
                 </li>
@@ -60,18 +60,18 @@
 
                 {% for num in page_obj.paginator.page_range %}
                 <li class="page-item {% if page_obj.number == num %}active{% endif %}">
-                    <a class="page-link" href="?{% if current_category %}category={{ current_category }}&{% endif %}page={{ num }}">{{ num }}</a>
+                    <a class="page-link" href="?{% if filter_query %}{{ filter_query }}&{% endif %}page={{ num }}">{{ num }}</a>
                 </li>
                 {% endfor %}
 
                 {% if page_obj.has_next %}
                 <li class="page-item">
-                    <a class="page-link" href="?{% if current_category %}category={{ current_category }}&{% endif %}page={{ page_obj.next_page_number }}" aria-label="Siguiente">
+                    <a class="page-link" href="?{% if filter_query %}{{ filter_query }}&{% endif %}page={{ page_obj.next_page_number }}" aria-label="Siguiente">
                         <i class="bi bi-chevron-right"></i>
                     </a>
                 </li>
                 <li class="page-item">
-                    <a class="page-link" href="?{% if current_category %}category={{ current_category }}&{% endif %}page={{ page_obj.paginator.num_pages }}" aria-label="Ultima">
+                    <a class="page-link" href="?{% if filter_query %}{{ filter_query }}&{% endif %}page={{ page_obj.paginator.num_pages }}" aria-label="Ultima">
                         <i class="bi bi-chevron-double-right"></i>
                     </a>
                 </li>

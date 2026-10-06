@@ -96,6 +96,8 @@ class ProductListView(DashboardAdminMixin, ListView):
             queryset = queryset.filter(Q(name__icontains=search) | Q(description__icontains=search))
         if filters.get('category'):
             queryset = queryset.filter(category=filters['category'])
+        if filters.get('brand'):
+            queryset = queryset.filter(brand__icontains=filters['brand'])
         if filters.get('is_active'):
             queryset = queryset.filter(is_active=filters['is_active'] == 'True')
         return queryset

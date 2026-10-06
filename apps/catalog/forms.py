@@ -41,7 +41,7 @@ class ProductForm(DashboardFormMixin, forms.ModelForm):
 
     class Meta:
         model = Product
-        fields = ['category', 'name', 'description', 'price', 'image', 'stock', 'is_active', 'featured']
+        fields = ['category', 'name', 'description', 'price', 'image', 'stock', 'is_active', 'featured', 'brand']
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4}),
             'image': forms.ClearableFileInput(),
@@ -62,6 +62,7 @@ class ProductForm(DashboardFormMixin, forms.ModelForm):
 class ProductFilterForm(forms.Form):
     q = forms.CharField(label='Buscar', required=False, widget=forms.TextInput(attrs={'placeholder': 'Nombre o descripción...'}))
     category = forms.ModelChoiceField(label='Categoría', queryset=Category.objects.all(), required=False)
+    brand = forms.CharField(label='Marca', required=False)
     is_active = forms.ChoiceField(label='Estado', choices=[('', 'Todos'), ('True', 'Activo'), ('False', 'Inactivo')], required=False)
 
     def __init__(self, *args, **kwargs):

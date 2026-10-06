@@ -1,6 +1,8 @@
 from django.views.generic import DetailView, ListView
 
+from ..filters import ProductFilter
 from ..models import Category, Product
+
 
 class CatalogView(ListView):
     model = Product
@@ -9,16 +11,20 @@ class CatalogView(ListView):
     paginate_by = 12
 
     def get_queryset(self):
-        qs = Product.objects.filter(is_active=True).select_related('category')
-        category_slug = self.request.GET.get('category')
-        if category_slug:
-            qs = qs.filter(category__slug=category_slug)
-        return qs
+        # Siempre público: solo activos y con categoría activa
+        qs = Product.objects.filter(is_active=True, category__is_active=True).select_related('category')
+        self.filter = ProductFilter(self.request.GET, queryset=qs)
+        return self.filter.qs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['categories'] = Category.objects.filter(is_active=True)
         context['current_category'] = self.request.GET.get('category', '')
+        context['filter'] = getattr(self, 'filter', ProductFilter(self.request.GET, queryset=self.get_queryset()))
+        # Para paginación genérica que preserve TODOS los parámetros
+        query = self.request.GET.copy()
+        query.pop('page', None)
+        context['filter_query'] = query.urlencode()
         return context
 
 

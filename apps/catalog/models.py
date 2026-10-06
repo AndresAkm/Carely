@@ -37,6 +37,7 @@ class Product(models.Model):
     stock = models.PositiveIntegerField('stock', default=0)
     is_active = models.BooleanField('activo', default=True)
     featured = models.BooleanField('destacado', default=False)
+    brand = models.CharField('marca', max_length=100, blank=True, db_index=True)
     created_at = models.DateTimeField('creado', auto_now_add=True)
     updated_at = models.DateTimeField('actualizado', auto_now=True)
 

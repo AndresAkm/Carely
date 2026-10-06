@@ -15,7 +15,10 @@
             {% if request.resolver_match.namespace == 'core' %}
             <li><a href="#beneficios">Beneficios</a></li>
             <li><a href="#categorias">Categorias</a></li>
+            {% if not user.is_authenticated %}
             <li><a href="#por-que-carely">Por que Carely</a></li>
+            {% endif %}
+            <li><a href="{% url 'catalog:home' %}">Catalogo</a></li>
             {% else %}
             <li><a href="{% url 'core:home' %}">Inicio</a></li>
             <li><a href="{% url 'catalog:home' %}" style="color:var(--clr-text)">Catalogo</a></li>
