@@ -762,6 +762,14 @@
   margin: 0 auto 18px;
   transition: all 0.35s var(--ease);
   border: 1px solid var(--clr-border);
+  overflow: hidden;
+}
+
+/* La foto de la categoría llena la casilla de 64px en lugar del ícono. */
+.category-card__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .category-card:hover .category-card__icon,

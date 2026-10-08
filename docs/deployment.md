@@ -24,11 +24,12 @@ dependencias; Vercel no parsea `-r requirements/...`), `.python-version` y
   (los builds y las funciones de Vercel salen de rangos de IP de AWS).
 
 **Supabase Storage**: las 4 variables `SUPABASE_*` del `.env` apuntan al
-bucket con las imágenes (producción usa `carely-prod`, desarrollo usaba
-`carely-images`); se copian tal cual (incluido el sufijo `/rest/v1` de
-`SUPABASE_URL`, es correcto: `base.py` usa solo el host). El bucket debe
-estar marcado como **público** en Storage → Buckets, o las URLs
-`/storage/v1/object/public/...` devuelven 401.
+bucket con las imágenes (producción y desarrollo usan `carely-images`; el
+bucket `carely-prod` quedó vacío y se descartó); se copian tal cual
+(incluido el sufijo `/rest/v1` de `SUPABASE_URL`, es correcto: `base.py`
+usa solo el host). El bucket debe estar marcado como **público** en
+Storage → Buckets, o las URLs `/storage/v1/object/public/...` devuelven
+401/400.
 
 **Gmail SMTP**: `.env` ya trae host, puerto, usuario y contraseña de
 aplicación; se copian tal cual.
@@ -79,7 +80,7 @@ falla a propósito si no están. Marcar cada variable para **Production**
 | `DJANGO_DB_HOST` | host público de MariaDB Cloud (nunca `localhost`) |
 | `DJANGO_DB_USER` / `DJANGO_DB_PASSWORD` | credenciales de MariaDB Cloud |
 | `DJANGO_DB_PORT` | `4001` (SkySQL; `3306` en el default de otros proveedores) |
-| `SUPABASE_URL` / `SUPABASE_S3_ACCESS_KEY_ID` / `SUPABASE_S3_SECRET_ACCESS_KEY` / `SUPABASE_STORAGE_BUCKET` | igual que en `.env` (`SUPABASE_STORAGE_BUCKET=carely-prod`), copiar y pegar |
+| `SUPABASE_URL` / `SUPABASE_S3_ACCESS_KEY_ID` / `SUPABASE_S3_SECRET_ACCESS_KEY` / `SUPABASE_STORAGE_BUCKET` | igual que en `.env` (`SUPABASE_STORAGE_BUCKET=carely-images`), copiar y pegar |
 | `DJANGO_EMAIL_BACKEND` | `django.core.mail.backends.smtp.EmailBackend` |
 | `EMAIL_HOST` / `EMAIL_PORT` / `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` / `EMAIL_USE_TLS` / `DEFAULT_FROM_EMAIL` | igual que en `.env` |
 | `WOMPI_PUBLIC_KEY` / `WOMPI_PRIVATE_KEY` / `WOMPI_INTEGRITY_SECRET` / `WOMPI_EVENTS_SECRET` / `WOMPI_API_URL` / `WOMPI_CHECKOUT_URL` | igual que en `.env` (sandbox: `pub_test_`/`prv_test_`/`test_integrity_`/`test_events_`, `https://sandbox.wompi.co/v1`) |
@@ -139,10 +140,19 @@ $env:DJANGO_SUPERUSER_PASSWORD='<contraseña>'
 
 # Datos geográficos (Departamento/City), solo si la BD está vacía:
 .\env\Scripts\python.exe manage.py cargar_colombia
+
+# Catálogo real (6 categorías y 17 productos con imagen y precio en COP).
+# La migración 0002_seed_data solo deja productos genéricos sin imagen;
+# este comando los reemplaza y es idempotente (se puede volver a correr).
+.\env\Scripts\python.exe manage.py cargar_catalogo
 ```
 
-El catálogo (categorías y productos) lo siembra la migración
-`0002_seed_data` durante el migrate del build; no requiere pasos extra.
+`cargar_catalogo` borra los productos genéricos de la semilla, salvo los que
+tienen historial de pedidos o movimientos de inventario: esos quedan
+desactivados (`is_active=False`, `stock=0`) y arrastran a sus categorías
+(Maquillaje/Fragancias), que también se desactivan en vez de borrarse. Las
+imágenes no se suben desde el comando: ya viven en el bucket
+`carely-images` y solo se guarda su ruta en el campo `image`.
 
 Pasos restantes:
 

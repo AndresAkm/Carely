@@ -151,7 +151,13 @@
             <div class="categories-grid">
                 {% for category in categories %}
                 <div class="category-card anim-scroll">
-                    <div class="category-card__icon"><i class="bi {{ category.icon }}"></i></div>
+                    <div class="category-card__icon">
+                        {% if category.image %}
+                        <img src="{{ category.image.url }}" alt="{{ category.name }}" class="category-card__img">
+                        {% else %}
+                        <i class="bi {{ category.icon }}"></i>
+                        {% endif %}
+                    </div>
                     <h3 class="category-card__name">{{ category.name }}</h3>
                     <p class="category-card__desc">{{ category.description }}</p>
                 </div>

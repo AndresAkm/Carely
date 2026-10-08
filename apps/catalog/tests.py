@@ -1,11 +1,13 @@
 from decimal import Decimal
 
+from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from apps.catalog.models import Category, Product
+from apps.inventory.models import InventoryMovement
 from apps.users.models import User
 
 
@@ -213,3 +215,67 @@ class CatalogAPIFilterTests(APITestCase):
         self.assertEqual(resp.status_code, 200)
         results = self._results(resp.json())
         self.assertEqual(len(results), 0)
+
+
+class CargarCatalogoCommandTests(TestCase):
+    def setUp(self):
+        self.generica = Category.objects.create(
+            name='Maquillaje', slug='maquillaje', icon='bi-palette', order=3,
+        )
+        self.producto_generico = Product.objects.create(
+            category=self.generica,
+            name='Labial Mate de Larga Duración',
+            slug='labial-mate-de-larga-duracion',
+            price=Decimal('159.00'),
+            stock=25,
+        )
+
+    def test_reemplaza_el_catalogo_generico(self):
+        call_command('cargar_catalogo', verbosity=0)
+
+        self.assertEqual(Category.objects.count(), 6)
+        self.assertEqual(Product.objects.count(), 17)
+        self.assertFalse(Category.objects.filter(slug='maquillaje').exists())
+        self.assertFalse(
+            Product.objects.filter(slug='labial-mate-de-larga-duracion').exists()
+        )
+
+    def test_asigna_imagen_marca_y_precio(self):
+        call_command('cargar_catalogo', verbosity=0)
+
+        protector = Product.objects.get(
+            slug='anthelios-uvmune-400-anti-manchas-fps50-x50-ml',
+        )
+        self.assertEqual(protector.price, Decimal('143900.00'))
+        self.assertEqual(protector.brand, 'La Roche-Posay')
+        self.assertEqual(
+            protector.image.name,
+            'products/sun-protect-anthelios-400-la-roche-posay.jpg',
+        )
+        self.assertTrue(
+            Category.objects.get(slug='proteccion-solar').image.name.endswith(
+                'categories/category-sun-protect.jpg'
+            )
+        )
+
+    def test_es_idempotente(self):
+        call_command('cargar_catalogo', verbosity=0)
+        call_command('cargar_catalogo', verbosity=0)
+
+        self.assertEqual(Category.objects.count(), 6)
+        self.assertEqual(Product.objects.count(), 17)
+
+    def test_producto_con_historial_se_desactiva_en_lugar_de_borrarse(self):
+        InventoryMovement.objects.create(
+            product=self.producto_generico,
+            quantity=5,
+            movement_type=InventoryMovement.MovementType.SALIDA,
+        )
+
+        call_command('cargar_catalogo', verbosity=0)
+
+        producto = Product.objects.get(slug='labial-mate-de-larga-duracion')
+        self.assertFalse(producto.is_active)
+        self.assertEqual(producto.stock, 0)
+        # Maquillaje sigue existiendo porque protege al producto con historial.
+        self.assertFalse(Category.objects.get(slug='maquillaje').is_active)
