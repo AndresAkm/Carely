@@ -1,0 +1,3 @@
+# Vercel solo detecta requirements.txt en la raíz; la lista real vive en
+# requirements/. No dupliques dependencias aquí.
+-r requirements/production.txt

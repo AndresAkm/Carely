@@ -1,0 +1,13 @@
+# Exclusiones de despliegue (solo afectan a `vercel` CLI; con integración de
+# Git Vercel clona el repo entero).
+env/
+.env
+.env.local
+db.sqlite3
+db_test.sqlite3
+staticfiles/
+media/
+Agent/
+docs/
+*.pyc
+__pycache__/
