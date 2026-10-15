@@ -60,7 +60,7 @@ para el pedido #1: Fallo de red al enviar el correo
 ```
 
 Es **esperado**: un test simula un fallo de red de Gmail para comprobar que el
-pedido se confirma igual. La suite termina en `Ran 205 tests ... OK`. Si ves
+pedido se confirma igual. La suite termina en `Ran 401 tests ... OK`. Si ves
 `OK` al final, todo bien.
 
 ---
@@ -154,25 +154,20 @@ la causa más común de que una página se caiga. Si añades uno nuevo:
 
 No son trampas, son cosas que faltan. **Menciónalas, no las arregles de paso.**
 
-### `catalog` no tiene `tests.py`
+### `catalog` y `payments` sí tienen tests
 
-No existe el archivo. El detalle de producto se prueba desde
-`apps/core/tests.py`. Si tocas catálogo, crea el archivo y mueve o duplica lo
-que toque. **`catalog` tiene 0 tests propios.**
-
-### `payments/tests.py` está vacío
-
-0 bytes. La app de pagos no tiene ninguna cobertura.
+Sus listas de tests existen y están cubiertas: `apps/catalog/tests.py` (36) y
+`apps/payments/tests.py` (56). El detalle de producto se prueba además desde
+`apps/core/tests.py`. `catalog/services.py` sigue siendo un placeholder vacío.
 
 ### Archivos vacíos
 
-Estos existen y están versionados, pero están vacíos:
+Estos existen y están versionados, pero están vacíos (0 bytes, sin contar los
+`__init__.py`):
 
 ```
-apps/core/models.py       apps/core/admin.py       apps/core/services.py
-apps/core/signals.py      apps/core/utils.py      apps/catalog/services.py
-apps/payments/services.py apps/payments/views.py  apps/payments/tests.py
-apps/users/signals.py     apps/inventory/views.py apps/orders/views.py
+apps/catalog/services.py  apps/core/admin.py     apps/core/services.py
+apps/core/signals.py      apps/core/utils.py     apps/users/signals.py
 ```
 
 `services.py` vacíos son **placeholders deliberados**: la capa de servicios está

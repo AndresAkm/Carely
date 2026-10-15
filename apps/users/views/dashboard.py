@@ -119,25 +119,21 @@ class UserPasswordChangeView(DashboardUserMixin, PasswordChangeView):
         return super().form_valid(form)
 
 
-class UserToggleActiveView(DashboardUserMixin, UpdateView):
-    model = User
-    fields = []
-    success_url = reverse_lazy('dashboard:user_list')
-
+class UserToggleActiveView(DashboardUserMixin, View):
     def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        if self.object == request.user:
+        user = User.objects.get(pk=kwargs['pk'])
+        if user == request.user:
             messages.error(request, 'No puedes desactivar tu propia cuenta.')
-        elif self.object.is_active and self.object.role == User.Role.ADMIN and User.objects.filter(is_active=True, role=User.Role.ADMIN).count() <= 1:
+        elif user.is_active and user.role == User.Role.ADMIN and User.objects.filter(is_active=True, role=User.Role.ADMIN).count() <= 1:
             messages.error(request, 'No puedes desactivar al último administrador activo.')
-        elif self.object.is_active:
-            disable_account(self.object, request.user)
-            notify_deactivation(self.object, request.user, request)
+        elif user.is_active:
+            disable_account(user, request.user)
+            notify_deactivation(user, request.user, request)
             messages.success(request, 'Se desactivó el usuario correctamente.')
         else:
-            enable_account(self.object)
+            enable_account(user)
             messages.success(request, 'Se activó el usuario correctamente.')
-        return redirect(self.success_url)
+        return redirect('dashboard:user_list')
 
 
 class UserForceDeleteView(DashboardUserMixin, View):

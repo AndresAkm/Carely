@@ -11,6 +11,7 @@ __pycache__/
 staticfiles/
 db.sqlite3
 db.sqlite3-journal
+db_test.sqlite3
 media/
 
 # Secretos

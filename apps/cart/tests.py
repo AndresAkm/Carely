@@ -8,6 +8,7 @@ from decimal import Decimal
 
 from django.test import TestCase
 from django.urls import reverse
+from rest_framework.test import APITestCase
 
 from apps.catalog.models import Category, Product
 from apps.users.models import User
@@ -302,3 +303,66 @@ class CartViewsTests(TestCase):
         self.client.force_login(user2)
         response = self.client.get(reverse('cart:cart'))
         self.assertNotContains(response, self.product.name)
+
+
+# ---------------------------------------------------------------------------
+# 7. API — items de carrito
+# ---------------------------------------------------------------------------
+
+class CartItemAPITests(APITestCase):
+
+    def setUp(self):
+        self.user = make_user()
+        self.cart = get_or_create_cart(self.user)
+        self.product = make_product(stock=10)
+        self.list_url = reverse('items-carrito-list')
+
+    def test_crea_item_autenticado(self):
+        self.client.force_authenticate(self.user)
+        response = self.client.post(self.list_url, {
+            'cart': self.cart.pk,
+            'product': self.product.pk,
+            'quantity': 2,
+        })
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(CartItem.objects.filter(cart=self.cart).count(), 1)
+
+    def test_no_permite_crear_en_carrito_ajeno(self):
+        otro = make_user(email='otro@carely.test')
+        carrito_ajeno = get_or_create_cart(otro)
+        self.client.force_authenticate(self.user)
+        response = self.client.post(self.list_url, {
+            'cart': carrito_ajeno.pk,
+            'product': self.product.pk,
+            'quantity': 1,
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(CartItem.objects.count(), 0)
+
+    def test_actualiza_cantidad(self):
+        item = add_item(self.user, self.product, quantity=2)
+        self.client.force_authenticate(self.user)
+        response = self.client.patch(
+            reverse('items-carrito-detail', args=[item.pk]),
+            {'quantity': 5},
+        )
+        self.assertEqual(response.status_code, 200)
+        item.refresh_from_db()
+        self.assertEqual(item.quantity, 5)
+
+    def test_elimina_item(self):
+        item = add_item(self.user, self.product, quantity=2)
+        self.client.force_authenticate(self.user)
+        response = self.client.delete(
+            reverse('items-carrito-detail', args=[item.pk]),
+        )
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(CartItem.objects.filter(pk=item.pk).exists())
+
+    def test_requiere_autenticacion(self):
+        response = self.client.post(self.list_url, {
+            'cart': self.cart.pk,
+            'product': self.product.pk,
+            'quantity': 1,
+        })
+        self.assertIn(response.status_code, (401, 403))

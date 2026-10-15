@@ -128,7 +128,9 @@ $ErrorActionPreference = 'Continue'
 
 $whitespace = @(git diff --check 2>&1) |
     Where-Object { $_ -notmatch 'LF will be replaced' -and $_ -notmatch 'RemoteException' }
-$staged = @(git diff --cached --name-only 2>&1)
+# Solo altas/modificaciones: una eliminación deliberada de artefactos (p. ej.
+# `git rm --cached` de los .pyc o de staticfiles/) no es basura añadida.
+$staged = @(git diff --cached --name-only --diff-filter=ACMR 2>&1)
 $debug = @(git diff -U0 2>&1) |
     Select-String -Pattern '^\+.*\b(print\(|breakpoint\(|pdb\.set_trace|console\.log)'
 

@@ -279,3 +279,98 @@ class CargarCatalogoCommandTests(TestCase):
         self.assertEqual(producto.stock, 0)
         # Maquillaje sigue existiendo porque protege al producto con historial.
         self.assertFalse(Category.objects.get(slug='maquillaje').is_active)
+
+
+class CatalogDashboardCRUDTests(TestCase):
+    """CRUD de productos y categorías desde el panel (solo administradores)."""
+
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            username='admin@carely.test',
+            email='admin@carely.test',
+            password='pass12345',
+            role=User.Role.ADMIN,
+            is_staff=True,
+        )
+        self.category = Category.objects.create(
+            name='Base', slug='base', icon='bi-box',
+        )
+
+    def test_cliente_no_entra_al_panel(self):
+        cliente = User.objects.create_user(
+            username='cliente@carely.test',
+            email='cliente@carely.test',
+            password='pass12345',
+            role=User.Role.CLIENT,
+        )
+        self.client.force_login(cliente)
+        response = self.client.get(reverse('dashboard:product_list'))
+        self.assertRedirects(response, reverse('core:home'))
+
+    def test_crear_producto(self):
+        self.client.force_login(self.admin)
+        response = self.client.post(reverse('dashboard:product_create'), {
+            'name': 'Producto Dashboard',
+            'price': '12000.00',
+            'category': self.category.pk,
+            'stock': 5,
+            'brand': 'Carely',
+            'discount_percent': '0',
+        })
+        self.assertRedirects(response, reverse('dashboard:product_list'))
+        self.assertTrue(Product.objects.filter(slug='producto-dashboard').exists())
+
+    def test_editar_producto(self):
+        producto = Product.objects.create(
+            category=self.category, name='Editame', slug='editame',
+            price=Decimal('1000.00'),
+        )
+        self.client.force_login(self.admin)
+        response = self.client.post(
+            reverse('dashboard:product_update', args=[producto.pk]),
+            {
+                'name': 'Editado',
+                'price': '2000.00',
+                'category': self.category.pk,
+                'stock': 0,
+                'discount_percent': '0',
+            },
+        )
+        self.assertRedirects(response, reverse('dashboard:product_list'))
+        producto.refresh_from_db()
+        self.assertEqual(producto.name, 'Editado')
+        self.assertEqual(producto.price, Decimal('2000.00'))
+
+    def test_eliminar_producto_sin_historial(self):
+        producto = Product.objects.create(
+            category=self.category, name='Borrame', slug='borrame',
+            price=Decimal('1000.00'),
+        )
+        self.client.force_login(self.admin)
+        response = self.client.post(
+            reverse('dashboard:product_delete', args=[producto.pk]),
+        )
+        self.assertRedirects(response, reverse('dashboard:product_list'))
+        self.assertFalse(Product.objects.filter(pk=producto.pk).exists())
+
+    def test_crear_categoria(self):
+        self.client.force_login(self.admin)
+        response = self.client.post(reverse('dashboard:category_create'), {
+            'name': 'Nueva Categoria',
+            'icon': 'bi-star',
+            'order': 5,
+        })
+        self.assertRedirects(response, reverse('dashboard:category_list'))
+        self.assertTrue(Category.objects.filter(slug='nueva-categoria').exists())
+
+    def test_no_elimina_categoria_con_productos(self):
+        Product.objects.create(
+            category=self.category, name='Protegido', slug='protegido',
+            price=Decimal('1000.00'),
+        )
+        self.client.force_login(self.admin)
+        response = self.client.post(
+            reverse('dashboard:category_delete', args=[self.category.pk]),
+        )
+        self.assertRedirects(response, reverse('dashboard:category_list'))
+        self.assertTrue(Category.objects.filter(pk=self.category.pk).exists())

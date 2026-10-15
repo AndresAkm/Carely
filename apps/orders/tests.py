@@ -635,3 +635,47 @@ class CouponCheckoutIntegrationTests(TestCase):
         coupon, discount = validate_coupon('MINPURCH', Decimal('300.00'))
         self.assertEqual(discount, Decimal('30.00'))
 
+
+class OrderTotalSignalTests(TestCase):
+    """La señal que recalcula `Order.total` debe respetar el descuento del cupón.
+
+    Regresión: al guardar o borrar un `OrderItem`, la señal escribía el subtotal
+    bruto e ignoraba `discount_amount`, dejando el total de un pedido con cupón
+    más alto que el calculado en el checkout.
+    """
+
+    def setUp(self):
+        self.user = make_user('signal@carely.com')
+        self.address = make_address(self.user, recipient_name='Sig', address_line='Calle S')
+        self.prod = make_product('Base', price='100.00', stock=10)
+        self.cart = Cart.objects.create(user=self.user)
+        CartItem.objects.create(cart=self.cart, product=self.prod, quantity=2)
+        # subtotal = 200.00
+        make_coupon('SIG10', discount_value='10.00')  # 10% -> 20.00
+
+    def test_agregar_item_mantiene_el_descuento(self):
+        order = checkout_cart(self.user, self.address.id, coupon_code='SIG10')
+        order.refresh_from_db()
+        self.assertEqual(order.total, Decimal('180.00'))
+
+        extra = make_product('Extra', price='50.00', stock=10)
+        OrderItem.objects.create(
+            order=order, product=extra, product_name='Extra',
+            quantity=1, unit_price=Decimal('50.00'),
+        )
+        order.refresh_from_db()
+        # subtotal 250 - descuento 20 = 230
+        self.assertEqual(order.total, Decimal('230.00'))
+
+    def test_eliminar_item_mantiene_el_descuento(self):
+        order = checkout_cart(self.user, self.address.id, coupon_code='SIG10')
+        extra = make_product('Extra 2', price='50.00', stock=10)
+        item = OrderItem.objects.create(
+            order=order, product=extra, product_name='Extra 2',
+            quantity=1, unit_price=Decimal('50.00'),
+        )
+        item.delete()
+        order.refresh_from_db()
+        # Vuelve al subtotal original 200 - descuento 20 = 180
+        self.assertEqual(order.total, Decimal('180.00'))
+

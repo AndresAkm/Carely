@@ -203,14 +203,7 @@ class Order(models.Model):
                 Decimal('0.00'),
             )
             self.total = max(subtotal - self.discount_amount, Decimal('0.00'))
-        else:
-            # Al crear, respetar total asignado manualmente (ej. tests, simulaciones)
-            # Solo recalcular si no hay total explícito o es 0 y hay items
-            has_explicit_total = 'total' in kwargs.get('update_fields', []) if kwargs.get('update_fields') else True
-            if not has_explicit_total:
-                pass  # respetar valor ya asignado
-            # Si no se pasó update_fields, el valor asignado se respeta
-            # No forzamos a 0.00
+        # Al crear se respeta el total asignado por el llamador (checkout, tests).
         super().save(*args, **kwargs)
 
     def calculate_total(self):

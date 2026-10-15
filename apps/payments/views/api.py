@@ -4,7 +4,7 @@ from ..serializer import *
 from apps.core.permissions import IsAuthenticatedOrAdminReadOnly, is_admin
 
 
-class PaymentViewSet(viewsets.ModelViewSet):
+class PaymentViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticatedOrAdminReadOnly]
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer

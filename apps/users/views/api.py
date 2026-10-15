@@ -4,16 +4,14 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 
-from rest_framework_simplejwt.views import TokenObtainPairView
-
 from ..models import Address, City, Department, User
 from ..serializer import AddressSerializer, CitySerializer, DepartmentSerializer, UserSerializer
-from apps.core.permissions import IsAdmin, IsAuthenticatedOwnedOrAdmin, is_admin
+from apps.core.permissions import IsAdminOnly, IsAuthenticatedOwnedOrAdmin, is_admin
 
 
 # Vistas para las APIs
 class UserViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAdmin]
+    permission_classes = [IsAdminOnly]
     queryset = User.objects.all()
     serializer_class = UserSerializer
     http_method_names = ['get', 'post', 'put', 'patch', 'head', 'options']

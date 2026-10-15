@@ -1236,6 +1236,12 @@ class DashboardDeactivationAuditTests(TestCase):
         self.assertIsNone(self.client_user.deactivated_at)
         self.assertIsNone(self.client_user.deactivated_by)
 
+    def test_toggle_rejects_get(self):
+        # Regresión: como UpdateView sin plantilla, un GET intentaba renderizar
+        # una plantilla inexistente y devolvía 500 en vez de 405.
+        self.client.force_login(self.admin)
+        self.assertEqual(self.client.get(self.toggle_url).status_code, 405)
+
 
 def register_payload(**overrides):
     payload = {
@@ -1657,3 +1663,39 @@ class AddressFormTests(TestCase):
         })
         self.assertFalse(form.is_valid())
         self.assertIn('city', form.errors)
+
+
+class JWTTokenTests(APITestCase):
+    """Endpoints de token JWT (simplejwt)."""
+
+    def setUp(self):
+        self.user = create_user(
+            username='jwt@example.com',
+            email='jwt@example.com',
+            password='pass12345',
+        )
+
+    def _obtain(self):
+        return self.client.post(reverse('token_obtain_pair'), {
+            'username': 'jwt@example.com',
+            'password': 'pass12345',
+        })
+
+    def test_obtener_token_con_credenciales_validas(self):
+        response = self._obtain()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('access', response.data)
+        self.assertIn('refresh', response.data)
+
+    def test_obtener_token_rechaza_password_incorrecta(self):
+        response = self.client.post(reverse('token_obtain_pair'), {
+            'username': 'jwt@example.com',
+            'password': 'incorrecta',
+        })
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_refrescar_token(self):
+        refresh = self._obtain().data['refresh']
+        response = self.client.post(reverse('token_refresh'), {'refresh': refresh})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('access', response.data)

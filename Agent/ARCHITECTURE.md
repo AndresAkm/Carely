@@ -46,18 +46,16 @@ requirements/          base.txt, development.txt, production.txt
 
 | App | Modelos | Web | API | Tests |
 |---|---|---|---|---|
-| `core` | — | home, `/privacidad/`, dashboard, reportes | — | 18 |
-| `users` | `User`, `Address`, `Department`, `City` | login, registro, perfil, direcciones, desactivar cuenta | `UserViewSet`, `AddressViewSet`, `DepartmentViewSet`, `CityViewSet` | 68 |
-| `catalog` | `Category`, `Product` | catálogo, detalle, dashboard | `ProductViewSet`, `CategoryViewSet` | **0** ⚠ |
-| `cart` | `Cart`, `CartItem` | ver/añadir/actualizar/quitar | `CartViewSet`, `CartItemViewSet` | 29 |
-| `orders` | `Order`, `OrderItem`, `OrderStatusHistory`, `Coupon` | checkout, mis pedidos, dashboard | `OrderViewSet`, `OrderItemViewSet` | 35 |
+| `core` | — | home, `/privacidad/`, dashboard, reportes, páginas de error | — | 44 |
+| `users` | `User`, `Address`, `Department`, `City`, `TwoFactorCode` | login, registro, perfil, direcciones, desactivar cuenta | `UserViewSet`, `AddressViewSet`, `DepartmentViewSet`, `CityViewSet` | 152 |
+| `catalog` | `Category`, `Product` | catálogo, detalle, dashboard | `ProductViewSet`, `CategoryViewSet` | 36 |
+| `cart` | `Cart`, `CartItem` | ver/añadir/actualizar/quitar | `CartViewSet`, `CartItemViewSet` | 34 |
+| `orders` | `Order`, `OrderItem`, `OrderStatusHistory`, `Coupon` | checkout, mis pedidos, dashboard | `OrderViewSet`, `OrderItemViewSet` | 48 |
 | `inventory` | `InventoryMovement` | — | `InventoryMovementViewSet` | 31 |
-| `payments` | `Payment` | — | `PaymentViewSet` | **0** ⚠ |
+| `payments` | `Payment` | /pagos (retorno, estado, webhook, simulado) | `PaymentViewSet` | 56 |
 
-⚠ `catalog` no tiene archivo `tests.py` y `payments/tests.py` está vacío. El
-detalle de producto, que es una vista con formulario de compra, se prueba desde
-`apps/core/tests.py`. Si tocas catálogo o pagos, **crea el archivo de tests que
-falta**.
+Total: 401 tests. `catalog/services.py`, `core/services.py`, `core/utils.py`,
+`core/signals.py` y `users/signals.py` siguen siendo placeholders vacíos.
 
 ## Modelos
 
@@ -147,7 +145,6 @@ admin a quien tenga `is_staff`, `is_superuser` **o** `role == 'admin'`.
 | `IsAdminOrReadOnly` | lectura a todos, escritura a admin |
 | `IsAuthenticatedOrAdminReadOnly` | lectura a autenticados, escritura a admin |
 | `IsAdminOnly` | solo admin |
-| `IsAdmin` | alias de solo admin |
 | `IsAuthenticatedOwnedOrAdmin` | dueño del objeto o admin (sigue `obj.user`, o `obj.cart.user`) |
 
 **Usa siempre estas clases en vez de escribir permisos ad hoc en cada ViewSet.**
@@ -214,9 +211,10 @@ En `apps/core/context_processors.py`, activos en todas las páginas:
 
 - `site_settings` → `site_name`, `site_description`, `carely_email`,
   `carely_phone`, `carely_phone_href`, `carely_address`, `carely_socials`.
-  Inyecta un **queryset sin evaluate** en cada página, pero devuelve un
-  `QuerySet` perezoso, no una lista: no se ejecuta hasta que el template itera.
-- `footer_categories` → `categories`, queryset de `Category.objects.filter(is_active=True)`.
+  Solo lee escalares de `settings`; **no consulta la base de datos**.
+- `footer_categories` → `categories`, queryset **perezoso** de
+  `Category.objects.filter(is_active=True)`; no se ejecuta hasta que el template
+  itera.
 - `cart_count` → suma de `quantity` de los items del carrito, con `try/except`
   para que un fallo de BD no rompa la página.
 

@@ -40,8 +40,3 @@ class IsAuthenticatedOwnedOrAdmin(BasePermission):
         if owner is None and hasattr(obj, 'cart'):
             owner = obj.cart.user
         return owner == request.user
-
- 
-class IsAdmin(BasePermission):
-    def has_permission(self, request, view):
-        return is_admin(request.user)

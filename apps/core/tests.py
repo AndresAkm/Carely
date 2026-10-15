@@ -422,3 +422,35 @@ class ErrorPagesWithDebugMiddlewareTests(TestCase):
             content = self.client.get('/x/').content.decode()
         self.assertNotIn('URLconf defined in', content)
         self.assertNotIn('didn', content)
+
+
+class ReportExportTests(TestCase):
+    """Exportación del reporte de pedidos a PDF (solo administradores)."""
+
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            username='admin@carely.test',
+            email='admin@carely.test',
+            password='pass12345',
+            role=User.Role.ADMIN,
+            is_staff=True,
+        )
+
+    def test_admin_descarga_pdf(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse('dashboard:report_export'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/pdf')
+        self.assertIn('attachment', response['Content-Disposition'])
+        self.assertTrue(response.content.startswith(b'%PDF'))
+
+    def test_cliente_no_exporta(self):
+        cliente = User.objects.create_user(
+            username='cliente@carely.test',
+            email='cliente@carely.test',
+            password='pass12345',
+            role=User.Role.CLIENT,
+        )
+        self.client.force_login(cliente)
+        response = self.client.get(reverse('dashboard:report_export'))
+        self.assertRedirects(response, reverse('core:home'))

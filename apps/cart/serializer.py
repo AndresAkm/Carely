@@ -1,4 +1,7 @@
 from rest_framework import serializers
+
+from apps.core.permissions import is_admin
+
 from .models import *
 
 
@@ -13,4 +16,12 @@ class CartItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = CartItem
         fields = '__all__'
-        read_only_fields = ['id', 'cart']
+        read_only_fields = ['id']
+
+    def validate_cart(self, cart):
+        user = self.context['request'].user
+        if not is_admin(user) and cart.user_id != user.id:
+            raise serializers.ValidationError(
+                'No puedes modificar el carrito de otro usuario.',
+            )
+        return cart

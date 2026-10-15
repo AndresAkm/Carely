@@ -7,12 +7,16 @@ from .models import Order, OrderItem
 
 
 def recalculate_order_total(order_id):
-    total = sum(
+    order = Order.objects.filter(pk=order_id).first()
+    if order is None:
+        return
+    subtotal = sum(
         (unit_price * quantity for unit_price, quantity in OrderItem.objects.filter(
             order_id=order_id,
         ).values_list('unit_price', 'quantity')),
         Decimal('0.00'),
     )
+    total = max(subtotal - order.discount_amount, Decimal('0.00'))
     Order.objects.filter(pk=order_id).update(total=total)
 
 

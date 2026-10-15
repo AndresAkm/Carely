@@ -30,10 +30,10 @@ ViewSets registrados en `config/api_router.py`, bajo el prefijo `/api/v1/`:
 | `geo/departamentos/` | `DepartmentViewSet` | lectura | Departamentos de Colombia |
 | `geo/municipios/` | `CityViewSet` | lectura | Filtro `?department=<id>` |
 | `inventario/movimientos/` | `InventoryMovementViewSet` | `IsAdminOnly` | `@action` POST `entrada/`, `salida/`, `ajuste/` |
-| `carrito/carritos/` | `CartViewSet` | `IsAuthenticatedOrAdminReadOnly` | Un carrito por usuario |
-| `carrito/items/` | `CartItemViewSet` | `IsAuthenticatedOrAdminReadOnly` | Único por carrito + producto |
-| `pedidos/pedidos/` | `OrderViewSet` | `IsAuthenticatedOrAdminReadOnly` | CRUD |
-| `pedidos/items/` | `OrderItemViewSet` | `IsAuthenticatedOrAdminReadOnly` | CRUD |
+| `carrito/carritos/` | `CartViewSet` | `IsAuthenticatedOwnedOrAdmin` | Un carrito por usuario |
+| `carrito/items/` | `CartItemViewSet` | `IsAuthenticatedOwnedOrAdmin` | Único por carrito + producto; el dueño solo puede usar su carrito |
+| `pedidos/pedidos/` | `OrderViewSet` | `IsAuthenticatedOrAdminReadOnly` | Lectura; escritura solo admin |
+| `pedidos/items/` | `OrderItemViewSet` | `IsAuthenticatedOrAdminReadOnly` | Lectura; escritura solo admin |
 | `pagos/` | `PaymentViewSet` | `IsAuthenticatedOrAdminReadOnly` | Solo lectura |
 
 ## Rutas web

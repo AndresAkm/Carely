@@ -1,5 +1,3 @@
-from django.core.exceptions import PermissionDenied
-from django.http import Http404
 from django.views.generic import TemplateView
 
 
@@ -36,13 +34,3 @@ class NotFoundView(ErrorView):
 class PermissionDeniedView(ErrorView):
     template_name = 'errors/403.html'
     status_code = 403
-
-
-def page_not_found(request, exception=None):
-    """`handler404` de Django. Se usa con `DEBUG=False`."""
-    raise Http404
-
-
-def page_permission_denied(request, exception=None):
-    """`handler403` de Django. Se usa con `DEBUG=False`."""
-    raise PermissionDenied
