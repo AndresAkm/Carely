@@ -6,6 +6,7 @@ app_name = 'core'
 
 urlpatterns = [
     path('', views.LandingView.as_view(), name='home'),
+    path('contacto/', views.ContactView.as_view(), name='contact'),
     path('dashboard/', views.DashboardView.as_view(), name='dashboard'),
     path('privacidad/', views.LegalView.as_view(), name='privacy'),
     # Páginas de error. Solo accesibles con DEBUG=True; en producción las

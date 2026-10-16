@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es">
+<body style="margin:0;background:#f7f1f6;font-family:Arial,sans-serif;color:#29253a;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:32px 12px;background:#f7f1f6;">
+        <tr><td align="center">
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#fff;border-radius:24px;box-shadow:0 16px 40px rgba(66,55,90,.14);overflow:hidden;">
+                <tr><td style="height:7px;background:linear-gradient(90deg,#e8609b,#5b8def);"></td></tr>
+                <tr><td style="padding:40px;text-align:left;">
+                    <div style="margin:0 0 24px;color:#20202a;font-size:26px;font-weight:700;letter-spacing:-1px;">Carely</div>
+                    <h1 style="margin:0 0 16px;font-size:20px;">Nuevo mensaje de contacto</h1>
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="font-size:15px;line-height:1.6;">
+                        <tr><td style="padding:4px 0;color:#6f6a7d;width:90px;">Nombre</td><td style="padding:4px 0;font-weight:600;">{{ name }}</td></tr>
+                        <tr><td style="padding:4px 0;color:#6f6a7d;">Correo</td><td style="padding:4px 0;font-weight:600;"><a href="mailto:{{ email }}" style="color:#5b8def;text-decoration:none;">{{ email }}</a></td></tr>
+                        <tr><td style="padding:4px 0;color:#6f6a7d;">Asunto</td><td style="padding:4px 0;font-weight:600;">{{ subject|default:"(sin asunto)" }}</td></tr>
+                    </table>
+                    <div style="margin:24px 0 8px;color:#6f6a7d;font-size:13px;text-transform:uppercase;letter-spacing:.08em;">Mensaje</div>
+                    <div style="padding:18px 20px;border-radius:14px;background:#f5f0f8;font-size:15px;line-height:1.6;white-space:pre-line;">{{ message }}</div>
+                    <p style="margin:28px 0 0;color:#999;font-size:13px;line-height:1.5;">Responde a este correo para contestarle directamente a {{ name }}.</p>
+                </td></tr>
+            </table>
+        </td></tr>
+    </table>
+</body>
+</html>

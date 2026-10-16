@@ -1,0 +1,64 @@
+<div class="modal fade contact-modal" id="contactModal" tabindex="-1" aria-labelledby="contactModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <button type="button" class="btn-close contact-modal__close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            <div class="modal-body p-4 p-sm-5">
+                <span class="contact-modal__icon"><i class="bi bi-chat-heart"></i></span>
+                <h5 class="modal-title contact-modal__title" id="contactModalLabel">¿Hablamos?</h5>
+                <p class="contact-modal__lead" data-contact-intro>
+                    ¿Tienes alguna duda en específico? Escríbela aquí: se enviará directo a
+                    nuestro equipo y te responderemos por correo lo antes posible.
+                </p>
+
+                <div class="contact-modal__success d-none" data-contact-success role="status">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <strong>¡Recibimos tu mensaje!</strong>
+                    <span>Gracias por escribirnos; te responderemos muy pronto a tu correo.</span>
+                </div>
+
+                <form method="post" action="{% url 'core:contact' %}" data-contact-form novalidate>
+                    {% csrf_token %}
+                    <div class="contact-modal__feedback d-none" data-contact-feedback role="alert"></div>
+                    <div class="row g-3">
+                        <div class="col-12 col-sm-6">
+                            <label class="form-label" for="contactName">Nombre</label>
+                            <input type="text" class="form-control" id="contactName" name="name"
+                                maxlength="120" placeholder="¿Cómo te llamas?" autocomplete="name"
+                                value="{% if user.is_authenticated %}{{ user.get_full_name }}{% endif %}">
+                            <div class="contact-modal__error" data-contact-error="name"></div>
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <label class="form-label" for="contactEmail">Correo</label>
+                            <input type="email" class="form-control" id="contactEmail" name="email"
+                                placeholder="tu@correo.com" autocomplete="email"
+                                value="{% if user.is_authenticated %}{{ user.email }}{% endif %}">
+                            <div class="contact-modal__error" data-contact-error="email"></div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" for="contactSubject">Asunto <span class="text-muted">(opcional)</span></label>
+                            <input type="text" class="form-control" id="contactSubject" name="subject"
+                                maxlength="150" placeholder="¿Sobre qué quieres hablar?">
+                            <div class="contact-modal__error" data-contact-error="subject"></div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" for="contactMessage">Mensaje</label>
+                            <textarea class="form-control" id="contactMessage" name="message" rows="4"
+                                placeholder="Cuéntanos tu duda con el mayor detalle posible…"></textarea>
+                            <div class="contact-modal__error" data-contact-error="message"></div>
+                        </div>
+                    </div>
+                    <div class="contact-modal__actions">
+                        <button type="button" class="btn btn-carely-outline" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-carely-primary">
+                            <i class="bi bi-send-fill me-1"></i> Enviar mensaje
+                        </button>
+                    </div>
+                </form>
+
+                <button type="button" class="btn btn-carely-primary contact-modal__done d-none" data-bs-dismiss="modal" data-contact-done>
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

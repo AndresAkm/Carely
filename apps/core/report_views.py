@@ -1,5 +1,6 @@
 from io import BytesIO
 import os
+import tempfile
 from decimal import Decimal
 
 from django.conf import settings
@@ -9,17 +10,13 @@ from django.db.models.functions import Coalesce, TruncDate
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.views.generic import TemplateView, View
+from PIL import Image as PILImage
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_RIGHT
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
-
-try:
-    from svglib.svglib import svg2rlg
-except ImportError:
-    svg2rlg = None
+from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from apps.core.forms import ReportFilterForm
 from apps.core.permissions import is_admin
@@ -38,6 +35,33 @@ def get_report_orders(request):
         if filters.get('status'):
             orders = orders.filter(status=filters['status'])
     return form, orders
+
+
+LOGO_PATH = os.path.join(
+    settings.BASE_DIR, 'apps', 'core', 'static', 'core', 'images', 'carely-logo-text.webp'
+)
+
+
+def load_report_logo():
+    """Convierte el logo completo a un PNG temporal para el encabezado del PDF.
+
+    ReportLab no lee WebP, así que se decodifica con Pillow y se escribe como
+    PNG en un archivo temporal (con su tamaño original) para que `Image` pueda
+    escalarlo. Devuelve una tupla `(ruta, ancho, alto)` o None si el logo no
+    existe o no se puede abrir; en ese caso el reporte se genera igual sin logo.
+    """
+    if not os.path.exists(LOGO_PATH):
+        return None
+    try:
+        image = PILImage.open(LOGO_PATH)
+        if image.mode not in ('RGB', 'RGBA'):
+            image = image.convert('RGBA')
+        handle, path = tempfile.mkstemp(suffix='.png')
+        os.close(handle)
+        image.save(path, format='PNG')
+        return path, image.width, image.height
+    except Exception:
+        return None
 
 
 def get_report_data(request):
@@ -154,18 +178,18 @@ class ReportExportView(DashboardReportMixin, View):
         )
         story = []
 
-        if svg2rlg:
-            logo_path = os.path.join(settings.BASE_DIR, 'apps', 'core', 'static', 'core', 'images', 'carely-logo.svg')
-            if os.path.exists(logo_path):
-                drawing = svg2rlg(logo_path)
-                if drawing:
-                    scale_factor = 0.45
-                    drawing.width = drawing.width * scale_factor
-                    drawing.height = drawing.height * scale_factor
-                    drawing.scale(scale_factor, scale_factor)
-                    drawing.hAlign = 'CENTER'
-                    story.append(drawing)
-                    story.append(Spacer(1, 4 * mm))
+        logo = load_report_logo()
+        if logo:
+            logo_path, logo_width, logo_height = logo
+            target_width = 42 * mm
+            report_logo = Image(
+                logo_path,
+                width=target_width,
+                height=target_width * logo_height / logo_width,
+            )
+            report_logo.hAlign = 'CENTER'
+            story.append(report_logo)
+            story.append(Spacer(1, 4 * mm))
 
         story.append(Paragraph('Reporte de pedidos', styles['ReportTitle']))
         form = data['report_form']
@@ -251,7 +275,14 @@ class ReportExportView(DashboardReportMixin, View):
             ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
         ]))
         story.append(products_table)
-        document.build(story)
+        try:
+            document.build(story)
+        finally:
+            if logo:
+                try:
+                    os.remove(logo[0])
+                except OSError:
+                    pass
 
         response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
         response['Content-Disposition'] = 'attachment; filename="reporte-pedidos.pdf"'

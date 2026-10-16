@@ -1,0 +1,11 @@
+Nuevo mensaje de contacto desde Carely
+
+Nombre: {{ name }}
+Correo: {{ email }}
+Asunto: {{ subject|default:"(sin asunto)" }}
+
+Mensaje:
+{{ message }}
+
+—
+Responde directamente a {{ email }} para contestarle.

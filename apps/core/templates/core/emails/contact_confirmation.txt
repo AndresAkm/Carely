@@ -1,0 +1,14 @@
+Hola {{ name }},
+
+¡Gracias por escribirnos! Recibimos tu mensaje y ya está en manos de nuestro equipo.
+
+Asunto: {{ subject|default:"(sin asunto)" }}
+Tu mensaje:
+{{ message }}
+
+Te responderemos a este correo lo antes posible. Si necesitas agregar algo,
+puedes responder directamente a este mensaje.
+
+Un saludo,
+El equipo de Carely
+{{ carely_email }}

@@ -9,10 +9,18 @@ document.addEventListener('DOMContentLoaded', () => {
     onScroll();
   }
 
-  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+  document.querySelectorAll('a[href*="#"]').forEach(anchor => {
     anchor.addEventListener('click', e => {
-      const id = anchor.getAttribute('href');
+      const href = anchor.getAttribute('href') || '';
+      const hashIndex = href.indexOf('#');
+      if (hashIndex === -1) return;
+      const id = href.slice(hashIndex);
       if (id === '#') return;
+      const path = href.slice(0, hashIndex);
+      // Interceptamos solo los enlaces que apuntan a esta misma página. Si el
+      // enlace va a otra ruta (p. ej. /#beneficios desde /privacidad/), dejamos
+      // que el navegador navegue y haga el salto al ancla.
+      if (path && path !== window.location.pathname) return;
       const target = document.querySelector(id);
       if (target) {
         e.preventDefault();

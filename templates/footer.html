@@ -5,7 +5,7 @@
         <div class="footer-grid">
             <div class="footer-brand">
                 <a href="{% url 'core:home' %}" class="c-nav__brand footer-brand__logo" aria-label="{{ site_name }}">
-                    <img src="{% static 'core/images/carely-logo.svg' %}" alt="{{ site_name }}" class="c-footer__logo">
+                    <img src="{% static 'core/images/carely-logo.webp' %}" alt="{{ site_name }}" class="c-footer__logo">
                 </a>
                 <p>{{ site_description }}. Productos originales, asesoria personalizada y envios rapidos.</p>
                 <div class="footer-social">
@@ -27,7 +27,7 @@
             <div class="footer-col">
                 <h5>Ayuda</h5>
                 <ul>
-                    <li><a href="mailto:{{ carely_email }}">Contacto</a></li>
+                    <li><a href="#" data-bs-toggle="modal" data-bs-target="#contactModal">Contacto</a></li>
                     <li><a href="{% url 'core:privacy' %}#terminos">Terminos y envios</a></li>
                     <li><a href="{% url 'core:privacy' %}#privacidad">Privacidad</a></li>
                     <li><a href="{% url 'users:password_reset' %}">Recuperar contrasena</a></li>
@@ -47,3 +47,5 @@
         </div>
     </div>
 </footer>
+
+{% include 'components/contact_modal.html' %}

@@ -1,4 +1,6 @@
+import re
 from decimal import Decimal
+from unittest.mock import patch
 
 from django.conf import settings
 from django.urls import reverse
@@ -10,6 +12,7 @@ from apps.catalog.models import Category, Product
 from apps.orders.models import Order, OrderItem
 from apps.payments.models import Payment
 from apps.users.models import User
+from apps.users.services import GmailServiceError
 
 
 class ResourceOwnershipTests(APITestCase):
@@ -120,12 +123,69 @@ class FooterLinksTests(TestCase):
     def test_no_dead_anchor_links(self):
         for url in (reverse('core:home'), reverse('catalog:home')):
             content = self.client.get(url).content.decode()
-            self.assertNotIn('href="#"', content, f'href="#" encontrado en {url}')
+            # El enlace de contacto abre un modal (data-bs-toggle), no es un
+            # ancla muerta. El resto de `href="#"` sí serían enlaces rotos.
+            without_modal_triggers = re.sub(
+                r'<a\b[^>]*data-bs-toggle="modal"[^>]*>', '<a>', content
+            )
+            self.assertNotIn('href="#"', without_modal_triggers, f'href="#" encontrado en {url}')
 
     def test_contact_details_rendered(self):
         response = self.client.get(reverse('core:home'))
         self.assertContains(response, 'mailto:carelywebsite@gmail.com')
         self.assertContains(response, reverse('core:privacy'))
+
+    def test_contact_link_opens_the_modal(self):
+        response = self.client.get(reverse('core:home'))
+        self.assertContains(response, 'data-bs-target="#contactModal"')
+        self.assertContains(response, 'data-contact-form')
+        self.assertContains(response, reverse('core:contact'))
+
+
+class ContactFormTests(TestCase):
+    """El formulario del modal de contacto envía el mensaje por correo."""
+
+    def setUp(self):
+        self.url = reverse('core:contact')
+
+    def _post(self, **overrides):
+        data = {
+            'name': 'Ana Restrepo',
+            'email': 'ana@example.com',
+            'subject': 'Una duda sobre el envío',
+            'message': 'Hola, quiero saber si hacen envíos a mi ciudad.',
+        }
+        data.update(overrides)
+        return self.client.post(self.url, data)
+
+    def test_valid_submission_notifies_team_and_sender(self):
+        with patch('apps.core.services.GmailService.send_message', return_value=True) as send:
+            response = self._post()
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['ok'])
+        self.assertEqual(send.call_count, 2)
+        self.assertEqual(send.call_args_list[0].kwargs['recipient'], settings.CARELY_EMAIL)
+        self.assertEqual(send.call_args_list[1].kwargs['recipient'], 'ana@example.com')
+
+    def test_invalid_form_returns_field_errors(self):
+        response = self._post(name='', email='no-es-un-correo', message='corto')
+        self.assertEqual(response.status_code, 400)
+        data = response.json()
+        self.assertFalse(data['ok'])
+        self.assertIn('name', data['errors'])
+        self.assertIn('email', data['errors'])
+        self.assertIn('message', data['errors'])
+
+    def test_email_failure_returns_502(self):
+        with patch(
+            'apps.core.services.GmailService.send_message',
+            side_effect=GmailServiceError('sin red'),
+        ):
+            response = self._post()
+        self.assertEqual(response.status_code, 502)
+        self.assertFalse(response.json()['ok'])
+        self.assertIn('message', response.json())
 
 
 class PageRenderSmokeTests(TestCase):

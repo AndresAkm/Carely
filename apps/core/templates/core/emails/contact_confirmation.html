@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es">
+<body style="margin:0;background:#f7f1f6;font-family:Arial,sans-serif;color:#29253a;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:32px 12px;background:#f7f1f6;">
+        <tr><td align="center">
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#fff;border-radius:24px;box-shadow:0 16px 40px rgba(66,55,90,.14);overflow:hidden;">
+                <tr><td style="height:7px;background:linear-gradient(90deg,#e8609b,#5b8def);"></td></tr>
+                <tr><td style="padding:40px;text-align:center;">
+                    <div style="margin:0 auto 28px;color:#20202a;font-size:30px;font-weight:700;letter-spacing:-1px;">Carely</div>
+                    <div style="margin:0 auto 18px;width:64px;height:64px;line-height:64px;border-radius:50%;background:#f8d7e6;color:#e8609b;font-size:30px;">&#9993;</div>
+                    <h1 style="margin:0 0 12px;font-size:24px;">¡Recibimos tu mensaje!</h1>
+                    <p style="margin:0 0 24px;color:#6f6a7d;font-size:16px;line-height:1.6;">Hola {{ name }}, gracias por escribirnos. Tu mensaje ya está en manos de nuestro equipo y te responderemos a este correo lo antes posible.</p>
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="text-align:left;font-size:15px;line-height:1.6;">
+                        <tr><td style="padding:4px 0;color:#6f6a7d;width:90px;">Asunto</td><td style="padding:4px 0;font-weight:600;">{{ subject|default:"(sin asunto)" }}</td></tr>
+                    </table>
+                    <div style="margin:20px 0 8px;color:#6f6a7d;font-size:13px;text-transform:uppercase;letter-spacing:.08em;text-align:left;">Tu mensaje</div>
+                    <div style="padding:18px 20px;border-radius:14px;background:#f5f0f8;font-size:15px;line-height:1.6;text-align:left;white-space:pre-line;">{{ message }}</div>
+                    <p style="margin:28px 0 0;color:#999;font-size:13px;line-height:1.5;">Si necesitas agregar algo, responde directamente a este correo.</p>
+                </td></tr>
+            </table>
+        </td></tr>
+    </table>
+</body>
+</html>

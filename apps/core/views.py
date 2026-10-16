@@ -1,14 +1,22 @@
+import logging
+
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth import get_user_model
+from django.http import JsonResponse
 from django.shortcuts import redirect
+from django.views import View
 from django.views.generic import TemplateView
 
 from apps.catalog.models import Category, Product
+from apps.core.forms import ContactMessageForm
 from apps.core.permissions import is_admin
+from apps.core.services import send_contact_message
 from apps.orders.models import Order
+from apps.users.services import GmailServiceError
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
 class LandingView(TemplateView):
@@ -323,6 +331,55 @@ class LegalView(TemplateView):
         context = super().get_context_data(**kwargs)
         context['legal_groups'] = LEGAL_GROUPS
         return context
+
+
+class ContactView(View):
+    """Recibe el formulario de contacto del footer y lo reenvía por correo.
+
+    Responde en JSON porque el modal lo envía con `fetch`: así se muestran los
+    errores sin recargar la página en la que esté el usuario.
+    """
+
+    def post(self, request, *args, **kwargs):
+        form = ContactMessageForm(request.POST)
+        if not form.is_valid():
+            errors = {
+                field: [str(error) for error in field_errors]
+                for field, field_errors in form.errors.items()
+            }
+            return JsonResponse({'ok': False, 'errors': errors}, status=400)
+
+        data = form.cleaned_data
+        try:
+            send_contact_message(
+                name=data['name'],
+                email=data['email'],
+                subject=data['subject'],
+                message=data['message'],
+            )
+        except GmailServiceError:
+            logger.exception('No se pudo enviar el mensaje de contacto de %s', data['email'])
+            return JsonResponse(
+                {
+                    'ok': False,
+                    'message': (
+                        'No pudimos enviar tu mensaje en este momento. '
+                        'Inténtalo de nuevo más tarde o escríbenos directamente a '
+                        f'{settings.CARELY_EMAIL}.'
+                    ),
+                },
+                status=502,
+            )
+
+        return JsonResponse(
+            {
+                'ok': True,
+                'message': (
+                    '¡Recibimos tu mensaje! Gracias por escribirnos; '
+                    'te responderemos muy pronto a tu correo.'
+                ),
+            },
+        )
 
 
 class DashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):

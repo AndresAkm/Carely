@@ -143,7 +143,7 @@
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid rgba(0, 0, 0, 0.04);
-  padding: 12px 0;
+  padding: 8px 0;
   transition:
     box-shadow 0.3s var(--ease),
     background 0.3s var(--ease);
@@ -167,9 +167,8 @@
 
 .c-nav__brand-logo {
   display: block;
-  width: 92px;
-  max-height: 40px;
-  height: auto;
+  width: auto;
+  height: 52px;
   object-fit: contain;
 }
 
@@ -573,11 +572,9 @@
 
 .c-footer__logo {
   display: block;
-  width: 100px;
-  max-height: 44px;
-  height: auto;
+  width: auto;
+  height: 44px;
   object-fit: contain;
-  filter: brightness(0) invert(1);
 }
 
 .footer-social,

@@ -1346,6 +1346,15 @@ class LegalPageTests(TestCase):
         response = self.client.get('/privacidad/')
         self.assertEqual(response.status_code, 200)
 
+    def test_navbar_section_links_point_to_the_home_page(self):
+        # En /privacidad/ no existen las secciones del inicio, así que los
+        # enlaces del navbar deben llevar a la home con el ancla (/#beneficios)
+        # en vez de a un `#` local que no hace nada.
+        response = self.client.get(reverse('core:privacy'))
+        home = reverse('core:home')
+        for anchor in ('beneficios', 'categorias', 'por-que-carely'):
+            self.assertContains(response, f'{home}#{anchor}')
+
     def test_contact_details_come_from_context(self):
         response = self.client.get(reverse('core:privacy'))
         self.assertEqual(response.context['carely_email'], settings.CARELY_EMAIL)
