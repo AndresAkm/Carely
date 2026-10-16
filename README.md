@@ -56,7 +56,7 @@ pip install -r requirements\development.txt
 # Copiar variables de entorno
 Copy-Item .env.example .env
 
-# Migraciones y seed (categorías y productos)
+# Migraciones (el catálogo real se carga con `cargar_catalogo`)
 python manage.py makemigrations
 python manage.py migrate
 

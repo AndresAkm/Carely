@@ -95,17 +95,25 @@ copiar cada valor a mano al dashboard.
 **Settings → Build & Development Settings → Build Command**:
 
 ```
-python manage.py migrate --noinput
+python manage.py migrate --noinput && python manage.py cargar_colombia && python manage.py cargar_catalogo
 ```
 
-`collectstatic` lo ejecuta Vercel solo; no incluirlo. La versión de Python
-sale de `.python-version` (3.14).
+- `migrate` crea el esquema. La migración `0002_seed_data` es un `noop`: ya no
+  siembra el catálogo genérico.
+- `cargar_colombia` carga 33 departamentos y ~1100 municipios desde
+  `api-colombia.com`; necesita salida a internet durante el build.
+- `cargar_catalogo` deja las 6 categorías y 17 productos reales con imagen y
+  precio en COP.
+
+Los tres comandos son idempotentes, así que se re-ejecutan en cada deploy sin
+duplicar datos. `collectstatic` lo ejecuta Vercel solo; no incluirlo. La versión
+de Python sale de `.python-version` (3.14).
 
 ### 6. Deploy
 
 1. **Deployments → Deploy** (o reconectar el repo).
 2. Leer el log del build. Debe mostrar: dependencias → migrate →
-   collectstatic. Si falla:
+   cargar_colombia → cargar_catalogo → collectstatic. Si falla:
    - `ImproperlyConfigured: DJANGO_SECRET_KEY must be defined` → falta la
      variable o no está marcada para Production.
    - `ImproperlyConfigured: DJANGO_ALLOWED_HOSTS ...` → ídem.
@@ -137,21 +145,23 @@ $env:DJANGO_SUPERUSER_USERNAME='admin@correo.com'
 $env:DJANGO_SUPERUSER_EMAIL='admin@correo.com'
 $env:DJANGO_SUPERUSER_PASSWORD='<contraseña>'
 .\env\Scripts\python.exe manage.py createsuperuser --noinput
+```
 
-# Datos geográficos (Departamento/City), solo si la BD está vacía:
+Los datos geográficos y el catálogo real ya se cargan durante el build de
+Vercel (`cargar_colombia` y `cargar_catalogo`). Solo hay que correrlos a mano
+si el build no los aplicó (por ejemplo, si falló `api-colombia.com`):
+
+```powershell
 .\env\Scripts\python.exe manage.py cargar_colombia
-
-# Catálogo real (6 categorías y 17 productos con imagen y precio en COP).
-# La migración 0002_seed_data solo deja productos genéricos sin imagen;
-# este comando los reemplaza y es idempotente (se puede volver a correr).
 .\env\Scripts\python.exe manage.py cargar_catalogo
 ```
 
-`cargar_catalogo` borra los productos genéricos de la semilla, salvo los que
-tienen historial de pedidos o movimientos de inventario: esos quedan
-desactivados (`is_active=False`, `stock=0`) y arrastran a sus categorías
-(Maquillaje/Fragancias), que también se desactivan en vez de borrarse. Las
-imágenes no se suben desde el comando: ya viven en el bucket
+Ambos son idempotentes. `cargar_catalogo` crea/actualiza las 6 categorías y 17
+productos reales; si alguna vez queda un producto genérico de la antigua
+semilla, lo borra, salvo que tenga historial de pedidos o movimientos de
+inventario: esos quedan desactivados (`is_active=False`, `stock=0`) y arrastran
+a sus categorías (Maquillaje/Fragancias), que también se desactivan en vez de
+borrarse. Las imágenes no se suben desde el comando: ya viven en el bucket
 `carely-images` y solo se guarda su ruta en el campo `image`.
 
 Pasos restantes:

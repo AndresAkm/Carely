@@ -7,8 +7,9 @@
 - Configuración: `config/settings/development.py` hereda de `base.py`.
 - Las credenciales y el host se proporcionan mediante variables `DJANGO_DB_*`.
 - `db.sqlite3` se conserva como respaldo y ya no es la base principal.
-- El seed de categorías y productos se carga con una migración de datos:
-  `apps/catalog/migrations/0002_seed_data.py`.
+- El catálogo real (categorías y productos) se carga con el comando
+  `cargar_catalogo`. La migración `apps/catalog/migrations/0002_seed_data.py`
+  se conserva por dependencias pero es un `noop`: ya no siembra datos.
 
 ### Migraciones
 
