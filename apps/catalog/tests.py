@@ -374,3 +374,88 @@ class CatalogDashboardCRUDTests(TestCase):
         )
         self.assertRedirects(response, reverse('dashboard:category_list'))
         self.assertTrue(Category.objects.filter(pk=self.category.pk).exists())
+
+
+class CatalogDeletionRulesTests(TestCase):
+    """Qué se puede eliminar desde el panel y qué protege el historial.
+
+    Un producto inactivo NO es eliminable por estar inactivo: se bloquea si
+    tiene pedidos o movimientos de inventario. Una categoría se bloquea mientras
+    tenga cualquier producto, activo o no.
+    """
+
+    def setUp(self):
+        from apps.inventory.services import InventoryService
+
+        self.admin = User.objects.create_user(
+            username='admin-borrado@carely.test', email='admin-borrado@carely.test',
+            password='pass12345', role=User.Role.ADMIN, is_staff=True,
+        )
+        self.client.force_login(self.admin)
+        self.inventory = InventoryService
+        self.categoria = Category.objects.create(name='Cuidado facial', slug='cuidado-facial', icon='bi-person')
+
+    def producto(self, nombre, activo=True, categoria=None):
+        return Product.objects.create(
+            category=categoria or self.categoria, name=nombre, slug=nombre.lower().replace(' ', '-'),
+            price=Decimal('10000.00'), is_active=activo,
+        )
+
+    def test_producto_inactivo_sin_historial_se_elimina(self):
+        p = self.producto('Crema vieja', activo=False)
+        self.client.post(reverse('dashboard:product_delete', args=[p.pk]))
+        self.assertFalse(Product.objects.filter(pk=p.pk).exists())
+
+    def test_producto_activo_sin_historial_se_elimina(self):
+        p = self.producto('Crema nueva', activo=True)
+        self.client.post(reverse('dashboard:product_delete', args=[p.pk]))
+        self.assertFalse(Product.objects.filter(pk=p.pk).exists())
+
+    def test_producto_inactivo_con_pedido_no_se_elimina(self):
+        from apps.orders.models import Order, OrderItem
+
+        p = self.producto('Serum vendido', activo=False)
+        pedido = Order.objects.create(user=self.admin, total=Decimal('10000.00'), shipping_address='x')
+        OrderItem.objects.create(
+            order=pedido, product=p, product_name=p.name, quantity=1, unit_price=Decimal('10000.00'),
+        )
+        response = self.client.post(reverse('dashboard:product_delete', args=[p.pk]), follow=True)
+        self.assertTrue(Product.objects.filter(pk=p.pk).exists())
+        self.assertContains(response, 'tiene pedidos o movimientos de inventario')
+        self.assertContains(response, 'Desactívalo')
+
+    def test_producto_con_movimiento_de_inventario_no_se_elimina(self):
+        p = self.producto('Tonico con stock', activo=False)
+        self.inventory.add_stock(product=p, quantity=5, reason='carga inicial')
+        self.client.post(reverse('dashboard:product_delete', args=[p.pk]))
+        self.assertTrue(Product.objects.filter(pk=p.pk).exists())
+
+    def test_categoria_vacia_se_elimina(self):
+        vacia = Category.objects.create(name='Vacia', slug='vacia', icon='bi-x')
+        self.client.post(reverse('dashboard:category_delete', args=[vacia.pk]))
+        self.assertFalse(Category.objects.filter(pk=vacia.pk).exists())
+
+    def test_categoria_con_producto_inactivo_no_se_elimina(self):
+        # Aunque el producto esté inactivo y sin historial, la categoría sigue
+        # protegida: el producto sí se podría borrar antes que la categoría.
+        self.producto('Inactivo en categoria', activo=False)
+        self.client.post(reverse('dashboard:category_delete', args=[self.categoria.pk]))
+        self.assertTrue(Category.objects.filter(pk=self.categoria.pk).exists())
+
+    def test_categoria_bloqueada_explica_como_liberarla(self):
+        self.producto('Inactivo en categoria', activo=False)
+        response = self.client.post(reverse('dashboard:category_delete', args=[self.categoria.pk]), follow=True)
+        self.assertContains(response, 'activos o inactivos')
+        self.assertContains(response, 'Cámbialos a otra categoría')
+
+    def test_categoria_se_elimina_cuando_ya_no_tiene_productos(self):
+        p = self.producto('Ultimo producto', activo=False)
+        p.delete()
+        self.client.post(reverse('dashboard:category_delete', args=[self.categoria.pk]))
+        self.assertFalse(Category.objects.filter(pk=self.categoria.pk).exists())
+
+    def test_pantalla_de_confirmacion_de_categoria_no_promete_borrar_productos(self):
+        # El texto anterior decía que se borraban "sus productos asociados", y
+        # el modelo lo impide: la pantalla debe decir lo que realmente pasa.
+        response = self.client.get(reverse('dashboard:category_delete', args=[self.categoria.pk]))
+        self.assertNotContains(response, 'sus productos asociados')

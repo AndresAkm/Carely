@@ -72,7 +72,7 @@ class CategoryDeleteView(DashboardAdminMixin, DeleteView):
         try:
             response = super().form_valid(form)
         except ProtectedError:
-            messages.error(self.request, 'No puedes eliminar una categoría que todavía tiene productos.')
+            messages.error(self.request, 'No se puede eliminar esta categoría porque tiene productos, activos o inactivos. Cámbialos a otra categoría primero.')
             return redirect(self.success_url)
         messages.success(self.request, 'La categoría se eliminó correctamente.')
         return response
@@ -153,7 +153,7 @@ class ProductDeleteView(DashboardAdminMixin, DeleteView):
         try:
             response = super().form_valid(form)
         except ProtectedError:
-            messages.error(self.request, 'No puedes eliminar un producto que está asociado a pedidos o movimientos de inventario.')
+            messages.error(self.request, 'Este producto tiene pedidos o movimientos de inventario, así que no se puede eliminar. Desactívalo para ocultarlo de la tienda.')
             return redirect(self.success_url)
         messages.success(self.request, 'El producto se eliminó correctamente.')
         return response

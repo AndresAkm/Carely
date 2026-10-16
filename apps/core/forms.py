@@ -1,6 +1,133 @@
 from django import forms
+from django.core.files.uploadedfile import UploadedFile
 
+from apps.catalog.models import Category, Product
+from apps.core.models import (
+    BENEFIT_POSITIONS,
+    MAX_FEATURED_PRODUCTS,
+    LandingBenefit,
+    SiteCustomization,
+    validate_plain_text,
+)
 from apps.orders.models import Order
+
+MAX_HERO_IMAGE_BYTES = 5 * 1024 * 1024
+
+
+class ProductChoiceField(forms.ModelMultipleChoiceField):
+    def label_from_instance(self, obj):
+        estado = '' if obj.is_active else ' (inactivo)'
+        return f'{obj.name} · {obj.category.name}{estado}'
+
+
+class CategoryChoiceField(forms.ModelMultipleChoiceField):
+    def label_from_instance(self, obj):
+        estado = '' if obj.is_active else ' (inactiva)'
+        return f'{obj.name}{estado}'
+
+
+class SiteCustomizationForm(forms.ModelForm):
+    """Portada, productos y categorías destacadas, y pie de página.
+
+    Las selecciones de productos y categorías usan los modelos existentes: el
+    campo valida que cada id corresponda a un registro real.
+    """
+
+    featured_products = ProductChoiceField(
+        label='Productos destacados',
+        required=False,
+        queryset=Product.objects.select_related('category').order_by('name'),
+        widget=forms.CheckboxSelectMultiple,
+        help_text=(
+            f'Hasta {MAX_FEATURED_PRODUCTS}. Si no eliges ninguno activo, '
+            'se muestran los productos marcados como destacados en el catálogo.'
+        ),
+    )
+    featured_categories = CategoryChoiceField(
+        label='Categorías destacadas',
+        required=False,
+        queryset=Category.objects.order_by('order', 'name'),
+        widget=forms.CheckboxSelectMultiple,
+        help_text='Si no eliges ninguna activa, se muestran todas las categorías activas.',
+    )
+
+    class Meta:
+        model = SiteCustomization
+        fields = [
+            'hero_title',
+            'hero_subtitle',
+            'hero_button_text',
+            'hero_image',
+            'featured_products',
+            'featured_categories',
+            'footer_email',
+            'footer_phone',
+            'footer_address',
+            'footer_facebook',
+            'footer_instagram',
+            'footer_whatsapp',
+        ]
+        labels = {
+            'footer_email': 'Correo de contacto',
+            'footer_phone': 'Teléfono',
+            'footer_address': 'Dirección',
+            'footer_facebook': 'Facebook',
+            'footer_instagram': 'Instagram',
+            'footer_whatsapp': 'WhatsApp',
+        }
+        help_texts = {
+            'footer_facebook': 'Dejar vacío usa el valor configurado en el servidor.',
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if name not in ('featured_products', 'featured_categories'):
+                field.widget.attrs.setdefault('class', 'form-control')
+
+    def clean_hero_image(self):
+        image = self.cleaned_data.get('hero_image')
+        # Solo se mide un archivo recién subido: medir uno ya guardado obligaría
+        # a una consulta al almacenamiento en cada guardado.
+        if isinstance(image, UploadedFile) and image.size > MAX_HERO_IMAGE_BYTES:
+            raise forms.ValidationError('La imagen supera 5 MB. Elige una más liviana.')
+        return image
+
+    def clean_featured_products(self):
+        products = self.cleaned_data.get('featured_products') or []
+        if len(products) > MAX_FEATURED_PRODUCTS:
+            raise forms.ValidationError(f'Puedes destacar hasta {MAX_FEATURED_PRODUCTS} productos.')
+        return products
+
+
+class LandingBenefitsForm(forms.Form):
+    """Título y descripción de los cuatro bloques de beneficios."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for position in BENEFIT_POSITIONS:
+            self.fields[f'title_{position}'] = forms.CharField(
+                label=f'Bloque {position}: título',
+                max_length=80,
+                validators=[validate_plain_text],
+                widget=forms.TextInput(attrs={'class': 'form-control'}),
+            )
+            self.fields[f'description_{position}'] = forms.CharField(
+                label=f'Bloque {position}: descripción',
+                max_length=200,
+                validators=[validate_plain_text],
+                widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            )
+
+    def save(self):
+        for position in BENEFIT_POSITIONS:
+            LandingBenefit.objects.update_or_create(
+                position=position,
+                defaults={
+                    'title': self.cleaned_data[f'title_{position}'],
+                    'description': self.cleaned_data[f'description_{position}'],
+                },
+            )
 
 
 class ContactMessageForm(forms.Form):

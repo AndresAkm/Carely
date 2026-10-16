@@ -10,6 +10,13 @@ from django.views.generic import TemplateView
 
 from apps.catalog.models import Category, Product
 from apps.core.forms import ContactMessageForm
+from apps.core.landing import (
+    get_benefits,
+    get_featured_categories,
+    get_featured_products,
+    get_hero_image_url,
+)
+from apps.core.models import SiteCustomization
 from apps.core.permissions import is_admin
 from apps.core.services import send_contact_message
 from apps.orders.models import Order
@@ -24,28 +31,14 @@ class LandingView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['benefits'] = [
-            {
-                'icon': 'bi-shield-check',
-                'title': 'Productos 100% Originales',
-                'description': 'Trabajamos directamente con marcas reconocidas para garantizar la autenticidad de cada producto.',
-            },
-            {
-                'icon': 'bi-truck',
-                'title': 'Envío Rápido y Seguro',
-                'description': 'Recibe tus productos en la puerta de tu casa con entregas rápidas y empaque cuidadoso.',
-            },
-            {
-                'icon': 'bi-star',
-                'title': 'Asesoría Personalizada',
-                'description': 'Nuestro equipo de expertos te ayuda a encontrar los productos ideales para tu tipo de piel.',
-            },
-            {
-                'icon': 'bi-arrow-repeat',
-                'title': 'Devoluciones Sin Complicaciones',
-                'description': 'Si no estás satisfecha, puedes devolver tu producto en un plazo de 30 días.',
-            },
-        ]
+        # Se lee en cada petición (sin caché): en Vercel hay varias instancias,
+        # y una caché en memoria quedaría desactualizada en algunas de ellas.
+        config = SiteCustomization.load()
+        context['site'] = config
+        context['hero_image_url'] = get_hero_image_url(config)
+        context['benefits'] = get_benefits()
+        context['categories'] = get_featured_categories(config)
+        context['featured_products'] = get_featured_products(config)
         context['why_us'] = [
             {
                 'icon': 'bi-heart',
@@ -63,10 +56,6 @@ class LandingView(TemplateView):
                 'description': 'Nos asociamos con marcas que comparten nuestro compromiso con la calidad y la sostenibilidad.',
             },
         ]
-        context['categories'] = Category.objects.filter(is_active=True)
-        context['featured_products'] = Product.objects.filter(
-            is_active=True, featured=True
-        ).select_related('category')[:6]
         return context
 
 

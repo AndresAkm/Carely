@@ -1,0 +1,284 @@
+{% extends 'core/dashboard_base.html' %}
+{% load static %}
+
+{% block dashboard_title %}Personalización del sitio{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<link href="{% static 'core/css/site-customization.css' %}?v=5" rel="stylesheet">
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="dashboard-page-header">
+    <div>
+        <h1 class="dashboard-heading">Personalización del sitio</h1>
+        <p class="dashboard-muted">Edita la portada, las categorías, los productos destacados, los beneficios y el pie de página.</p>
+    </div>
+    <a href="{% url 'core:home' %}" target="_blank" rel="noopener" class="btn btn-carely-outline">
+        <i class="bi bi-box-arrow-up-right me-1"></i>Ver landing
+    </a>
+</div>
+
+<form method="post" enctype="multipart/form-data" novalidate class="site-customization site-customization--bento">
+    {% csrf_token %}
+    {# Botón oculto: hace que Enter en un campo de texto GUARDE, no que navegue. #}
+    <button type="submit" hidden aria-hidden="true" tabindex="-1"></button>
+
+    {# BENTO CELDA 1: Portada (span 8) #}
+    <section class="dashboard-card dashboard-form-card bento-card bento-card--hero">
+        <div class="dashboard-card-body bento-card__body">
+            <div class="bento-card__head">
+                <span class="bento-card__icon bento-card__icon--hero">
+                    <i class="bi bi-window-desktop"></i>
+                </span>
+                <div class="bento-card__head-text">
+                    <span class="bento-card__tag">Sección 01</span>
+                    <h2 class="site-customization__title">Portada</h2>
+                </div>
+            </div>
+            <p class="bento-card__desc">Configura los mensajes principales, el llamado a la acción y la imagen visual de portada.</p>
+            <div class="row g-4 align-items-start">
+                <div class="col-lg-7">
+                    {% include 'core/dashboard/_field.html' with field=form.hero_title %}
+                    {% include 'core/dashboard/_field.html' with field=form.hero_subtitle %}
+                    {% include 'core/dashboard/_field.html' with field=form.hero_button_text %}
+                </div>
+                <div class="col-lg-5">
+                    {% include 'core/dashboard/_field.html' with field=form.hero_image %}
+                    <div class="site-image-preview">
+                        <img src="{{ hero_image_url }}" alt="Imagen de la portada" data-image-preview>
+                        <span class="site-image-preview__badge"><i class="bi bi-eye me-1"></i>Vista previa</span>
+                    </div>
+                    <p class="site-image-preview__hint" data-image-hint>Imagen actual de la portada</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {# BENTO CELDA 2: Categorías destacadas (span 4) #}
+    <section class="dashboard-card dashboard-form-card bento-card bento-card--categories">
+        <div class="dashboard-card-body bento-card__body">
+            <div class="bento-card__head">
+                <span class="bento-card__icon bento-card__icon--categories">
+                    <i class="bi bi-grid-fill"></i>
+                </span>
+                <div class="bento-card__head-text">
+                    <span class="bento-card__tag">Sección 02</span>
+                    <h2 class="site-customization__title">Categorías destacadas</h2>
+                </div>
+            </div>
+            <p class="bento-card__desc">{{ form.featured_categories.help_text }}</p>
+            {% for error in form.featured_categories.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            <div class="site-choice-grid bento-categories-grid">
+                {% for category in picker.categories %}
+                <label class="site-choice site-choice--category{% if not category.is_active %} site-choice--muted{% endif %}">
+                    <input class="form-check-input" type="checkbox" name="featured_categories" value="{{ category.pk }}"
+                        {% if category.pk|stringformat:"s" in selected_category_ids %}checked{% endif %}>
+                    {% if category.image %}
+                    <img src="{{ category.image.url }}" alt="" class="site-choice__thumb">
+                    {% else %}
+                    <span class="site-choice__thumb site-choice__thumb--empty"><i class="bi {{ category.icon }}"></i></span>
+                    {% endif %}
+                    <span class="site-choice__text">
+                        <strong>{{ category.name }}</strong>
+                        {% if not category.is_active %}<small>inactiva</small>{% endif %}
+                    </span>
+                </label>
+                {% empty %}
+                <p class="dashboard-muted">Todavía no hay categorías registradas.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    {# BENTO CELDA 3: Productos destacados (span 12) #}
+    <section class="dashboard-card dashboard-form-card bento-card bento-card--products" id="productos-destacados">
+        <div class="dashboard-card-body bento-card__body">
+            <div class="site-section-head bento-card__head-split">
+                <div class="bento-card__head">
+                    <span class="bento-card__icon bento-card__icon--products">
+                        <i class="bi bi-stars"></i>
+                    </span>
+                    <div class="bento-card__head-text">
+                        <span class="bento-card__tag">Sección 03</span>
+                        <h2 class="site-customization__title">Productos destacados</h2>
+                    </div>
+                </div>
+                <span class="site-counter bento-counter-pill" data-selected-count data-max="{{ picker.max_count }}">
+                    <i class="bi bi-check2-circle me-1"></i>{{ picker.selected_count }} de {{ picker.max_count }} seleccionados
+                </span>
+            </div>
+            <p class="bento-card__desc">{{ form.featured_products.help_text }}</p>
+            {% for error in form.featured_products.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+
+            <div class="site-filter bento-filter">
+                <div class="site-filter__field">
+                    <label for="productQuery"><i class="bi bi-search me-1"></i>Buscar</label>
+                    <input type="search" id="productQuery" name="product_q" class="form-control"
+                        value="{{ picker.filters.query }}" placeholder="Nombre o marca" maxlength="100">
+                </div>
+                <div class="site-filter__field">
+                    <label for="productCategory"><i class="bi bi-funnel me-1"></i>Categoría</label>
+                    <select id="productCategory" name="product_category" class="form-select">
+                        <option value="">Todas</option>
+                        {% for category in picker.categories %}
+                        <option value="{{ category.pk }}"{% if category.pk == picker.filters.category_id %} selected{% endif %}>{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-check site-filter__check">
+                    <input class="form-check-input" type="checkbox" id="productOnlySelected" name="product_selected" value="1"
+                        {% if picker.filters.only_selected %}checked{% endif %}>
+                    <label class="form-check-label" for="productOnlySelected">Solo seleccionados</label>
+                </div>
+                <div class="site-filter__actions">
+                    <button type="button" class="btn btn-carely-outline btn-sm" data-product-clear>Limpiar</button>
+                    <button type="submit" name="browse_page" value="1" class="btn btn-carely-primary btn-sm" data-product-filter>
+                        <i class="bi bi-funnel me-1"></i>Filtrar
+                    </button>
+                </div>
+            </div>
+
+            {# Seleccionados que no se ven en esta página: viajan con el formulario. #}
+            {% for product_id in picker.hidden_ids %}<input type="hidden" name="featured_products" value="{{ product_id }}">{% endfor %}
+
+            <div class="site-choice-grid bento-products-grid">
+                {% for product in picker.page %}
+                <label class="site-choice site-choice--product{% if not product.is_active %} site-choice--muted{% endif %}">
+                    <input class="form-check-input" type="checkbox" name="featured_products" value="{{ product.pk }}"
+                        {% if product.pk|stringformat:"s" in picker.selected_ids %}checked{% endif %}>
+                    {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="" class="site-choice__thumb">
+                    {% else %}
+                    <span class="site-choice__thumb site-choice__thumb--empty"><i class="bi bi-box"></i></span>
+                    {% endif %}
+                    <span class="site-choice__text">
+                        <strong>{{ product.name }}</strong>
+                        <small>{{ product.category.name }}{% if not product.is_active %} · inactivo{% endif %}</small>
+                    </span>
+                </label>
+                {% empty %}
+                <p class="dashboard-muted site-empty">No hay productos que coincidan con el filtro.</p>
+                {% endfor %}
+            </div>
+
+            {% if picker.page.paginator.num_pages > 1 %}
+            <nav class="site-pager" aria-label="Páginas de productos">
+                <span class="site-pager__info">
+                    Página {{ picker.page.number }} de {{ picker.page.paginator.num_pages }}
+                    · {{ picker.page.paginator.count }} productos
+                </span>
+                <div class="site-pager__buttons">
+                    <button type="submit" name="browse_page" value="{{ picker.page.number|add:'-1' }}"
+                        class="btn btn-carely-outline btn-sm"{% if not picker.page.has_previous %} disabled{% endif %}>
+                        <i class="bi bi-chevron-left"></i> Anterior
+                    </button>
+                    {% for item in picker.page_links %}
+                        {% if item is None %}
+                        <span class="site-pager__gap" aria-hidden="true">…</span>
+                        {% elif item == picker.page.number %}
+                        <span class="site-pager__current" aria-current="page">{{ item }}</span>
+                        {% else %}
+                        <button type="submit" name="browse_page" value="{{ item }}" class="btn btn-carely-outline btn-sm">{{ item }}</button>
+                        {% endif %}
+                    {% endfor %}
+                    <button type="submit" name="browse_page" value="{{ picker.page.number|add:'1' }}"
+                        class="btn btn-carely-outline btn-sm"{% if not picker.page.has_next %} disabled{% endif %}>
+                        Siguiente <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+            </nav>
+            {% endif %}
+        </div>
+    </section>
+
+    {# BENTO CELDA 4: Beneficios (span 6) #}
+    <section class="dashboard-card dashboard-form-card bento-card bento-card--benefits">
+        <div class="dashboard-card-body bento-card__body">
+            <div class="bento-card__head">
+                <span class="bento-card__icon bento-card__icon--benefits">
+                    <i class="bi bi-shield-check"></i>
+                </span>
+                <div class="bento-card__head-text">
+                    <span class="bento-card__tag">Sección 04</span>
+                    <h2 class="site-customization__title">Beneficios</h2>
+                </div>
+            </div>
+            <p class="bento-card__desc">Propuestas de valor visibles debajo de la portada en la página de inicio.</p>
+            <div class="bento-benefits-grid">
+                {% for block in benefit_blocks %}
+                <div class="site-benefit bento-benefit-card">
+                    <div class="bento-benefit-card__icon-wrap">
+                        <span class="site-benefit__icon"><i class="bi {{ block.icon }}"></i></span>
+                        <span class="bento-benefit-card__num">#{{ block.position }}</span>
+                    </div>
+                    <div class="bento-benefit-card__fields flex-grow-1">
+                        {% include 'core/dashboard/_field.html' with field=block.title %}
+                        {% include 'core/dashboard/_field.html' with field=block.description %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    {# BENTO CELDA 5: Pie de página (span 6) #}
+    <section class="dashboard-card dashboard-form-card bento-card bento-card--footer">
+        <div class="dashboard-card-body bento-card__body">
+            <div class="bento-card__head">
+                <span class="bento-card__icon bento-card__icon--footer">
+                    <i class="bi bi-layout-text-window-reverse"></i>
+                </span>
+                <div class="bento-card__head-text">
+                    <span class="bento-card__tag">Sección 05</span>
+                    <h2 class="site-customization__title">Pie de página</h2>
+                </div>
+            </div>
+            <p class="bento-card__desc">Los campos vacíos usan la configuración del servidor. Los enlaces deben iniciar con https://.</p>
+
+            <div class="bento-footer-grid">
+                <div class="bento-footer-group">
+                    <h6 class="bento-footer-group__title"><i class="bi bi-geo-alt-fill me-2 text-primary"></i>Datos de contacto</h6>
+                    <div class="d-flex flex-column gap-3">
+                        {% include 'core/dashboard/_field.html' with field=form.footer_email %}
+                        {% include 'core/dashboard/_field.html' with field=form.footer_phone %}
+                        {% include 'core/dashboard/_field.html' with field=form.footer_address %}
+                    </div>
+                </div>
+                <div class="bento-footer-group">
+                    <h6 class="bento-footer-group__title"><i class="bi bi-share-fill me-2 text-secondary"></i>Redes sociales</h6>
+                    <div class="d-flex flex-column gap-3">
+                        {% include 'core/dashboard/_field.html' with field=form.footer_facebook %}
+                        {% include 'core/dashboard/_field.html' with field=form.footer_instagram %}
+                        {% include 'core/dashboard/_field.html' with field=form.footer_whatsapp %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {# BENTO ACCIONES (span 12) #}
+    <div class="bento-card bento-actions-card">
+        <div class="bento-actions-bar">
+            <div class="bento-actions-info d-none d-md-flex align-items-center gap-2">
+                <i class="bi bi-cloud-check-fill text-success fs-5"></i>
+                <div>
+                    <strong class="d-block text-dark" style="font-size: 0.85rem;">Publicación inmediata</strong>
+                    <span class="text-muted" style="font-size: 0.78rem;">Al guardar los cambios se verán reflejados en la tienda en vivo.</span>
+                </div>
+            </div>
+            <div class="d-flex gap-2 justify-content-end form-actions">
+                <a href="{% url 'dashboard:site_customization' %}" class="btn btn-carely-outline">Descartar cambios</a>
+                <button type="submit" class="btn btn-carely-primary">
+                    <i class="bi bi-check2 me-1"></i>Guardar cambios
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script src="{% static 'core/js/site_customization.js' %}?v=2"></script>
+{% endblock %}

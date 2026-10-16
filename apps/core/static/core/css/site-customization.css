@@ -1,0 +1,651 @@
+/* Panel: Personalización del sitio - Bento Grid Layout */
+
+/* 1. Contenedor principal Bento Grid */
+.site-customization {
+    display: grid;
+    gap: 24px;
+    width: 100%;
+}
+
+.site-customization .dashboard-form-card {
+    max-width: none;
+    width: 100%;
+    margin: 0;
+}
+
+/* 2. Bento Grid responsive en pantallas grandes */
+@media (min-width: 1100px) {
+    .site-customization {
+        grid-template-columns: repeat(12, 1fr);
+        align-items: start;
+    }
+
+    .bento-card--hero {
+        grid-column: span 8;
+    }
+
+    .bento-card--categories {
+        grid-column: span 4;
+        align-self: stretch;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .bento-card--products {
+        grid-column: span 12;
+    }
+
+    .bento-card--benefits {
+        grid-column: span 6;
+    }
+
+    .bento-card--footer {
+        grid-column: span 6;
+    }
+
+    .bento-card--actions,
+    .bento-actions-card {
+        grid-column: span 12;
+    }
+}
+
+/* Breakpoint intermedio (tablets horizontales) */
+@media (min-width: 768px) and (max-width: 1099.98px) {
+    .site-customization {
+        grid-template-columns: repeat(12, 1fr);
+        gap: 20px;
+    }
+
+    .bento-card--hero {
+        grid-column: span 12;
+    }
+
+    .bento-card--categories {
+        grid-column: span 6;
+        align-self: stretch;
+    }
+
+    .bento-card--benefits {
+        grid-column: span 6;
+    }
+
+    .bento-card--products {
+        grid-column: span 12;
+    }
+
+    .bento-card--footer {
+        grid-column: span 12;
+    }
+
+    .bento-card--actions,
+    .bento-actions-card {
+        grid-column: span 12;
+    }
+}
+
+/* Breakpoint móvil */
+@media (max-width: 767.98px) {
+    .site-customization {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+}
+
+/* 3. Tarjeta Bento (`.bento-card`) */
+.bento-card {
+    background: var(--clr-card);
+    border: 1px solid var(--clr-border);
+    border-radius: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02), 0 8px 24px -4px rgba(0, 0, 0, 0.04);
+    transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease), border-color 0.25s var(--ease);
+    overflow: hidden;
+    position: relative;
+}
+
+.bento-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03), 0 16px 36px -6px rgba(0, 0, 0, 0.06);
+    border-color: rgba(91, 141, 239, 0.25);
+}
+
+.bento-card .dashboard-card-body,
+.bento-card__body {
+    padding: 26px 28px;
+}
+
+@media (max-width: 767.98px) {
+    .bento-card .dashboard-card-body,
+    .bento-card__body {
+        padding: 20px 18px;
+    }
+}
+
+/* Encabezados Bento con Badge e Icono */
+.bento-card__head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 6px;
+}
+
+.bento-card__head-split {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.bento-card__icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.bento-card__icon--hero {
+    background: linear-gradient(135deg, rgba(91, 141, 239, 0.16) 0%, rgba(91, 141, 239, 0.06) 100%);
+    color: var(--clr-secondary);
+}
+
+.bento-card__icon--categories {
+    background: linear-gradient(135deg, rgba(232, 96, 155, 0.16) 0%, rgba(232, 96, 155, 0.06) 100%);
+    color: var(--clr-primary);
+}
+
+.bento-card__icon--products {
+    background: linear-gradient(135deg, rgba(91, 141, 239, 0.2) 0%, rgba(232, 96, 155, 0.14) 100%);
+    color: var(--accent);
+}
+
+.bento-card__icon--benefits {
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.16) 0%, rgba(76, 175, 80, 0.06) 100%);
+    color: #2e7d32;
+}
+
+.bento-card__icon--footer {
+    background: linear-gradient(135deg, rgba(111, 66, 193, 0.16) 0%, rgba(111, 66, 193, 0.06) 100%);
+    color: #6f42c1;
+}
+
+.bento-card__tag {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--clr-text-2);
+    background: var(--clr-bg-2);
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-bottom: 2px;
+}
+
+.site-customization__title {
+    margin-bottom: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--clr-text);
+    letter-spacing: -0.01em;
+}
+
+.bento-card__desc {
+    font-size: 0.86rem;
+    color: var(--clr-text-2);
+    margin-top: 4px;
+    margin-bottom: 20px;
+    line-height: 1.45;
+}
+
+/* 4. Portada: Vista previa de imagen */
+.site-image-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    position: relative;
+    border: 2px dashed rgba(91, 141, 239, 0.3);
+    border-radius: 14px;
+    background: var(--clr-bg-2);
+    transition: border-color 0.2s var(--ease);
+}
+
+.site-image-preview:hover {
+    border-color: var(--clr-secondary);
+}
+
+.site-image-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.site-image-preview__badge {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(26, 26, 26, 0.75);
+    backdrop-filter: blur(4px);
+    color: #ffffff;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.site-image-preview__hint {
+    margin-top: 8px;
+    font-size: 0.82rem;
+    color: var(--clr-text-2);
+}
+
+/* 5. Categorías destacadas */
+.bento-card--categories .dashboard-card-body,
+.bento-card--categories .bento-card__body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+}
+
+.bento-categories-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-auto-rows: minmax(62px, 1fr);
+    gap: 12px;
+    flex: 1;
+    min-height: 0;
+    max-height: 330px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.bento-categories-grid::-webkit-scrollbar {
+    width: 6px;
+}
+
+.bento-categories-grid::-webkit-scrollbar-thumb {
+    background: var(--clr-border);
+    border-radius: 999px;
+}
+
+.site-choice--category {
+    padding: 12px 14px;
+    min-height: 62px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-sizing: border-box;
+}
+
+.site-choice--category .site-choice__thumb {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    border-radius: 10px;
+}
+
+.site-choice--category .site-choice__text {
+    min-width: 0;
+    flex: 1;
+}
+
+.site-choice--category .site-choice__text strong {
+    font-size: 0.88rem;
+    line-height: 1.25;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+@media (max-width: 540px) {
+    .bento-categories-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.site-choice--category:has(input:checked) {
+    border-color: var(--clr-primary);
+    background: linear-gradient(135deg, rgba(248, 215, 230, 0.35) 0%, rgba(220, 238, 255, 0.15) 100%);
+    box-shadow: 0 0 0 1px var(--clr-primary);
+}
+
+/* 6. Contador dinámico de destacados */
+.bento-counter-pill {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: #1d4ed8;
+    background: linear-gradient(135deg, var(--clr-secondary-soft) 0%, rgba(220, 238, 255, 0.6) 100%);
+    border: 1px solid rgba(91, 141, 239, 0.25);
+    border-radius: 999px;
+    padding: 6px 14px;
+    box-shadow: 0 2px 6px rgba(91, 141, 239, 0.1);
+}
+
+/* 7. Barra de filtro toolbar */
+.bento-filter {
+    background: var(--clr-bg-2);
+    border: 1px solid var(--clr-border);
+    border-radius: 14px;
+    padding: 14px 18px;
+    margin: 16px 0 20px;
+    display: grid;
+    grid-template-columns: minmax(180px, 2fr) minmax(160px, 1.5fr) auto auto;
+    align-items: end;
+    gap: 12px 16px;
+}
+
+.site-filter__field label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--clr-text);
+}
+
+.site-filter__field .form-control,
+.site-filter__field .form-select {
+    border-radius: 10px;
+    background: #ffffff;
+    border: 1px solid var(--clr-border);
+    padding: 8px 12px;
+    font-size: 0.88rem;
+}
+
+.site-filter__check {
+    padding-bottom: 8px;
+    white-space: nowrap;
+    font-size: 0.88rem;
+    font-weight: 500;
+}
+
+.site-filter__actions {
+    display: flex;
+    gap: 8px;
+}
+
+@media (max-width: 860px) {
+    .bento-filter {
+        grid-template-columns: 1fr;
+    }
+
+    .site-filter__actions {
+        justify-content: flex-end;
+    }
+}
+
+/* 8. Cuadrícula de opciones de productos */
+.bento-products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 14px;
+}
+
+.site-choice {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    padding: 12px 14px;
+    border: 1.5px solid var(--clr-border);
+    border-radius: 14px;
+    background: var(--clr-card);
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s var(--ease);
+}
+
+.site-choice:hover {
+    border-color: rgba(91, 141, 239, 0.45);
+    transform: translateY(-2px);
+    box-shadow: var(--sh-sm);
+}
+
+.site-choice:has(input:checked) {
+    border-color: var(--clr-secondary);
+    background: linear-gradient(135deg, rgba(220, 238, 255, 0.35) 0%, rgba(248, 215, 230, 0.15) 100%);
+    box-shadow: 0 0 0 1px var(--clr-secondary);
+}
+
+.site-choice--muted {
+    opacity: 0.65;
+}
+
+.site-choice input {
+    flex: 0 0 auto;
+    margin: 0;
+    width: 17px;
+    height: 17px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.site-choice__thumb {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 46px;
+    width: 46px;
+    height: 46px;
+    border-radius: 10px;
+    object-fit: cover;
+    background: var(--clr-bg-2);
+}
+
+.site-choice__thumb--empty {
+    font-size: 1.25rem;
+    color: var(--clr-text-2);
+}
+
+.site-choice__text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.site-choice__text strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.88rem;
+    color: var(--clr-text);
+}
+
+.site-choice__text small {
+    color: var(--clr-text-2);
+    font-size: 0.78rem;
+}
+
+/* Paginador Bento */
+.bento-pager {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid var(--clr-border);
+}
+
+.site-pager__info {
+    font-size: 0.86rem;
+    color: var(--clr-text-2);
+    font-weight: 500;
+}
+
+.site-pager__buttons {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.site-pager__current {
+    min-width: 34px;
+    padding: 5px 10px;
+    border-radius: var(--r-sm);
+    font-weight: 700;
+    font-size: 0.86rem;
+    text-align: center;
+    color: #ffffff;
+    background: var(--clr-secondary);
+    box-shadow: 0 2px 6px rgba(91, 141, 239, 0.3);
+}
+
+.site-pager__gap {
+    padding: 0 4px;
+    color: var(--clr-text-2);
+}
+
+/* 9. Beneficios: microtarjetas */
+.bento-benefits-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.bento-benefit-card {
+    background: var(--clr-bg-2);
+    border: 1px solid var(--clr-border);
+    border-radius: 14px;
+    padding: 16px 18px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    transition: all 0.2s var(--ease);
+    border-bottom: 1px solid var(--clr-border);
+}
+
+.bento-benefit-card:hover {
+    border-color: rgba(76, 175, 80, 0.4);
+    background: #ffffff;
+    box-shadow: var(--sh-sm);
+}
+
+.bento-benefit-card__icon-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.site-benefit__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    font-size: 1.25rem;
+    color: #2e7d32;
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.2) 0%, rgba(76, 175, 80, 0.08) 100%);
+    box-shadow: 0 2px 6px rgba(76, 175, 80, 0.12);
+}
+
+.bento-benefit-card__num {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--clr-text-2);
+    background: rgba(0, 0, 0, 0.05);
+    padding: 2px 6px;
+    border-radius: 6px;
+}
+
+.bento-benefit-card__fields {
+    min-width: 0;
+}
+
+.bento-benefit-card__fields .dashboard-field:last-child {
+    margin-bottom: 0;
+}
+
+/* 10. Pie de página en dos columnas Bento */
+.bento-footer-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+}
+
+@media (max-width: 640px) {
+    .bento-footer-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.bento-footer-group {
+    background: var(--clr-bg-2);
+    border: 1px solid var(--clr-border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.bento-footer-group__title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--clr-text);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+}
+
+.bento-footer-group .dashboard-field {
+    margin-bottom: 0;
+}
+
+/* 11. Barra de acciones flotante / anclada */
+.bento-actions-card {
+    background: var(--clr-card);
+    border: 1px solid var(--clr-border);
+    border-radius: 18px;
+    padding: 16px 24px;
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.06);
+}
+
+.bento-actions-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    width: 100%;
+}
+
+.bento-actions-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.bento-actions-info i {
+    font-size: 1.25rem;
+}
+
+/* 12. Elementos vacíos */
+.site-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 32px 16px;
+    background: var(--clr-bg-2);
+    border-radius: 12px;
+    border: 1px dashed var(--clr-border);
+}

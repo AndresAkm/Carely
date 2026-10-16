@@ -67,6 +67,13 @@
                     <span>Reportes</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'site_customization' %}active{% endif %}"
+                    href="{% url 'dashboard:site_customization' %}">
+                    <i class="bi bi-palette"></i>
+                    <span>Personalización web</span>
+                </a>
+            </li>
             </ul>
     </nav>
     <div class="sidebar-footer">

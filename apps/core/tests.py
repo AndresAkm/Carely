@@ -13,6 +13,15 @@ from apps.orders.models import Order, OrderItem
 from apps.payments.models import Payment
 from apps.users.models import User
 from apps.users.services import GmailServiceError
+from io import BytesIO
+
+from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
+from PIL import Image
+
+from apps.core.forms import SiteCustomizationForm
+from apps.core.landing import DEFAULT_BENEFITS
+from apps.core.models import LandingBenefit, SiteCustomization, validate_plain_text
 
 
 class ResourceOwnershipTests(APITestCase):
@@ -513,3 +522,495 @@ class ReportExportTests(TestCase):
         self.client.force_login(cliente)
         response = self.client.get(reverse('dashboard:report_export'))
         self.assertRedirects(response, reverse('core:home'))
+
+
+def make_png_bytes(width=8, height=8):
+    buffer = BytesIO()
+    Image.new('RGB', (width, height), (232, 96, 155)).save(buffer, format='PNG')
+    return buffer.getvalue()
+
+
+def make_png_upload(name='portada.png'):
+    return SimpleUploadedFile(name, make_png_bytes(), content_type='image/png')
+
+
+class SiteCustomizationModelTests(TestCase):
+    """La configuración de la landing es un singleton con los valores actuales por defecto."""
+
+    def test_load_crea_la_fila_unica_con_el_contenido_actual(self):
+        config = SiteCustomization.load()
+        self.assertEqual(config.pk, 1)
+        self.assertEqual(config.hero_title, 'Cultiva tu')
+        self.assertEqual(config.hero_button_text, 'Ver Catalogo')
+        self.assertEqual(SiteCustomization.objects.count(), 1)
+
+    def test_save_siempre_escribe_en_la_fila_1(self):
+        SiteCustomization(hero_title='Primera').save()
+        SiteCustomization(hero_title='Segunda').save()
+        self.assertEqual(SiteCustomization.objects.count(), 1)
+        self.assertEqual(SiteCustomization.objects.get().hero_title, 'Segunda')
+
+    def test_validate_plain_text_rechaza_etiquetas(self):
+        with self.assertRaises(ValidationError):
+            validate_plain_text('<script>alert(1)</script>')
+        validate_plain_text('Cultiva tu mejor versión')
+
+
+class SiteCustomizationFormTests(TestCase):
+
+    def setUp(self):
+        self.category = Category.objects.create(name='Perfumes', slug='perfumes', icon='bi-test')
+        self.product = Product.objects.create(
+            category=self.category, name='Aroma', slug='aroma',
+            price=Decimal('50000.00'), stock=5, is_active=True,
+        )
+        self.config = SiteCustomization.load()
+
+    def datos(self, **overrides):
+        data = {
+            'hero_title': 'Cultiva tu',
+            'hero_subtitle': 'Un subtítulo sencillo.',
+            'hero_button_text': 'Ver catálogo',
+        }
+        data.update(overrides)
+        return data
+
+    def test_acepta_datos_validos(self):
+        form = SiteCustomizationForm(self.datos(), files={'hero_image': make_png_upload()}, instance=self.config)
+        self.assertTrue(form.is_valid(), form.errors)
+
+    def test_rechaza_html_en_el_titulo(self):
+        form = SiteCustomizationForm(self.datos(hero_title='<b>Hola</b>'), instance=self.config)
+        self.assertFalse(form.is_valid())
+        self.assertIn('hero_title', form.errors)
+
+    def test_rechaza_javascript_en_un_enlace_social(self):
+        form = SiteCustomizationForm(
+            self.datos(footer_facebook='javascript:alert(1)'), instance=self.config,
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn('footer_facebook', form.errors)
+
+    def test_rechaza_mas_de_seis_productos_destacados(self):
+        ids = [
+            Product.objects.create(
+                category=self.category, name=f'Producto {n}', slug=f'producto-{n}',
+                price=Decimal('1000.00'),
+            ).pk
+            for n in range(7)
+        ]
+        form = SiteCustomizationForm(self.datos(featured_products=ids), instance=self.config)
+        self.assertFalse(form.is_valid())
+        self.assertIn('featured_products', form.errors)
+
+    def test_rechaza_ids_de_productos_que_no_existen(self):
+        form = SiteCustomizationForm(self.datos(featured_products=[999999]), instance=self.config)
+        self.assertFalse(form.is_valid())
+        self.assertIn('featured_products', form.errors)
+
+    def test_rechaza_archivo_que_no_es_una_imagen(self):
+        fake = SimpleUploadedFile('portada.png', b'esto no es una imagen', content_type='image/png')
+        form = SiteCustomizationForm(self.datos(), files={'hero_image': fake}, instance=self.config)
+        self.assertFalse(form.is_valid())
+        self.assertIn('hero_image', form.errors)
+
+    def test_rechaza_extension_no_permitida(self):
+        bmp = SimpleUploadedFile('portada.bmp', make_png_bytes(), content_type='image/bmp')
+        form = SiteCustomizationForm(self.datos(), files={'hero_image': bmp}, instance=self.config)
+        self.assertFalse(form.is_valid())
+        self.assertIn('hero_image', form.errors)
+
+    def test_rechaza_imagen_mas_grande_que_el_limite(self):
+        with patch('apps.core.forms.MAX_HERO_IMAGE_BYTES', 10):
+            form = SiteCustomizationForm(
+                self.datos(), files={'hero_image': make_png_upload()}, instance=self.config,
+            )
+            self.assertFalse(form.is_valid())
+        self.assertIn('hero_image', form.errors)
+
+
+class LandingCustomizationTests(TestCase):
+    """La landing lee la configuración guardada y conserva el contenido original sin ella."""
+
+    def setUp(self):
+        self.category = Category.objects.create(name='Perfumes', slug='perfumes', icon='bi-test')
+        self.featured = Product.objects.create(
+            category=self.category, name='Destacado Automatico', slug='destacado-automatico',
+            price=Decimal('1000.00'), is_active=True, featured=True,
+        )
+        self.url = reverse('core:home')
+
+    def test_sin_configuracion_muestra_el_contenido_original(self):
+        content = self.client.get(self.url).content.decode()
+        self.assertIn('Cultiva tu', content)
+        self.assertIn('Productos cuidadosamente seleccionados', content)
+        self.assertIn('Ver Catalogo', content)
+        self.assertIn('hero-placeholder.png', content)
+        for block in DEFAULT_BENEFITS:
+            self.assertIn(block['title'], content)
+        self.assertIn('Destacado Automatico', content)
+
+    def test_los_cambios_guardados_se_reflejan_en_la_landing(self):
+        config = SiteCustomization.load()
+        config.hero_title = 'Descubre tu'
+        config.hero_subtitle = 'Un subtítulo nuevo.'
+        config.hero_button_text = 'Explorar'
+        config.hero_image = 'landing/portada.png'
+        config.save()
+
+        content = self.client.get(self.url).content.decode()
+        self.assertIn('Descubre tu', content)
+        self.assertIn('Un subtítulo nuevo.', content)
+        self.assertIn('Explorar', content)
+        self.assertIn(config.hero_image.url, content)
+
+    def test_productos_seleccionados_reemplazan_a_los_automaticos(self):
+        elegido = Product.objects.create(
+            category=self.category, name='Producto Elegido', slug='producto-elegido',
+            price=Decimal('2000.00'), is_active=True,
+        )
+        config = SiteCustomization.load()
+        config.featured_products.set([elegido])
+
+        content = self.client.get(self.url).content.decode()
+        self.assertIn('Producto Elegido', content)
+        self.assertNotIn('Destacado Automatico', content)
+
+    def test_producto_inactivo_seleccionado_vuelve_a_los_automaticos(self):
+        oculto = Product.objects.create(
+            category=self.category, name='Producto Oculto', slug='producto-oculto',
+            price=Decimal('2000.00'), is_active=False,
+        )
+        config = SiteCustomization.load()
+        config.featured_products.set([oculto])
+
+        content = self.client.get(self.url).content.decode()
+        self.assertNotIn('Producto Oculto', content)
+        self.assertIn('Destacado Automatico', content)
+
+    def test_categorias_seleccionadas_filtran_la_seccion(self):
+        visible = Category.objects.create(name='Solo visible', slug='solo-visible', icon='bi-a')
+        Category.objects.create(name='Sin destacar', slug='sin-destacar', icon='bi-b')
+        config = SiteCustomization.load()
+        config.featured_categories.set([visible])
+
+        content = self.client.get(self.url).content.decode()
+        self.assertIn('class="category-card__name">Solo visible<', content)
+        self.assertNotIn('class="category-card__name">Sin destacar<', content)
+
+    def test_beneficio_guardado_reemplaza_el_texto_por_defecto(self):
+        LandingBenefit.objects.create(position=1, title='Beneficio nuevo', description='Descripción nueva.')
+        content = self.client.get(self.url).content.decode()
+        self.assertIn('Beneficio nuevo', content)
+        self.assertIn('Descripción nueva.', content)
+        self.assertNotIn(DEFAULT_BENEFITS[0]['title'], content)
+
+    def test_pie_de_pagina_usa_los_datos_guardados(self):
+        config = SiteCustomization.load()
+        config.footer_email = 'hola@carely.test'
+        config.footer_phone = '+57 300 111 2233'
+        config.footer_address = 'Bogotá, Colombia'
+        config.footer_facebook = 'https://facebook.com/carely'
+        config.save()
+
+        content = self.client.get(self.url).content.decode()
+        self.assertIn('mailto:hola@carely.test', content)
+        self.assertIn('tel:+573001112233', content)
+        self.assertIn('Bogotá, Colombia', content)
+        self.assertIn('https://facebook.com/carely', content)
+
+    def test_pie_de_pagina_vacio_usa_los_valores_del_servidor(self):
+        content = self.client.get(self.url).content.decode()
+        self.assertIn(f'mailto:{settings.CARELY_EMAIL}', content)
+
+
+class SiteCustomizationPanelTests(TestCase):
+    """Solo los administradores editan la landing; los cambios llegan a la página pública."""
+
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            username='admin-landing@carely.test', email='admin-landing@carely.test',
+            password='pass12345', role=User.Role.ADMIN, is_staff=True,
+        )
+        self.cliente = User.objects.create_user(
+            username='cliente-landing@carely.test', email='cliente-landing@carely.test',
+            password='pass12345',
+        )
+        self.category = Category.objects.create(name='Perfumes', slug='perfumes', icon='bi-test')
+        self.product = Product.objects.create(
+            category=self.category, name='Aroma', slug='aroma',
+            price=Decimal('50000.00'), is_active=True,
+        )
+        self.url = reverse('dashboard:site_customization')
+
+    def datos_validos(self, **overrides):
+        data = {
+            'hero_title': 'Cultiva tu',
+            'hero_subtitle': 'Subtítulo de prueba.',
+            'hero_button_text': 'Ver catálogo',
+            'featured_products': [self.product.pk],
+            'featured_categories': [self.category.pk],
+            'footer_email': '',
+            'footer_phone': '',
+            'footer_address': '',
+            'footer_facebook': '',
+            'footer_instagram': '',
+            'footer_whatsapp': '',
+        }
+        for position in (1, 2, 3, 4):
+            data[f'title_{position}'] = f'Beneficio {position}'
+            data[f'description_{position}'] = f'Descripción {position}'
+        data.update(overrides)
+        return data
+
+    def test_anonimo_no_puede_entrar(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 302)
+
+    def test_cliente_no_puede_ver_ni_editar(self):
+        self.client.force_login(self.cliente)
+        self.assertEqual(self.client.get(self.url).status_code, 302)
+
+        self.client.post(self.url, self.datos_validos(hero_title='Hackeado'))
+        self.assertEqual(SiteCustomization.load().hero_title, 'Cultiva tu')
+
+    def test_admin_ve_el_formulario(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'name="hero_title"')
+        self.assertContains(response, 'name="featured_products"')
+        self.assertContains(response, 'name="title_1"')
+        self.assertContains(response, 'name="footer_email"')
+
+    def test_admin_guarda_los_cambios_y_se_publican(self):
+        self.client.force_login(self.admin)
+        response = self.client.post(self.url, self.datos_validos(), follow=True)
+        self.assertContains(response, 'Los cambios se guardaron')
+
+        config = SiteCustomization.load()
+        self.assertEqual(config.hero_button_text, 'Ver catálogo')
+        self.assertEqual(list(config.featured_products.all()), [self.product])
+        self.assertEqual(LandingBenefit.objects.count(), 4)
+        self.assertEqual(LandingBenefit.objects.get(position=2).title, 'Beneficio 2')
+
+        landing = self.client.get(reverse('core:home')).content.decode()
+        self.assertIn('Ver catálogo', landing)
+        self.assertIn('Beneficio 2', landing)
+
+    def test_datos_invalidos_no_se_guardan(self):
+        self.client.force_login(self.admin)
+        response = self.client.post(self.url, self.datos_validos(hero_title='<script>x</script>'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Revisa los campos marcados')
+        self.assertEqual(SiteCustomization.load().hero_title, 'Cultiva tu')
+
+    def test_imagen_subida_se_muestra_en_la_landing(self):
+        self.client.force_login(self.admin)
+        response = self.client.post(
+            self.url, self.datos_validos(hero_image=make_png_upload()), follow=True,
+        )
+        self.assertContains(response, 'Los cambios se guardaron')
+
+        config = SiteCustomization.load()
+        self.assertTrue(config.hero_image.name.startswith('landing/'))
+        landing = self.client.get(reverse('core:home')).content.decode()
+        self.assertIn(config.hero_image.url, landing)
+
+    def test_reemplazar_la_imagen_borra_la_anterior_del_almacenamiento(self):
+        from django.core.files.storage import default_storage
+
+        anterior = default_storage.save('landing/anterior.png', make_png_upload('anterior.png'))
+        config = SiteCustomization.load()
+        config.hero_image = anterior
+        config.save()
+
+        self.client.force_login(self.admin)
+        self.client.post(self.url, self.datos_validos(hero_image=make_png_upload('nueva.png')))
+
+        self.assertFalse(default_storage.exists(anterior))
+        self.assertTrue(default_storage.exists(SiteCustomization.load().hero_image.name))
+
+
+def hidden_featured_ids(html):
+    return {int(v) for v in re.findall(r'type="hidden" name="featured_products" value="(\d+)"', html)}
+
+
+def checked_featured_ids(html):
+    # Entre `value` y `checked` hay un salto de línea: por eso \s+.
+    return {int(v) for v in re.findall(r'name="featured_products" value="(\d+)"\s+checked', html)}
+
+
+def browser_featured_values(html):
+    """Lo que el navegador enviaría en `featured_products` desde esa pantalla."""
+    return sorted(hidden_featured_ids(html) | checked_featured_ids(html))
+
+
+class SiteCustomizationPickerTests(TestCase):
+    """Paginador, filtro y selección de productos destacados en el panel."""
+
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            username='admin-picker@carely.test', email='admin-picker@carely.test',
+            password='pass12345', role=User.Role.ADMIN, is_staff=True,
+        )
+        self.cliente = User.objects.create_user(
+            username='cliente-picker@carely.test', email='cliente-picker@carely.test',
+            password='pass12345',
+        )
+        self.client.force_login(self.admin)
+        self.url = reverse('dashboard:site_customization')
+        self.perfumes = Category.objects.create(name='Perfumes', slug='perfumes', icon='bi-test')
+        self.maquillaje = Category.objects.create(name='Maquillaje', slug='maquillaje', icon='bi-brush')
+        # Catorce productos con nombres ordenables: 12 en la página 1, 2 en la 2.
+        self.productos = [
+            Product.objects.create(
+                category=self.perfumes, name=f'Producto {n:02d}', slug=f'producto-{n:02d}',
+                price=Decimal('1000.00'), is_active=True,
+            )
+            for n in range(1, 15)
+        ]
+
+    def datos(self, **extra):
+        data = {
+            'hero_title': 'Cultiva tu',
+            'hero_subtitle': 'Subtítulo de prueba.',
+            'hero_button_text': 'Ver catálogo',
+            'footer_email': '', 'footer_phone': '', 'footer_address': '',
+            'footer_facebook': '', 'footer_instagram': '', 'footer_whatsapp': '',
+        }
+        for position in (1, 2, 3, 4):
+            data[f'title_{position}'] = f'Beneficio {position}'
+            data[f'description_{position}'] = f'Descripción {position}'
+        data.update(extra)
+        return data
+
+    def test_muestra_doce_productos_por_pagina(self):
+        response = self.client.get(self.url)
+        page = response.context['picker']['page']
+        self.assertEqual(page.paginator.num_pages, 2)
+        self.assertEqual(len(page.object_list), 12)
+        self.assertEqual(response.content.decode().count('name="featured_products" value='), 12)
+
+    def test_segunda_pagina_muestra_el_resto(self):
+        response = self.client.post(self.url, {'browse_page': '2'})
+        page = response.context['picker']['page']
+        self.assertEqual(page.number, 2)
+        self.assertEqual([p.name for p in page.object_list], ['Producto 13', 'Producto 14'])
+
+    def test_numero_de_pagina_invalido_no_rompe_la_pantalla(self):
+        self.assertEqual(self.client.post(self.url, {'browse_page': 'abc'}).context['picker']['page'].number, 1)
+        self.assertEqual(self.client.post(self.url, {'browse_page': '999'}).context['picker']['page'].number, 2)
+
+    def test_paginador_solo_aparece_si_hay_mas_de_una_pagina(self):
+        self.assertContains(self.client.get(self.url), 'class="site-pager"')
+        filtrado = self.client.post(self.url, {'browse_page': '1', 'product_q': 'Producto 1'})
+        self.assertNotContains(filtrado, 'class="site-pager"')
+
+    def test_filtro_por_nombre(self):
+        response = self.client.post(self.url, {'browse_page': '1', 'product_q': 'Producto 1'})
+        nombres = {p.name for p in response.context['picker']['page'].object_list}
+        self.assertEqual(nombres, {f'Producto {n}' for n in range(10, 15)})
+
+    def test_filtro_por_categoria(self):
+        self.productos[-1].category = self.maquillaje
+        self.productos[-1].save()
+        response = self.client.post(self.url, {'browse_page': '1', 'product_category': str(self.maquillaje.pk)})
+        nombres = [p.name for p in response.context['picker']['page'].object_list]
+        self.assertEqual(nombres, ['Producto 14'])
+
+    def test_filtro_sin_resultados_lo_indica(self):
+        response = self.client.post(self.url, {'browse_page': '1', 'product_q': 'zzzz'})
+        self.assertContains(response, 'No hay productos que coincidan con el filtro.')
+
+    def test_solo_seleccionados_muestra_los_marcados(self):
+        self.client.post(self.url, {'browse_page': '1', 'featured_products': [self.productos[4].pk]})
+        response = self.client.post(self.url, {
+            'browse_page': '1', 'product_selected': '1', 'featured_products': [self.productos[4].pk],
+        })
+        nombres = [p.name for p in response.context['picker']['page'].object_list]
+        self.assertEqual(nombres, ['Producto 05'])
+
+    def test_seleccion_se_mantiene_al_cambiar_de_pagina(self):
+        p1, p13 = self.productos[0], self.productos[12]
+
+        # 1) Marco el producto 1 en la página 1 y paso a la página 2.
+        resp1 = self.client.post(self.url, {'browse_page': '2', 'featured_products': [p1.pk]})
+        self.assertIn(p1.pk, hidden_featured_ids(resp1.content.decode()))
+
+        # 2) En la página 2 marco el producto 13.
+        resp2 = self.client.post(self.url, {
+            'browse_page': '2',
+            'featured_products': browser_featured_values(resp1.content.decode()) + [p13.pk],
+        })
+        html2 = resp2.content.decode()
+        self.assertIn(p1.pk, hidden_featured_ids(html2))
+        self.assertIn(p13.pk, checked_featured_ids(html2))
+
+        # 3) Guardo: ambos deben quedar seleccionados.
+        resp3 = self.client.post(
+            self.url,
+            self.datos(featured_products=browser_featured_values(html2)),
+            follow=True,
+        )
+        self.assertContains(resp3, 'Los cambios se guardaron')
+        self.assertEqual(
+            set(SiteCustomization.load().featured_products.values_list('pk', flat=True)),
+            {p1.pk, p13.pk},
+        )
+
+    def test_navegar_no_guarda_nada(self):
+        self.client.post(self.url, {
+            'browse_page': '2',
+            'hero_title': 'Titulo sin guardar',
+            'featured_products': [self.productos[0].pk],
+        })
+        config = SiteCustomization.load()
+        self.assertEqual(config.hero_title, 'Cultiva tu')
+        self.assertEqual(config.featured_products.count(), 0)
+
+    def test_seleccion_guardada_aparece_marcada_al_abrir_el_panel(self):
+        config = SiteCustomization.load()
+        config.featured_products.set([self.productos[2]])
+        html = self.client.get(self.url).content.decode()
+        self.assertIn(self.productos[2].pk, checked_featured_ids(html))
+        self.assertIn('1 de 6 seleccionados', html)
+
+    def test_ids_inexistentes_no_se_reenvian(self):
+        response = self.client.post(self.url, {'browse_page': '1', 'featured_products': ['999999']})
+        self.assertNotIn('value="999999"', response.content.decode())
+
+    def test_guardar_con_mas_de_seis_no_cambia_la_seleccion(self):
+        config = SiteCustomization.load()
+        config.featured_products.set([self.productos[0]])
+        ids = [p.pk for p in self.productos[:7]]
+        response = self.client.post(self.url, self.datos(featured_products=ids))
+        self.assertContains(response, 'Revisa los campos marcados')
+        self.assertEqual(list(config.featured_products.values_list('pk', flat=True)), [self.productos[0].pk])
+
+    def test_cliente_no_puede_paginar_ni_filtrar(self):
+        self.client.force_login(self.cliente)
+        response = self.client.post(self.url, {'browse_page': '2', 'product_q': 'x'})
+        self.assertEqual(response.status_code, 302)
+
+
+class PageWindowTests(TestCase):
+    """La ventana del paginador no crece con el catálogo."""
+
+    class FakePage:
+        def __init__(self, number, num_pages):
+            self.number = number
+            self.paginator = type('P', (), {'num_pages': num_pages})()
+
+    def window(self, number, num_pages):
+        from apps.core.customization_views import page_window
+
+        return page_window(self.FakePage(number, num_pages))
+
+    def test_pocas_paginas_se_muestran_todas(self):
+        self.assertEqual(self.window(1, 3), [1, 2, 3])
+
+    def test_muchas_paginas_muestran_hueco_y_extremos(self):
+        self.assertEqual(self.window(1, 20), [1, 2, 3, None, 20])
+        self.assertEqual(self.window(10, 20), [1, None, 8, 9, 10, 11, 12, None, 20])
+        self.assertEqual(self.window(20, 20), [1, None, 18, 19, 20])

@@ -10,6 +10,7 @@ from apps.catalog.views.dashboard import (
     ProductListView,
     ProductUpdateView,
 )
+from apps.core.customization_views import SiteCustomizationView
 from apps.core.report_views import ReportExportView, ReportView
 from apps.orders.views.dashboard import (
     CouponCreateView,
@@ -37,6 +38,7 @@ urlpatterns = [
     path('pedidos/<int:pk>/notas/', OrderUpdateNotesView.as_view(), name='order_notes'),
     path('reportes/', ReportView.as_view(), name='report_list'),
     path('reportes/exportar/', ReportExportView.as_view(), name='report_export'),
+    path('personalizacion/', SiteCustomizationView.as_view(), name='site_customization'),
     path('productos/', ProductListView.as_view(), name='product_list'),
     path('productos/nuevo/', ProductCreateView.as_view(), name='product_create'),
     path('productos/<int:pk>/editar/', ProductUpdateView.as_view(), name='product_update'),

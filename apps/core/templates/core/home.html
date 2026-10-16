@@ -41,13 +41,12 @@
                 <div class="hero__left">
 
                     <h1 class="hero__title anim-reveal" data-delay="1">
-                        Cultiva tu<br>
+                        {{ site.hero_title }}<br>
                         <em class="hero__title-accent" id="heroAccent">mejor version</em>
                     </h1>
 
                     <p class="hero__desc anim-reveal" data-delay="2">
-                        Productos cuidadosamente seleccionados para nutrir tu piel,
-                        tu mente y tu ritual diario de bienestar.
+                        {{ site.hero_subtitle }}
                     </p>
 
                     <div class="hero__tabs anim-reveal" data-delay="3">
@@ -68,7 +67,7 @@
 
                     <div class="hero-cta d-flex flex-wrap gap-3 mt-4 anim-reveal" data-delay="4">
                         <a href="{% url 'catalog:home' %}" class="c-btn c-btn--primary c-btn--lg">
-                            <i class="bi bi-shop me-2"></i>Ver Catalogo
+                            <i class="bi bi-shop me-2"></i>{{ site.hero_button_text }}
                         </a>
                         {% if not user.is_authenticated %}<a href="{% url 'users:register' %}" class="c-btn c-btn--outline c-btn--lg">
                             Crear Cuenta
@@ -79,7 +78,7 @@
 
                 <div class="hero__right anim-reveal" data-delay="2" id="heroShowcase">
                     <div class="hero__showcase">
-                        <img src="{% static 'core/images/hero-placeholder.png' %}" alt="Cuidado personal Carely"
+                        <img src="{{ hero_image_url }}" alt="Cuidado personal Carely"
                             class="hero__showcase-img">
 
                         <div class="hero__float hero__float--rating">
@@ -180,7 +179,7 @@
                     <div class="why-visual__center"><i class="bi bi-heart"></i></div>
                 </div>
                 <div class="why-content anim-scroll">
-                    <h2 class="c-section__title c-section__title--left">Por que elegir Carely?</h2>
+                    <h2 class="c-section__title c-section__title--left">¿Por qué elegir Carely?</h2>
                     <p class="c-section__subtitle c-section__subtitle--left">En Carely creemos que el cuidado personal
                         es una forma de amor propio. Por eso seleccionamos los mejores productos para ti.</p>
                     <div class="why-list">

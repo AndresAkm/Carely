@@ -1,15 +1,36 @@
+import re
+
 from django.conf import settings
+
+from apps.core.models import SiteCustomization
+
+
+def phone_href(phone):
+    """`+57 323 227 3483` -> `+573232273483`, el formato de `tel:`."""
+    return '+' + re.sub(r'\D', '', phone)
 
 
 def site_settings(request):
+    """Datos públicos de la tienda para el pie de página.
+
+    Un campo guardado en el panel gana al valor de `settings` (variables de
+    entorno). Un campo vacío en el panel usa el valor del servidor, así que
+    borrar un dato no lo deja sin mostrar.
+    """
+    config = SiteCustomization.load()
+    socials = settings.CARELY_SOCIALS
     return {
         'site_name': settings.SITE_NAME,
         'site_description': settings.SITE_DESCRIPTION,
-        'carely_email': settings.CARELY_EMAIL,
-        'carely_phone': settings.CARELY_PHONE,
-        'carely_phone_href': settings.CARELY_PHONE_HREF,
-        'carely_address': settings.CARELY_ADDRESS,
-        'carely_socials': settings.CARELY_SOCIALS,
+        'carely_email': config.footer_email or settings.CARELY_EMAIL,
+        'carely_phone': config.footer_phone or settings.CARELY_PHONE,
+        'carely_phone_href': phone_href(config.footer_phone) if config.footer_phone else settings.CARELY_PHONE_HREF,
+        'carely_address': config.footer_address or settings.CARELY_ADDRESS,
+        'carely_socials': {
+            'facebook': config.footer_facebook or socials.get('facebook', ''),
+            'instagram': config.footer_instagram or socials.get('instagram', ''),
+            'whatsapp': config.footer_whatsapp or socials.get('whatsapp', ''),
+        },
     }
 
 
