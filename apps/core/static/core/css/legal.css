@@ -69,11 +69,15 @@
     transform: translateY(-2px);
 }
 
+/* El layout es el contexto de posicionamiento del índice: legal.js lo fija
+   dentro de estos límites (arriba al hacer scroll, abajo al terminar la
+   sección) en vez de contra el viewport, para que nunca invada el hero. */
 .legal-layout {
     display: grid;
     grid-template-columns: 280px minmax(0, 1fr);
     gap: 36px;
     align-items: start;
+    position: relative;
 }
 
 .legal-toc__card {
@@ -81,8 +85,6 @@
     border-radius: var(--r-lg);
     background: var(--clr-card);
     box-shadow: var(--sh-sm);
-    position: sticky;
-    top: 104px;
     max-height: calc(100vh - 140px);
     overflow-y: auto;
 }

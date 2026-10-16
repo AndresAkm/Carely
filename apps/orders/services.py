@@ -83,14 +83,20 @@ def build_mail_items(order, site_url: str = '') -> list:
 
     La imagen se devuelve ya absoluta. El correo se lee fuera del navegador, en
     un cliente que no tiene contexto del sitio: una ruta como `/media/...` no
-    resuelve y sale el ícono de imagen rota. Sin `site_url` no hay forma de
-    armarla, así que el item llega sin imagen y la plantilla cae al ícono.
+    resuelve y sale el ícono de imagen rota. Cuando el almacenamiento ya entrega
+    una URL absoluta (por ejemplo Supabase/S3) se respeta tal cual, sin volver a
+    prefijarle el sitio. Sin `site_url` y con ruta relativa, el item llega sin
+    imagen y la plantilla cae al ícono.
     """
     filas = []
     for item in order.items.select_related('product'):
         imagen = ''
-        if site_url and item.product.image:
-            imagen = f'{site_url.rstrip("/")}{item.product.image.url}'
+        if item.product.image:
+            url = item.product.image.url
+            if url.startswith(('http://', 'https://')):
+                imagen = url
+            elif site_url:
+                imagen = f'{site_url.rstrip("/")}{url}'
         filas.append({
             'product_name': item.product_name,
             'unit_price': item.unit_price,

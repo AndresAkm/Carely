@@ -797,7 +797,7 @@ class TwoFactorSetupTests(TestCase):
         self.client.force_login(self.user)
         issue_two_factor_code(self.user, TwoFactorCode.Purpose.ENABLE, self.code)
         response = self.client.post(self.url, {'code': self.code})
-        self.assertRedirects(response, self.url)
+        self.assertRedirects(response, reverse('users:profile'))
         self.user.refresh_from_db()
         self.assertTrue(self.user.two_factor_enabled)
         self.assertIsNotNone(self.user.two_factor_enabled_at)
@@ -865,7 +865,7 @@ class TwoFactorSetupTests(TestCase):
         issue_two_factor_code(self.user, TwoFactorCode.Purpose.ENABLE, self.code)
         self.client.force_login(self.user)
         response = self.client.post(self.url, {'password': 'pass12345', 'code': self.code})
-        self.assertRedirects(response, self.url, fetch_redirect_response=False)
+        self.assertRedirects(response, reverse('users:profile'), fetch_redirect_response=False)
         self.user.refresh_from_db()
         self.assertFalse(self.user.two_factor_enabled)
         self.assertIsNone(self.user.two_factor_enabled_at)
@@ -1521,6 +1521,15 @@ class ProfilePageTests(TestCase):
         self.assertTrue(anchors)
         for anchor in anchors:
             self.assertIn(f'id="{anchor}"', html)
+
+    def test_security_section_offers_password_recovery(self):
+        # La zona de Seguridad debe ofrecer, además de cambiar la contraseña,
+        # recuperarla por correo cuando el usuario no la recuerda.
+        self.client.force_login(self.user)
+        html = self.client.get(self.url).content.decode()
+        section = re.search(r'id="perfil-seguridad".*?</section>', html, re.S).group(0)
+        self.assertIn(reverse('users:password_reset'), section)
+        self.assertIn('Recuperar contraseña', section)
 
     def test_offers_the_three_theme_presets(self):
         self.client.force_login(self.user)

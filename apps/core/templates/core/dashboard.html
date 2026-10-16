@@ -4,7 +4,7 @@
 {% block title %}Panel de Control - Carely{% endblock %}
 
 {% block extra_css %}
-    <link href="{% static 'core/css/dashboard.css' %}?v=5" rel="stylesheet">
+    <link href="{% static 'core/css/dashboard.css' %}?v=7" rel="stylesheet">
 {% endblock %}
 
 {% block body_class %}dashboard-page{% endblock %}
@@ -20,7 +20,7 @@
                 </button>
                 <h2 class="topbar-title mb-0">Dashboard</h2>
             </div>
-            <div class="d-flex align-items-center gap-3">
+            <div class="d-flex align-items-center gap-3 flex-wrap">
                 <a href="{% url 'core:home' %}" class="btn btn-sm btn-carely-outline">
                     <i class="bi bi-globe me-1"></i>Ver Sitio
                 </a>
@@ -149,7 +149,7 @@
                                 <div><h5 class="dashboard-card-title">Pedidos recientes</h5><p class="dashboard-card-subtitle mb-0">Últimas órdenes recibidas en la tienda.</p></div>
                                 <a href="{% url 'dashboard:order_list' %}" class="btn btn-sm btn-carely-outline">Ver todos</a>
                             </div>
-                            <div class="dashboard-card-body p-0"><div class="table-responsive"><table class="table dashboard-table align-middle mb-0"><thead><tr><th>Pedido</th><th>Cliente</th><th>Total</th><th>Estado</th><th>Fecha</th><th></th></tr></thead><tbody>{% for order in recent_orders %}<tr><td><strong>#{{ order.pk }}</strong></td><td>{{ order.user.get_full_name|default:order.user.email }}</td><td>COP {{ order.total|floatformat:2 }}</td><td><span class="status-badge status-badge--{{ order.status }}">{{ order.get_status_display }}</span></td><td>{{ order.created_at|date:'d/m/Y H:i' }}</td><td class="text-end"><a href="{% url 'dashboard:order_detail' order.pk %}" class="btn btn-sm btn-carely-outline" aria-label="Ver pedido"><i class="bi bi-eye"></i></a></td></tr>{% empty %}<tr><td colspan="6" class="text-center py-4 text-secondary">No hay pedidos registrados.</td></tr>{% endfor %}</tbody></table></div></div>
+                            <div class="dashboard-card-body p-0"><div class="table-responsive"><table class="table dashboard-table align-middle mb-0"><thead><tr><th>Pedido</th><th>Cliente</th><th>Total</th><th>Estado</th><th>Fecha</th><th></th></tr></thead><tbody>{% for order in recent_orders %}<tr><td><strong>#{{ order.pk }}</strong></td><td>{{ order.user.get_full_name|default:order.user.email }}</td><td>COP {{ order.total|floatformat:2 }}</td><td><span class="status-badge status-badge--{{ order.status }}">{{ order.get_status_display }}</span></td><td>{{ order.created_at|date:'d/m/Y H:i' }}</td><td class="text-end"><button type="button" class="btn btn-sm btn-carely-outline" data-table-detail data-table-detail-title="Pedido #{{ order.pk }}" title="Ver detalle" aria-label="Ver detalle"><i class="bi bi-list-ul"></i></button><a href="{% url 'dashboard:order_detail' order.pk %}" class="btn btn-sm btn-carely-outline" aria-label="Ver pedido"><i class="bi bi-eye"></i></a></td></tr>{% empty %}<tr><td colspan="6" class="text-center py-4 text-secondary">No hay pedidos registrados.</td></tr>{% endfor %}</tbody></table></div></div>
                         </div>
                     </div>
                 </div>
@@ -159,6 +159,7 @@
 </div>
 
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+{% include 'components/detail_modal.html' %}
 {% endblock %}
 
 {% block extra_js %}
@@ -168,4 +169,5 @@ function toggleSidebar() {
     document.getElementById('sidebarOverlay').classList.toggle('show');
 }
 </script>
+<script src="{% static 'core/js/table_detail.js' %}?v=1"></script>
 {% endblock %}

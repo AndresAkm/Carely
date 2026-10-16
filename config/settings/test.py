@@ -28,7 +28,17 @@ PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.MD5PasswordHasher',
 ]
 
-DEFAULT_FILE_STORAGE = 'django.core.files.storage.InMemoryStorage'
+# `DEFAULT_FILE_STORAGE` fue removido en Django 5.1; si no se define
+# `STORAGES` los tests heredan el S3 de Supabase y dependen de la red.
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.InMemoryStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+    },
+}
+
 
 # `django.core.handlers.base` rechaza con DisallowedHost cualquier host que no
 # esté en la lista, y Django solo añade `testserver` por su cuenta. Los pagos

@@ -188,7 +188,7 @@ class TwoFactorSetupView(LoginRequiredMixin, FormView):
         user.two_factor_enabled_at = timezone.now()
         user.save(update_fields=['two_factor_enabled', 'two_factor_enabled_at', 'updated_at'])
         messages.success(self.request, 'Activaste la verificación en dos pasos. Ya puedes deshabilitar tu cuenta.')
-        return redirect('users:two_factor_setup')
+        return redirect('users:profile')
 
     def _send_code(self, request):
         try:
@@ -208,7 +208,7 @@ class TwoFactorSetupView(LoginRequiredMixin, FormView):
             user.save(update_fields=['two_factor_enabled', 'two_factor_enabled_at', 'updated_at'])
             TwoFactorCode.objects.filter(user=user, used_at__isnull=True).delete()
             messages.success(request, 'Desactivaste la verificación en dos pasos.')
-            return redirect('users:two_factor_setup')
+            return redirect('users:profile')
         return self.render_to_response(self.get_context_data(form=form))
 
 

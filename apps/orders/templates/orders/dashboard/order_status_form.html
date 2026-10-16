@@ -5,7 +5,7 @@
 
 {% block extra_css %}
 {{ block.super }}
-<link href="{% static 'core/css/order-timeline.css' %}?v=3" rel="stylesheet">
+<link href="{% static 'core/css/order-timeline.css' %}?v=4" rel="stylesheet">
 {% endblock %}
 
 {% block dashboard_content %}
@@ -193,7 +193,7 @@
                 <div class="field-error">{{ error }}</div>
                 {% endfor %}
                 <div class="osf-actions">
-                    <button type="button" class="osf-btn osf-btn--outline" id="cancelNotesBtn">Cancelar</button>
+                    <button type="button" class="osf-btn osf-btn--outline" id="cancelNotesBtn">Revertir</button>
                     <button type="submit" class="osf-btn osf-btn--primary">Guardar cambios</button>
                 </div>
             </div>
@@ -249,69 +249,5 @@
 
 {% block extra_js %}
 {{ block.super }}
-<script>
-(function () {
-    'use strict';
-    
-    // Configuración de avance de estado
-    const statusOrder = ['pendiente', 'confirmado', 'enviado', 'entregado'];
-    const statusInput = document.getElementById('id_status');
-    const advanceBtn = document.getElementById('advanceStatusBtn');
-    const timeline = document.getElementById('orderTimeline');
-    
-    if (advanceBtn && timeline && statusInput) {
-        advanceBtn.addEventListener('click', function() {
-            const currentStatus = statusInput.value;
-            const currentIndex = statusOrder.indexOf(currentStatus);
-            
-            if (currentIndex >= 0 && currentIndex < statusOrder.length - 1) {
-                const newStatus = statusOrder[currentIndex + 1];
-                statusInput.value = newStatus; // Actualiza el input hidden
-                
-                // Actualiza visualmente el timeline
-                const steps = timeline.querySelectorAll('.osf-step');
-                const lines = timeline.querySelectorAll('.osf-line');
-                
-                // Encuentra el paso actual y el siguiente
-                let foundCurrent = false;
-                steps.forEach((step, index) => {
-                    if (step.dataset.status === newStatus) {
-                        const circle = step.querySelector('.osf-circle');
-                        circle.classList.remove('osf-circle--pending');
-                        circle.classList.add('osf-circle--done');
-                        
-                        const icon = circle.querySelector('i');
-                        if (icon) icon.style.display = 'inline-block';
-                        
-                        // Pinta la línea anterior
-                        if (index > 0 && lines[index - 1]) {
-                            lines[index - 1].classList.add('osf-line--done');
-                        }
-                    }
-                });
-                
-                // Si llegamos a entregado, ocultar botón y estado cancelado visualmente
-                if (newStatus === 'entregado') {
-                    advanceBtn.parentElement.style.display = 'none';
-                    const cancelStep = Array.from(steps).find(s => s.dataset.status === 'cancelado');
-                    if (cancelStep) {
-                        cancelStep.style.display = 'none';
-                        if (lines[lines.length - 1]) lines[lines.length - 1].style.display = 'none';
-                    }
-                }
-            }
-        });
-    }
-
-    // Descartar cambios de notas al pulsar "Cancelar"
-    var notesTA = document.getElementById('id_order_notes');
-    var cancelBtn = document.getElementById('cancelNotesBtn');
-    if (notesTA && cancelBtn) {
-        cancelBtn.addEventListener('click', function () {
-            notesTA.value = notesTA.defaultValue;
-            notesTA.blur();
-        });
-    }
-})();
-</script>
+<script src="{% static 'orders/js/order_status_form.js' %}?v=1"></script>
 {% endblock %}

@@ -227,7 +227,6 @@ class OrderStatusFormTemplateTests(TestCase):
         self.assertEqual(response.status_code, 200)
         content = response.content.decode()
         self.assertIn('id="id_order_notes"', content)
-        self.assertIn("getElementById('id_order_notes')", content)
 
 
 class ErrorPageTests(TestCase):

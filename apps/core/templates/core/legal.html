@@ -5,7 +5,7 @@
 {% block meta_description %}Consulta los términos y condiciones de Carely y nuestra política de privacidad y protección de datos personales.{% endblock %}
 
 {% block extra_css %}
-<link href="{% static 'core/css/legal.css' %}?v=1" rel="stylesheet">
+<link href="{% static 'core/css/legal.css' %}?v=3" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
@@ -67,4 +67,7 @@
 </main>
 
 {% include 'footer.html' %}
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'core/js/legal.js' %}?v=2"></script>
 {% endblock %}

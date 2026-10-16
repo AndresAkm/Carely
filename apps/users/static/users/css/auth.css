@@ -280,8 +280,9 @@
     height: 100dvh;
     min-height: 100dvh;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    /* Centrado con `margin:auto` en la tarjeta. Con `align-items:center` el
+       desbordamiento se repartía hacia arriba y la parte superior quedaba
+       recortada e inalcanzable; el auto-margen se colapsa y permite el scroll. */
     overflow-y: auto;
     padding: 14px 20px;
 }
@@ -289,6 +290,7 @@
 .register-page .auth-container {
     max-width: 560px;
     width: 100%;
+    margin: auto;
 }
 
 .register-page .auth-card {

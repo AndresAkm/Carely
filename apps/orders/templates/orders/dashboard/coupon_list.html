@@ -53,12 +53,12 @@
                 <thead>
                     <tr>
                         <th>Código</th>
-                        <th>Tipo</th>
+                        <th class="d-none d-md-table-cell">Tipo</th>
                         <th>Descuento</th>
-                        <th>Mín. compra</th>
-                        <th>Vigencia</th>
-                        <th class="text-center">Usos</th>
-                        <th>Estado</th>
+                        <th class="d-none d-md-table-cell">Mín. compra</th>
+                        <th class="d-none d-md-table-cell">Vigencia</th>
+                        <th class="text-center d-none d-md-table-cell">Usos</th>
+                        <th class="d-none d-md-table-cell">Estado</th>
                         <th class="text-end">Acciones</th>
                     </tr>
                 </thead>
@@ -67,14 +67,14 @@
                     <tr>
 
                         <!-- Código -->
-                        <td>
+                        <td data-label="Código">
                             <strong style="font-family:monospace;letter-spacing:0.05em;">
                                 {{ coupon.code }}
                             </strong>
                         </td>
 
                         <!-- Tipo -->
-                        <td>
+                        <td data-label="Tipo" class="d-none d-md-table-cell">
                             {% if coupon.discount_type == 'percentage' %}
                             <span class="status-badge" style="background:#e8f4fd;color:#0d6efd;">
                                 <i class="bi bi-percent"></i> Porcentaje
@@ -87,7 +87,7 @@
                         </td>
 
                         <!-- Descuento -->
-                        <td>
+                        <td data-label="Descuento">
                             {% if coupon.discount_type == 'percentage' %}
                             {{ coupon.discount_value|floatformat:0 }}%
                             {% else %}
@@ -96,7 +96,7 @@
                         </td>
 
                         <!-- Mínimo de compra -->
-                        <td>
+                        <td data-label="Mín. compra" class="d-none d-md-table-cell">
                             {% if coupon.minimum_purchase > 0 %}
                             COP {{ coupon.minimum_purchase|floatformat:2 }}
                             {% else %}
@@ -105,7 +105,7 @@
                         </td>
 
                         <!-- Vigencia -->
-                        <td style="font-size:0.82rem;">
+                        <td data-label="Vigencia" class="d-none d-md-table-cell" style="font-size:0.82rem;">
                             {% if coupon.valid_from %}
                             <span class="text-secondary">Desde:</span>
                             {{ coupon.valid_from|date:'d/m/Y H:i' }}<br>
@@ -123,7 +123,7 @@
                         </td>
 
                         <!-- Usos -->
-                        <td class="text-center">
+                        <td data-label="Usos" class="text-center d-none d-md-table-cell">
                             {{ coupon.usage_count }}
                             {% if coupon.usage_limit %}
                             / {{ coupon.usage_limit }}
@@ -133,7 +133,7 @@
                         </td>
 
                         <!-- Estado compuesto -->
-                        <td>
+                        <td data-label="Estado" class="d-none d-md-table-cell">
                             {% if not coupon.is_active %}
                             <span class="status-badge status-badge--cancelado">Inactivo</span>
                             {% elif coupon.valid_until and coupon.valid_until < now %} <span
@@ -149,6 +149,7 @@
 
                         <!-- Acciones -->
                         <td class="text-end">
+                            <button type="button" class="btn btn-sm btn-carely-outline" data-table-detail data-table-detail-title="{{ coupon.code }}" title="Ver detalle" aria-label="Ver detalle"><i class="bi bi-list-ul"></i></button>
                             <!-- Editar -->
                             <a href="{% url 'dashboard:coupon_update' coupon.pk %}"
                                 class="btn btn-sm btn-carely-outline" title="Editar">

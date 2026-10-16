@@ -261,6 +261,28 @@ class CheckoutServiceTests(TestCase):
             'https://carely.co' + self.prod1.image.url,
         )
 
+    def test_correo_respeta_una_url_absoluta_del_almacenamiento(self):
+        # Con Supabase/S3 el storage ya entrega una URL absoluta. Prefijarle el
+        # dominio del sitio la volvería inválida.
+        from unittest import mock
+        from django.db.models.fields.files import FieldFile
+        from apps.orders.services import build_mail_items
+
+        self.prod1.image = 'products/crema.png'
+        self.prod1.save(update_fields=['image'])
+
+        order = checkout_cart(self.user, self.address.id)
+
+        absoluta = (
+            'https://xyz.supabase.co/storage/v1/object/public/media/products/crema.png'
+        )
+        with mock.patch.object(
+            FieldFile, 'url', new_callable=mock.PropertyMock, return_value=absoluta,
+        ):
+            filas = build_mail_items(order, site_url='https://carely.co')
+
+        self.assertEqual(filas[0]['image_url'], absoluta)
+
     def test_checkout_error_correo_no_revierte_pedido(self):
         from unittest.mock import patch
         

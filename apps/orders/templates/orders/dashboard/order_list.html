@@ -44,18 +44,18 @@
         <div class="table-responsive">
             <table class="table dashboard-table align-middle mb-0">
                 <thead>
-                    <tr><th>Pedido</th><th>Cliente</th><th>Artículos</th><th>Total</th><th>Estado</th><th>Fecha</th><th class="text-end">Acciones</th></tr>
+                    <tr><th>Pedido</th><th class="d-none d-md-table-cell">Cliente</th><th class="d-none d-md-table-cell">Artículos</th><th class="d-none d-md-table-cell">Total</th><th>Estado</th><th class="d-none d-md-table-cell">Fecha</th><th class="text-end">Acciones</th></tr>
                 </thead>
                 <tbody>
                 {% for order in orders %}
                     <tr>
-                        <td><strong>#{{ order.pk }}</strong></td>
-                        <td><strong>{{ order.user.get_full_name|default:order.user.email }}</strong><small class="d-block text-secondary">{{ order.user.email }}</small></td>
-                        <td>{{ order.item_count }}</td>
-                        <td>COP {{ order.total|floatformat:2 }}</td>
-                        <td><span class="status-badge status-badge--{{ order.status }}">{{ order.get_status_display }}</span></td>
-                        <td>{{ order.created_at|date:'d/m/Y H:i' }}</td>
-                        <td class="text-end"><a href="{% url 'dashboard:order_detail' order.pk %}" class="btn btn-sm btn-carely-outline" title="Ver pedido"><i class="bi bi-eye"></i></a><a href="{% url 'dashboard:order_status' order.pk %}" class="btn btn-sm btn-carely-outline" title="Actualizar estado"><i class="bi bi-pencil"></i></a></td>
+                        <td data-label="Pedido"><strong>#{{ order.pk }}</strong></td>
+                        <td data-label="Cliente" class="d-none d-md-table-cell"><strong>{{ order.user.get_full_name|default:order.user.email }}</strong><small class="d-block text-secondary">{{ order.user.email }}</small></td>
+                        <td data-label="Artículos" class="d-none d-md-table-cell">{{ order.item_count }}</td>
+                        <td data-label="Total" class="d-none d-md-table-cell">COP {{ order.total|floatformat:2 }}</td>
+                        <td data-label="Estado"><span class="status-badge status-badge--{{ order.status }}">{{ order.get_status_display }}</span></td>
+                        <td data-label="Fecha" class="d-none d-md-table-cell">{{ order.created_at|date:'d/m/Y H:i' }}</td>
+                        <td class="text-end"><button type="button" class="btn btn-sm btn-carely-outline" data-table-detail data-table-detail-title="Pedido #{{ order.pk }}" title="Ver detalle" aria-label="Ver detalle"><i class="bi bi-list-ul"></i></button><a href="{% url 'dashboard:order_detail' order.pk %}" class="btn btn-sm btn-carely-outline" title="Ver pedido"><i class="bi bi-eye"></i></a><a href="{% url 'dashboard:order_status' order.pk %}" class="btn btn-sm btn-carely-outline" title="Actualizar estado"><i class="bi bi-pencil"></i></a></td>
                     </tr>
                 {% empty %}
                     <tr><td colspan="7" class="text-center py-5 text-secondary">No hay pedidos que coincidan con los filtros.</td></tr>

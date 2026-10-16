@@ -120,6 +120,14 @@
                             <a href="{% url 'users:password_change' %}" class="c-btn c-btn--outline">Cambiar</a>
                         </div>
                         <div class="profile-row">
+                            <span class="profile-row__icon"><i class="bi bi-arrow-counterclockwise"></i></span>
+                            <span class="profile-row__body">
+                                <strong>Recuperar contraseña</strong>
+                                <span>Si no recuerdas tu contraseña, te enviamos un enlace seguro al correo para crear una nueva.</span>
+                            </span>
+                            <a href="{% url 'users:password_reset' %}" class="c-btn c-btn--outline">Recuperar</a>
+                        </div>
+                        <div class="profile-row">
                             <span class="profile-row__icon{% if profile_user.two_factor_enabled %} is-ok{% endif %}"><i class="bi bi-shield-lock"></i></span>
                             <span class="profile-row__body">
                                 <strong>Verificación en dos pasos</strong>

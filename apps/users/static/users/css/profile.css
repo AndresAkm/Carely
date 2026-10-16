@@ -671,6 +671,11 @@
     padding-top: 18px;
 }
 
+.profile-card__note {
+    margin: 0 0 16px;
+    padding: 0 34px;
+}
+
 .profile-danger__body {
     display: flex;
     align-items: center;
@@ -821,4 +826,5 @@
     .profile-danger__btn { justify-content: center; width: 100%; }
     .profile-confirm__list { padding: 22px 24px 0; }
     .profile-confirm__list .profile-danger__btn { width: auto; }
+    .profile-card__note { padding: 0 24px; }
 }

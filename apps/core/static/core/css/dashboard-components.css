@@ -158,6 +158,40 @@
     padding: 24px 32px;
 }
 
+/* Acciones del panel más compactas: el padding de `.btn-carely-*` está pensado
+   para la tienda (14px 34px) y desborda el topbar y los formularios del panel. */
+.dashboard-page .btn-carely-primary,
+.dashboard-page .btn-carely-outline {
+    padding: 9px 18px;
+    font-size: .88rem;
+}
+
+/* Barra superior: en pantallas pequeñas los botones envuelven y el título mengua. */
+@media (max-width: 768px) {
+    .dashboard-topbar {
+        padding: 12px 16px;
+        flex-wrap: wrap;
+        row-gap: 8px;
+    }
+    .topbar-title { font-size: 1.05rem; }
+    .dashboard-page .btn-carely-primary,
+    .dashboard-page .btn-carely-outline {
+        padding: 8px 14px;
+        font-size: .82rem;
+    }
+}
+
+/* Acciones de formulario: en móvil los botones ocupan el ancho completo. */
+@media (max-width: 640px) {
+    .dashboard-page .form-actions {
+        flex-wrap: wrap;
+    }
+    .dashboard-page .form-actions .btn {
+        flex: 1 1 100%;
+        justify-content: center;
+    }
+}
+
 .dashboard-page-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
 .dashboard-heading { font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; }
 .dashboard-muted { color: var(--clr-text-2); margin-bottom: 0; }
@@ -175,6 +209,7 @@
 .dashboard-product-table th:nth-child(6), .dashboard-product-table td:nth-child(6) { width: 12%; }
 .dashboard-product-table th:nth-child(7), .dashboard-product-table td:nth-child(7) { width: 150px; }
 .dashboard-product-table td { overflow-wrap: anywhere; }
+@media (max-width: 767.98px) { .dashboard-product-table { table-layout: auto; } }
 .dashboard-pagination { margin-top: 16px; }
 .dashboard-pagination .page-link { color: var(--clr-text); border-color: var(--clr-border); }
 .dashboard-pagination .page-item.active .page-link { color: #fff; background: var(--accent); border-color: var(--accent); }
@@ -210,6 +245,31 @@
 
 @media (max-width: 768px) {
     .dashboard-content { padding: 20px 16px; }
+}
+
+/* Detalle rápido de filas: lista de definición en dos columnas dentro del modal. */
+.table-detail-list {
+    display: grid;
+    grid-template-columns: minmax(110px, 38%) minmax(0, 1fr);
+    gap: 12px 16px;
+    margin: 0;
+}
+
+.table-detail-list dt {
+    color: var(--clr-text-2);
+    font-size: .8rem;
+    font-weight: 600;
+}
+
+.table-detail-list dd {
+    margin: 0;
+    color: var(--clr-text);
+    overflow-wrap: anywhere;
+}
+
+.table-detail-list dd img {
+    max-width: 100%;
+    border-radius: var(--r-sm);
 }
 
 .stat-card {

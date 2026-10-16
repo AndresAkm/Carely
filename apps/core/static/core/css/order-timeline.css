@@ -303,3 +303,41 @@
     .osf-cancel-order-btn { padding: 6px 12px; font-size: .76rem; }
     .osf-estado-row { gap: 12px; }
 }
+
+/* El timeline de 5 pasos no cabe en una fila junto a los botones en móvil:
+   se apila y los pasos se reparten el ancho en vez de desbordar. */
+@media (max-width: 600px) {
+    .osf-estado-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 18px;
+    }
+    .osf-timeline {
+        width: 100%;
+        flex: none;
+    }
+    .osf-step {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+    .osf-label {
+        white-space: normal;
+        text-align: center;
+        font-size: .58rem;
+        line-height: 1.15;
+        overflow-wrap: anywhere;
+    }
+    .osf-line { min-width: 6px; }
+    .osf-advance-wrapper { justify-content: center; }
+    .osf-cancel-order-btn {
+        width: 100%;
+        text-align: center;
+    }
+    .osf-actions {
+        flex-direction: column-reverse;
+    }
+    .osf-actions .osf-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
