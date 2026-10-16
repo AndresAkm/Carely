@@ -1,0 +1,17 @@
+Hola {{ order.user.first_name|default:order.user.email }},
+
+{{ title }}
+
+{{ message }}
+
+RESUMEN DEL PEDIDO #{{ order.id }}
+Estado: {{ order.get_status_display }}
+Fecha del pedido: {{ order.created_at|date:"d M Y, h:i a" }}
+Total: COP {{ order.total|floatformat:2 }}
+{% if site_url %}
+Puedes revisar los detalles de tu pedido aquí:
+{{ site_url }}{% url 'orders:order_detail' order.id %}
+{% endif %}
+
+Si tienes alguna duda, responde a este correo.
+¡Gracias por confiar en Carely!

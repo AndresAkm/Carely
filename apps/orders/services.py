@@ -1,6 +1,7 @@
 import logging
 from decimal import Decimal
 
+from django.conf import settings
 from django.db import transaction
 
 from apps.users.models import Address
@@ -16,7 +17,7 @@ from apps.inventory.services import (
     InventoryService,
     InsufficientStockError,
 )
-from apps.users.services import GmailService
+from apps.users.services import GmailService, GmailServiceError
 
 
 logger = logging.getLogger(__name__)
@@ -105,6 +106,81 @@ def build_mail_items(order, site_url: str = '') -> list:
             'image_url': imagen,
         })
     return filas
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Notificaciones de cambio de estado
+# ─────────────────────────────────────────────────────────────────────────────
+
+STATUS_NOTIFICATION_EMAILS = {
+    Order.Status.ENVIADO: {
+        'subject': '¡Tu pedido está en camino!',
+        'title': '¡Tu pedido está en camino!',
+        'message': (
+            'Buenas noticias: tu pedido ya fue despachado y va en camino '
+            'hacia la dirección que nos indicaste.'
+        ),
+        'accent': '#5b8def',
+    },
+    Order.Status.ENTREGADO: {
+        'subject': '¡Tu pedido fue entregado!',
+        'title': '¡Tu pedido fue entregado!',
+        'message': (
+            'Tu pedido ya fue entregado. Esperamos que disfrutes tus '
+            'productos y que pronto volvamos a verte.'
+        ),
+        'accent': '#4CAF50',
+    },
+    Order.Status.CANCELADO: {
+        'subject': 'Tu pedido fue cancelado',
+        'title': 'Tu pedido fue cancelado',
+        'message': (
+            'Tu pedido fue cancelado por nuestro equipo. Si crees que fue '
+            'un error o tienes alguna duda, responde a este correo y te '
+            'ayudaremos.'
+        ),
+        'accent': '#e8609b',
+    },
+}
+
+
+def notify_order_status_update(order, site_url: str = '') -> bool:
+    """
+    Avisa al cliente cuando su pedido cambia a un estado relevante.
+
+    Solo hay correo para ENVIADO, ENTREGADO y CANCELADO; el de CONFIRMADO ya
+    sale en el checkout y el resto de cambios no aportan información nueva al
+    cliente. La notificación es una cortesía: si falla, se registra y no se
+    interrumpe la actualización del pedido.
+    """
+    config = STATUS_NOTIFICATION_EMAILS.get(order.status)
+    if config is None:
+        return False
+
+    context = {
+        'order': order,
+        'site_url': site_url,
+        'title': config['title'],
+        'message': config['message'],
+        'accent': config['accent'],
+        'carely_email': settings.CARELY_EMAIL,
+    }
+    try:
+        GmailService.send_message(
+            subject=f'{config["subject"]} - Pedido #{order.id}',
+            recipient=order.user.email,
+            text_template='orders/emails/order_status_update.txt',
+            html_template='orders/emails/order_status_update.html',
+            context=context,
+        )
+    except GmailServiceError:
+        logger.warning(
+            'No se pudo notificar el cambio de estado del pedido #%s a %s',
+            order.id,
+            order.user.email,
+        )
+        return False
+    return True
 
 
 # ─────────────────────────────────────────────────────────────────────────────

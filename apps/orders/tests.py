@@ -701,3 +701,112 @@ class OrderTotalSignalTests(TestCase):
         # Vuelve al subtotal original 200 - descuento 20 = 180
         self.assertEqual(order.total, Decimal('180.00'))
 
+
+class OrderStatusNotificationTests(TestCase):
+    """El cambio de estado hecho por el admin notifica al cliente por correo."""
+
+    def setUp(self):
+        self.user = make_user('cliente@carely.com')
+        self.admin = User.objects.create_user(
+            username='admin-status@carely.test',
+            email='admin-status@carely.test',
+            password='pass12345',
+            role=User.Role.ADMIN,
+            is_staff=True,
+        )
+        self.order = Order.objects.create(
+            user=self.user,
+            total=Decimal('100.00'),
+            shipping_address='Calle 1, Ciudad',
+            status=Order.Status.CONFIRMADO,
+        )
+
+    def test_cambiar_estado_notifica_enviado_entregado_y_cancelado(self):
+        from django.core import mail
+
+        casos = {
+            Order.Status.ENVIADO: 'está en camino',
+            Order.Status.ENTREGADO: 'fue entregado',
+            Order.Status.CANCELADO: 'fue cancelado',
+        }
+        for status, fragmento in casos.items():
+            with self.subTest(status=status):
+                mail.outbox = []
+                self.order.status = status
+                self.order.save(update_fields=['status'])
+                self.assertEqual(len(mail.outbox), 1)
+                email = mail.outbox[0]
+                self.assertEqual(email.to, [self.user.email])
+                self.assertIn(fragmento, email.subject)
+                self.assertIn(f'#{self.order.id}', email.subject)
+
+    def test_cambiar_a_un_estado_sin_correo_no_notifica(self):
+        from django.core import mail
+
+        for status in (Order.Status.PENDIENTE, Order.Status.CONFIRMADO):
+            with self.subTest(status=status):
+                mail.outbox = []
+                self.order.status = status
+                self.order.save(update_fields=['status'])
+                self.assertEqual(len(mail.outbox), 0)
+
+    def test_guardar_sin_cambiar_estado_no_notifica(self):
+        # Guardar notas sin tocar el estado no debe generar correo.
+        from django.core import mail
+
+        mail.outbox = []
+        self.order.save(update_fields=['notes'])
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_avanzar_desde_el_panel_notifica_al_cliente(self):
+        from django.core import mail
+
+        self.client.force_login(self.admin)
+        mail.outbox = []
+        response = self.client.post(
+            reverse('dashboard:order_advance', args=[self.order.pk])
+        )
+        self.assertRedirects(
+            response, reverse('dashboard:order_status', args=[self.order.pk])
+        )
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, Order.Status.ENVIADO)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, [self.user.email])
+
+    def test_formulario_de_estado_notifica_al_cliente(self):
+        # El botón "Avanzar" del timeline cambia el input oculto y envía el
+        # formulario a OrderStatusUpdateView: ese es el camino real del UI.
+        from django.core import mail
+
+        self.client.force_login(self.admin)
+        mail.outbox = []
+        response = self.client.post(
+            reverse('dashboard:order_status', args=[self.order.pk]),
+            {'status': Order.Status.ENTREGADO, 'notes': ''},
+        )
+        self.assertRedirects(
+            response, reverse('dashboard:order_status', args=[self.order.pk])
+        )
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, Order.Status.ENTREGADO)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, [self.user.email])
+
+    def test_cancelar_desde_el_panel_notifica_al_cliente(self):
+        from django.core import mail
+
+        self.client.force_login(self.admin)
+        mail.outbox = []
+        response = self.client.post(
+            reverse('dashboard:order_cancel', args=[self.order.pk]),
+            {'cancel_reason': 'Sin stock'},
+        )
+        self.assertRedirects(
+            response, reverse('dashboard:order_status', args=[self.order.pk])
+        )
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, Order.Status.CANCELADO)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, [self.user.email])
+

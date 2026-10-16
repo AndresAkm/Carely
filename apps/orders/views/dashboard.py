@@ -77,6 +77,14 @@ class OrderStatusUpdateView(DashboardOrderMixin, UpdateView):
     def get_queryset(self):
         return Order.objects.select_related('user').prefetch_related('status_history')
 
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        # El formulario muta `self.object` durante la validación
+        # (construct_instance), así que guardamos el estado original ANTES para
+        # poder comparar si realmente cambió y notificar al cliente.
+        self._old_status = obj.status
+        return obj
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         order = self.object
@@ -107,7 +115,7 @@ class OrderStatusUpdateView(DashboardOrderMixin, UpdateView):
         )
 
     def form_valid(self, form):
-        old_status = self.object.status
+        old_status = getattr(self, '_old_status', self.object.status)
 
         response = super().form_valid(form)
 
@@ -291,7 +299,7 @@ class OrderCancelView(DashboardOrderMixin, View):
             comment=f"Cancelado por admin. {reason}".strip(),
             changed_by=request.user
         )
-        
+
         messages.success(request, 'El pedido fue cancelado correctamente.')
         return redirect('dashboard:order_status', pk=order.pk)
 

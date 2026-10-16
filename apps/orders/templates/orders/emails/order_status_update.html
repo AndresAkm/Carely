@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            margin: 0;
+            background: #f7f1f6;
+            font-family: Arial, sans-serif;
+            color: #29253a;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+        .wrapper {
+            padding: 32px 12px;
+            background: #f7f1f6;
+        }
+
+        .main-card {
+            max-width: 560px;
+            background: #fff;
+            border-radius: 24px;
+            box-shadow: 0 16px 40px rgba(66, 55, 90, .14);
+            overflow: hidden;
+            margin: 0 auto;
+        }
+
+        .header-bar {
+            height: 7px;
+            background: linear-gradient(90deg, #e8609b, #5b8def);
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .brand {
+            margin: 0 auto 28px;
+            color: #20202a;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -1px;
+            text-align: center;
+        }
+
+        .status-badge {
+            display: inline-block;
+            margin: 0 auto 20px;
+            padding: 8px 18px;
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+            color: #fff;
+        }
+
+        .title {
+            margin: 0 0 12px;
+            font-size: 24px;
+            text-align: center;
+        }
+
+        .text {
+            margin: 0 0 24px;
+            color: #6f6a7d;
+            font-size: 16px;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        .details-box {
+            background: #fdfcff;
+            border: 1px solid #efeef4;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+
+        .details-box p {
+            margin: 0 0 8px;
+            color: #6f6a7d;
+        }
+
+        .details-box strong {
+            color: #29253a;
+        }
+
+        .btn-container {
+            text-align: center;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 14px 26px;
+            border-radius: 12px;
+            background: #e8609b;
+            color: #fff !important;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .footer {
+            margin: 28px 0 0;
+            color: #999;
+            font-size: 13px;
+            line-height: 1.5;
+            text-align: center;
+        }
+
+        @media only screen and (max-width: 600px) {
+            .content {
+                padding: 24px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <table role="presentation" width="100%" class="wrapper">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="100%" class="main-card">
+                    <tr>
+                        <td class="header-bar"></td>
+                    </tr>
+                    <tr>
+                        <td class="content">
+                            <div class="brand">Carely</div>
+                            <div style="text-align: center;">
+                                <span class="status-badge" style="background: {{ accent }};">{{ order.get_status_display }}</span>
+                            </div>
+                            <h1 class="title">{{ title }}</h1>
+                            <p class="text">Hola {{ order.user.first_name|default:order.user.email }}, {{ message }}</p>
+
+                            <div class="details-box">
+                                <p><strong>Pedido #:</strong> {{ order.id }}</p>
+                                <p><strong>Fecha del pedido:</strong> {{ order.created_at|date:"d M Y, h:i a" }}</p>
+                                <p><strong>Estado:</strong> {{ order.get_status_display }}</p>
+                                <p style="margin-bottom: 0;"><strong>Total:</strong> COP {{ order.total|floatformat:2 }}</p>
+                            </div>
+
+                            {% if site_url %}
+                            <div class="btn-container">
+                                <a href="{{ site_url }}{% url 'orders:order_detail' order.id %}" class="btn"
+                                    style="background: {{ accent }};">Ver detalle de mi pedido</a>
+                            </div>
+                            {% endif %}
+
+                            <p class="footer">Si tienes alguna duda, responde a este correo.<br>¡Gracias por confiar en
+                                Carely para el cuidado personal!</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>

@@ -252,6 +252,10 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'true').lower() in {'1', 'true', 'yes', 'on'}
 EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'false').lower() in {'1', 'true', 'yes', 'on'}
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'no-reply@carely.com')
+
+# URL pública del sitio (sin barra final), usada para enlazar desde correos
+# que no tienen acceso al `request` (p. ej. las notificaciones por señales).
+SITE_URL = os.environ.get('SITE_URL', '').rstrip('/')
 PASSWORD_RESET_TIMEOUT = 3600
 
 # Vigencia del enlace de reactivación que se envía al deshabilitar una cuenta.
