@@ -1,5 +1,8 @@
 from django.contrib.auth import views as auth_views
 from django.urls import path
+
+from apps.core.contact_views import MyContactRequestDetailView, MyContactRequestListView
+
 from .views.web import AccountDeactivateView, AddressCreateView, AddressDeleteView, AddressListView, AddressSetDefaultView, AddressUpdateView, LoginView, LogoutView, PasswordChangeView, PasswordResetConfirmView, PausedAccountView, ProfileView, ReactivateAccountView, RegisterView, RegistrationConfirmationView, TwoFactorSetupView, department_cities_api
 
 app_name = 'users'
@@ -45,6 +48,8 @@ urlpatterns = [
         template_name='users/password_reset_complete.html',
     ), name='password_reset_complete'),
 
+    path('solicitudes/', MyContactRequestListView.as_view(), name='contact_request_list'),
+    path('solicitudes/<int:pk>/', MyContactRequestDetailView.as_view(), name='contact_request_detail'),
     path('direcciones/', AddressListView.as_view(), name='address_list'),
     path('direcciones/nueva/', AddressCreateView.as_view(), name='address_create'),
     path('direcciones/<int:pk>/editar/', AddressUpdateView.as_view(), name='address_update'),

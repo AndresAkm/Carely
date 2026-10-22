@@ -26,6 +26,7 @@
                     <span class="profile-subnav__label">Ir a</span>
                     <ul class="profile-subnav__list">
                         <li><a href="{% url 'orders:order_list' %}" class="profile-subnav__item profile-subnav__item--out"><i class="bi bi-box-seam"></i><span>Pedidos</span><i class="bi bi-arrow-up-right profile-subnav__out"></i></a></li>
+                        <li><a href="{% url 'users:contact_request_list' %}" class="profile-subnav__item profile-subnav__item--out"><i class="bi bi-envelope-paper"></i><span>Solicitudes</span><i class="bi bi-arrow-up-right profile-subnav__out"></i></a></li>
                         <li><a href="{% url 'cart:cart' %}" class="profile-subnav__item profile-subnav__item--out"><i class="bi bi-bag"></i><span>Carrito</span>{% if cart_count %}<span class="profile-subnav__count">{{ cart_count }}</span>{% endif %}</a></li>
                         <li><a href="{% url 'users:address_list' %}" class="profile-subnav__item profile-subnav__item--out"><i class="bi bi-geo-alt"></i><span>Direcciones</span><i class="bi bi-arrow-up-right profile-subnav__out"></i></a></li>
                     </ul>
@@ -72,6 +73,14 @@
                             <span class="profile-quick__body">
                                 <strong>Mi carrito</strong>
                                 <span>{% if cart_count %}{{ cart_count }} producto{{ cart_count|pluralize }} listo{{ cart_count|pluralize }} para pedir.{% else %}Tu carrito está vacío.{% endif %}</span>
+                            </span>
+                            <i class="bi bi-chevron-right profile-quick__arrow"></i>
+                        </a>
+                        <a href="{% url 'users:contact_request_list' %}" class="profile-quick__card">
+                            <span class="profile-quick__icon"><i class="bi bi-envelope-paper"></i></span>
+                            <span class="profile-quick__body">
+                                <strong>Mis solicitudes</strong>
+                                <span>Revisa tus mensajes a Carely, su estado y las respuestas.</span>
                             </span>
                             <i class="bi bi-chevron-right profile-quick__arrow"></i>
                         </a>

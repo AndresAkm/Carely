@@ -1,0 +1,146 @@
+{% extends 'core/dashboard_base.html' %}
+{% load static %}
+
+{% block dashboard_title %}Solicitudes{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<link href="{% static 'core/css/contact-requests.css' %}?v=1" rel="stylesheet">
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="dashboard-page-header">
+    <div>
+        <h1 class="dashboard-heading">Solicitudes</h1>
+        <p class="dashboard-muted">Mensajes recibidos desde el formulario de contacto del sitio.</p>
+    </div>
+    {% if pending_count %}
+    <span class="status-badge status-badge--pendiente">
+        <i class="bi bi-envelope me-1"></i>{{ pending_count }} pendiente{{ pending_count|pluralize }}
+    </span>
+    {% endif %}
+</div>
+
+<div class="dashboard-card dashboard-filter-card">
+    <div class="dashboard-card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-lg-5">
+                <label class="dashboard-filter-label" for="search_q">Buscar</label>
+                <input id="search_q" type="text" name="q" value="{{ search_q }}" class="form-control"
+                    placeholder="Nombre, correo, asunto o mensaje…">
+            </div>
+            <div class="col-lg-3">
+                <label class="dashboard-filter-label" for="filter_status">Estado</label>
+                <select id="filter_status" name="status" class="form-control">
+                    <option value="" {% if not filter_status %}selected{% endif %}>Todos</option>
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if filter_status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-lg-2">
+                <button class="btn btn-carely-outline w-100" type="submit">
+                    <i class="bi bi-search me-1"></i>Filtrar
+                </button>
+            </div>
+            {% if search_q or filter_status %}
+            <div class="col-lg-2">
+                <a href="{% url 'dashboard:contact_request_list' %}" class="btn btn-carely-outline w-100">
+                    <i class="bi bi-x me-1"></i>Limpiar
+                </a>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<div class="dashboard-card">
+    <div class="dashboard-card-body p-0">
+        <div class="table-responsive">
+            <table class="table dashboard-table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Solicitante</th>
+                        <th class="d-none d-md-table-cell">Asunto</th>
+                        <th class="d-none d-lg-table-cell">Mensaje</th>
+                        <th>Estado</th>
+                        <th class="text-end">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for contact_request in contact_requests %}
+                    <tr>
+                        <td data-label="Fecha">
+                            {{ contact_request.created_at|date:'d/m/Y' }}<br>
+                            <small class="text-secondary">{{ contact_request.created_at|date:'H:i' }}</small>
+                        </td>
+                        <td data-label="Solicitante">
+                            <strong>{{ contact_request.name }}</strong><br>
+                            <small class="text-secondary">{{ contact_request.email }}</small>
+                        </td>
+                        <td data-label="Asunto" class="d-none d-md-table-cell">
+                            {{ contact_request.subject|default:'(sin asunto)' }}
+                        </td>
+                        <td data-label="Mensaje" class="d-none d-lg-table-cell contact-request-preview">
+                            {{ contact_request.message|truncatechars:90 }}
+                        </td>
+                        <td data-label="Estado">
+                            {% if contact_request.status == 'respondida' %}
+                            <span class="status-badge status-badge--respondida">Respondida</span>
+                            {% else %}
+                            <span class="status-badge status-badge--pendiente">Pendiente</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'dashboard:contact_request_detail' contact_request.pk %}"
+                                class="btn btn-sm btn-carely-outline" title="{% if contact_request.status == 'respondida' %}Ver respuesta{% else %}Responder{% endif %}">
+                                <i class="bi {% if contact_request.status == 'respondida' %}bi-eye{% else %}bi-reply{% endif %} me-1"></i>
+                                {% if contact_request.status == 'respondida' %}Ver{% else %}Responder{% endif %}
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-secondary">
+                            No hay solicitudes que coincidan con el filtro.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% if is_paginated %}
+<nav class="dashboard-pagination" aria-label="Paginación de solicitudes">
+    <ul class="pagination justify-content-center mb-0">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if filter_query %}&{{ filter_query }}{% endif %}">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+        </li>
+        {% endif %}
+
+        {% for number in page_obj.paginator.page_range %}
+        <li class="page-item {% if page_obj.number == number %}active{% endif %}">
+            <a class="page-link" href="?page={{ number }}{% if filter_query %}&{{ filter_query }}{% endif %}">
+                {{ number }}
+            </a>
+        </li>
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if filter_query %}&{{ filter_query }}{% endif %}">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% endblock %}

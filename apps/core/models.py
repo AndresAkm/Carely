@@ -1,5 +1,6 @@
 import re
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 from django.db import models
@@ -111,3 +112,54 @@ class LandingBenefit(models.Model):
 
     def __str__(self):
         return f'{self.position}. {self.title}'
+
+
+class ContactRequest(models.Model):
+    """Mensaje recibido desde el modal de contacto del pie de página.
+
+    Se guarda siempre, aunque el aviso por correo falle, para que el equipo
+    pueda atenderlo desde el panel.
+    """
+
+    class Status(models.TextChoices):
+        PENDIENTE = 'pendiente', 'Pendiente'
+        RESPONDIDA = 'respondida', 'Respondida'
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='contact_requests',
+        verbose_name='usuario',
+    )
+    name = models.CharField('nombre', max_length=120)
+    email = models.EmailField('correo')
+    subject = models.CharField('asunto', max_length=150, blank=True)
+    message = models.TextField('mensaje')
+    status = models.CharField(
+        'estado',
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDIENTE,
+    )
+    reply = models.TextField('respuesta', blank=True)
+    replied_at = models.DateTimeField('respondida en', null=True, blank=True)
+    replied_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='contact_replies',
+        verbose_name='respondida por',
+    )
+    created_at = models.DateTimeField('creada', auto_now_add=True)
+    updated_at = models.DateTimeField('actualizada', auto_now=True)
+
+    class Meta:
+        verbose_name = 'solicitud de contacto'
+        verbose_name_plural = 'solicitudes de contacto'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.name} · {self.subject or self.email}'

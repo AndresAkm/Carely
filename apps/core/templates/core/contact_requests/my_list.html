@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mis solicitudes - Carely{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'users/css/profile.css' %}?v=6" rel="stylesheet">
+<link href="{% static 'core/css/contact-requests.css' %}?v=2" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+{% include 'navbar.html' %}
+
+<main class="profile-page">
+    <div class="container">
+        <div class="profile-header">
+            <span class="profile-eyebrow"><i class="bi bi-envelope-paper me-1"></i>Mis solicitudes</span>
+            <h1 class="profile-title">Tus mensajes a Carely</h1>
+            <p class="profile-subtitle">Consulta el estado de cada solicitud y lee la respuesta cuando esté lista.</p>
+        </div>
+
+        <div class="row g-4 g-lg-5 align-items-start">
+            <div class="col-lg-4">
+                <aside class="profile-summary">
+                    <div class="profile-avatar">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</div>
+                    <h2>{{ user.get_full_name|default:user.email }}</h2>
+                    <p class="profile-summary-email">{{ user.email }}</p>
+                    <span class="profile-role"><i class="bi bi-heart-fill me-1"></i>Cliente Carely</span>
+                    <dl class="profile-summary-details">
+                        <div><dt>Solicitudes</dt><dd>{{ total_count }}</dd></div>
+                        <div><dt>Pendientes</dt><dd>{{ pending_count }}</dd></div>
+                        <div><dt>Miembro desde</dt><dd>{{ user.created_at|date:'d/m/Y' }}</dd></div>
+                    </dl>
+                    <a href="{% url 'users:profile' %}" class="profile-password-link"><i class="bi bi-person me-2"></i>Mi perfil</a>
+                </aside>
+            </div>
+
+            <div class="col-lg-8">
+                <section class="profile-card">
+                    <div class="profile-card-header">
+                        <h2>Historial de solicitudes</h2>
+                        <p>Las respuestas también se envían al correo {{ user.email }}.</p>
+                    </div>
+
+                    {% if contact_requests %}
+                    <div class="cr-request-list">
+                        {% for contact_request in contact_requests %}
+                        <a href="{% url 'users:contact_request_detail' contact_request.pk %}" class="cr-request">
+                            <div class="cr-request__head">
+                                <strong class="cr-request__subject">{{ contact_request.subject|default:'(sin asunto)' }}</strong>
+                                {% if contact_request.status == 'respondida' %}
+                                <span class="cr-status cr-status--respondida"><i class="bi bi-check2-circle"></i>Respondida</span>
+                                {% else %}
+                                <span class="cr-status cr-status--pendiente"><i class="bi bi-clock"></i>Pendiente</span>
+                                {% endif %}
+                            </div>
+                            <p class="cr-request__preview">{{ contact_request.message|truncatechars:150 }}</p>
+                            <div class="cr-request__foot">
+                                <span><i class="bi bi-calendar3"></i>{{ contact_request.created_at|date:'d/m/Y H:i' }}</span>
+                                <span class="cr-request__link">Ver detalle <i class="bi bi-chevron-right"></i></span>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+
+                    {% if is_paginated %}
+                    <nav class="cr-pagination" aria-label="Paginación de solicitudes">
+                        {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}" class="c-btn c-btn--outline"><i class="bi bi-chevron-left me-1"></i>Anterior</a>
+                        {% endif %}
+                        <span class="cr-pagination__info">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+                        {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}" class="c-btn c-btn--outline">Siguiente<i class="bi bi-chevron-right ms-1"></i></a>
+                        {% endif %}
+                    </nav>
+                    {% endif %}
+
+                    {% else %}
+                    <div class="cr-empty">
+                        <i class="bi bi-envelope-paper"></i>
+                        <p>Todavía no has enviado solicitudes a Carely.</p>
+                        <p class="cr-empty__hint">Puedes escribirnos desde el formulario de contacto del pie de página.</p>
+                    </div>
+                    {% endif %}
+                </section>
+            </div>
+        </div>
+    </div>
+</main>
+
+{% include 'footer.html' %}
+{% endblock %}

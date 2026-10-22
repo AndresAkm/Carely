@@ -68,7 +68,7 @@ templates, JavaScript ni respuestas API. Las rutas conservan los prefijos
 | App | Modelos |
 |-----|---------|
 | `apps.catalog` | `Category`, `Product` |
-| `apps.core` | *(sin modelos)* |
+| `apps.core` | `SiteCustomization`, `LandingBenefit`, `ContactRequest` |
 | `apps.users` | `User`, `Department`, `City`, `Address`, `TwoFactorCode` |
 | `apps.inventory` | `InventoryMovement` |
 | `apps.cart` | `Cart`, `CartItem` |
@@ -78,6 +78,9 @@ templates, JavaScript ni respuestas API. Las rutas conservan los prefijos
 ### Relaciones principales
 
 - `User` ← `Cart`, `Order`, `Address`, `InventoryMovement`, `TwoFactorCode`.
+- `User` ← `ContactRequest.user` (SET_NULL) y `ContactRequest.replied_by`
+  (SET_NULL): el titular que envió la solicitud y el administrador que la
+  respondió. La solicitud se conserva aunque el usuario se elimine.
 - `Department` ← `City` ← `Address`.
 - `Category` ← `Product` ← `CartItem`, `OrderItem`, `InventoryMovement`.
 - `Cart` ← `CartItem` (único por `cart` + `product`).
@@ -92,6 +95,24 @@ templates, JavaScript ni respuestas API. Las rutas conservan los prefijos
   `django.contrib.auth.hashers.check_password`. Pedir uno nuevo borra los
   pendientes del mismo uso, así que hay como máximo uno vigente. Los códigos se
   pueden auditar en el admin, pero no se crean ni se editan a mano.
+
+### ContactRequest
+
+Guarda cada mensaje enviado desde el modal de contacto del pie de página. Se
+crea siempre, incluso si el aviso por correo falla, para que la solicitud no se
+pierda y pueda atenderse desde `/dashboard/solicitudes/`.
+
+| Campo | Para qué |
+|-------|----------|
+| `user` | Titular autenticado que la envió; vacío si se envió sin sesión |
+| `name`, `email`, `subject`, `message` | Datos originales del formulario |
+| `status` | `pendiente` o `respondida` |
+| `reply`, `replied_at`, `replied_by` | Respuesta enviada y rastro del administrador |
+
+Las respuestas se envían al correo del solicitante y usan el correo del
+administrador como `Reply-To`. Cada cliente ve sus solicitudes en
+`/accounts/solicitudes/`: las vinculadas a su `user` y las enviadas antes de
+tener cuenta con el mismo `email`.
 
 ### Payment
 

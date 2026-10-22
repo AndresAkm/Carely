@@ -16,7 +16,7 @@ from apps.core.landing import (
     get_featured_products,
     get_hero_image_url,
 )
-from apps.core.models import SiteCustomization
+from apps.core.models import ContactRequest, SiteCustomization
 from apps.core.permissions import is_admin
 from apps.core.services import send_contact_message
 from apps.orders.models import Order
@@ -339,6 +339,13 @@ class ContactView(View):
             return JsonResponse({'ok': False, 'errors': errors}, status=400)
 
         data = form.cleaned_data
+        ContactRequest.objects.create(
+            user=request.user if request.user.is_authenticated else None,
+            name=data['name'],
+            email=data['email'],
+            subject=data['subject'],
+            message=data['message'],
+        )
         try:
             send_contact_message(
                 name=data['name'],

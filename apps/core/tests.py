@@ -21,7 +21,7 @@ from PIL import Image
 
 from apps.core.forms import SiteCustomizationForm
 from apps.core.landing import DEFAULT_BENEFITS
-from apps.core.models import LandingBenefit, SiteCustomization, validate_plain_text
+from apps.core.models import ContactRequest, LandingBenefit, SiteCustomization, validate_plain_text
 
 
 class ResourceOwnershipTests(APITestCase):
@@ -195,6 +195,261 @@ class ContactFormTests(TestCase):
         self.assertEqual(response.status_code, 502)
         self.assertFalse(response.json()['ok'])
         self.assertIn('message', response.json())
+
+
+class ContactRequestPanelTests(TestCase):
+    """Las solicitudes del modal de contacto se atienden desde el panel."""
+
+    def setUp(self):
+        self.contact_url = reverse('core:contact')
+        self.admin = User.objects.create_user(
+            username='soporte@carely.test', email='soporte@carely.test',
+            password='pass12345', role=User.Role.ADMIN, is_staff=True,
+            first_name='Sofía', last_name='Soporte',
+        )
+        self.cliente = User.objects.create_user(
+            username='cliente-solicitudes@carely.test',
+            email='cliente-solicitudes@carely.test',
+            password='pass12345',
+        )
+        self.lista_url = reverse('dashboard:contact_request_list')
+
+    def crear_solicitud(self, **overrides):
+        data = {
+            'name': 'Ana Restrepo',
+            'email': 'ana@example.com',
+            'subject': 'Una duda sobre el envío',
+            'message': 'Hola, quiero saber si hacen envíos a mi ciudad.',
+        }
+        data.update(overrides)
+        return ContactRequest.objects.create(**data)
+
+    def detalle_url(self, contact_request):
+        return reverse('dashboard:contact_request_detail', args=[contact_request.pk])
+
+    def test_valid_submission_is_saved_for_the_panel(self):
+        with patch('apps.core.services.GmailService.send_message', return_value=True):
+            response = self.client.post(self.contact_url, {
+                'name': 'Ana Restrepo',
+                'email': 'ana@example.com',
+                'subject': 'Una duda sobre el envío',
+                'message': 'Hola, quiero saber si hacen envíos a mi ciudad.',
+            })
+        self.assertEqual(response.status_code, 200)
+        contact_request = ContactRequest.objects.get()
+        self.assertEqual(contact_request.email, 'ana@example.com')
+        self.assertEqual(contact_request.status, ContactRequest.Status.PENDIENTE)
+
+    def test_email_failure_keeps_the_saved_request(self):
+        with patch(
+            'apps.core.services.GmailService.send_message',
+            side_effect=GmailServiceError('sin red'),
+        ):
+            response = self.client.post(self.contact_url, {
+                'name': 'Ana Restrepo',
+                'email': 'ana@example.com',
+                'subject': 'Una duda',
+                'message': 'Quiero saber si tienen envíos a mi ciudad.',
+            })
+        self.assertEqual(response.status_code, 502)
+        self.assertTrue(ContactRequest.objects.filter(email='ana@example.com').exists())
+
+    def test_admin_sees_the_request_in_the_list(self):
+        self.crear_solicitud()
+        self.client.force_login(self.admin)
+        response = self.client.get(self.lista_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Ana Restrepo')
+        self.assertContains(response, 'ana@example.com')
+        self.assertContains(response, 'Pendiente')
+
+    def test_filter_by_status(self):
+        pendiente = self.crear_solicitud()
+        self.crear_solicitud(name='Beatriz', status=ContactRequest.Status.RESPONDIDA)
+        self.client.force_login(self.admin)
+        response = self.client.get(self.lista_url, {'status': ContactRequest.Status.RESPONDIDA})
+        self.assertContains(response, 'Beatriz')
+        self.assertNotContains(response, pendiente.name)
+
+    def test_client_cannot_access_the_panel(self):
+        contact_request = self.crear_solicitud()
+        self.client.force_login(self.cliente)
+        for url in (self.lista_url, self.detalle_url(contact_request)):
+            with self.subTest(url=url):
+                self.assertRedirects(self.client.get(url), reverse('core:home'))
+
+    def test_anonymous_cannot_access_the_panel(self):
+        contact_request = self.crear_solicitud()
+        self.assertEqual(self.client.get(self.lista_url).status_code, 302)
+        self.assertEqual(self.client.get(self.detalle_url(contact_request)).status_code, 302)
+
+    def test_admin_reply_is_sent_and_request_marked_answered(self):
+        contact_request = self.crear_solicitud()
+        self.client.force_login(self.admin)
+        reply = 'Hola Ana, sí hacemos envíos a tu ciudad. Quedamos atentos.'
+        with patch('apps.core.services.GmailService.send_message', return_value=True) as send:
+            response = self.client.post(self.detalle_url(contact_request), {'reply': reply})
+
+        self.assertRedirects(response, self.detalle_url(contact_request))
+        contact_request.refresh_from_db()
+        self.assertEqual(contact_request.status, ContactRequest.Status.RESPONDIDA)
+        self.assertEqual(contact_request.reply, reply)
+        self.assertEqual(contact_request.replied_by, self.admin)
+        self.assertIsNotNone(contact_request.replied_at)
+
+        kwargs = send.call_args.kwargs
+        self.assertEqual(kwargs['recipient'], 'ana@example.com')
+        self.assertEqual(kwargs['reply_to'], [self.admin.email])
+
+    def test_empty_reply_is_rejected(self):
+        contact_request = self.crear_solicitud()
+        self.client.force_login(self.admin)
+        with patch('apps.core.services.GmailService.send_message', return_value=True) as send:
+            response = self.client.post(self.detalle_url(contact_request), {'reply': '   '})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Escribe una respuesta antes de enviarla.')
+        self.assertEqual(send.call_count, 0)
+        contact_request.refresh_from_db()
+        self.assertEqual(contact_request.status, ContactRequest.Status.PENDIENTE)
+
+    def test_email_failure_keeps_the_request_pending(self):
+        contact_request = self.crear_solicitud()
+        self.client.force_login(self.admin)
+        with patch(
+            'apps.core.services.GmailService.send_message',
+            side_effect=GmailServiceError('sin red'),
+        ):
+            response = self.client.post(
+                self.detalle_url(contact_request),
+                {'reply': 'Una respuesta que no salió.'},
+                follow=True,
+            )
+        self.assertContains(response, 'No pudimos enviar la respuesta')
+        contact_request.refresh_from_db()
+        self.assertEqual(contact_request.status, ContactRequest.Status.PENDIENTE)
+        self.assertEqual(contact_request.reply, '')
+        self.assertIsNone(contact_request.replied_by)
+
+
+class MyContactRequestsTests(TestCase):
+    """Cada cliente ve sus propias solicitudes y la respuesta cuando existe."""
+
+    def setUp(self):
+        self.cliente = User.objects.create_user(
+            username='cliente-panel@carely.test',
+            email='cliente-panel@carely.test',
+            password='pass12345',
+            first_name='Laura',
+            last_name='Cliente',
+        )
+        self.otro = User.objects.create_user(
+            username='otro-panel@carely.test',
+            email='otro-panel@carely.test',
+            password='pass12345',
+        )
+        self.lista_url = reverse('users:contact_request_list')
+
+    def crear_solicitud(self, **overrides):
+        data = {
+            'name': 'Laura Cliente',
+            'email': self.cliente.email,
+            'subject': 'Duda con mi pedido',
+            'message': 'Quisiera saber cuándo llega mi pedido.',
+        }
+        data.update(overrides)
+        return ContactRequest.objects.create(**data)
+
+    def detalle_url(self, contact_request):
+        return reverse('users:contact_request_detail', args=[contact_request.pk])
+
+    def test_anonymous_is_redirected_to_login(self):
+        contact_request = self.crear_solicitud()
+        login_url = reverse('users:login')
+        for url in (self.lista_url, self.detalle_url(contact_request)):
+            with self.subTest(url=url):
+                self.assertRedirects(
+                    self.client.get(url),
+                    f'{login_url}?next={url}',
+                )
+
+    def test_list_shows_own_requests_by_user_or_email(self):
+        vinculada = self.crear_solicitud(subject='Solicitud vinculada')
+        previa = self.crear_solicitud(
+            subject='Solicitud antes de la cuenta',
+            user=None,
+        )
+        ajena = self.crear_solicitud(
+            subject='Solicitud de otra persona',
+            user=self.otro,
+            email=self.otro.email,
+        )
+        self.client.force_login(self.cliente)
+        response = self.client.get(self.lista_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, vinculada.subject)
+        self.assertContains(response, previa.subject)
+        self.assertNotContains(response, ajena.subject)
+
+    def test_list_marks_pending_and_answered_requests(self):
+        self.crear_solicitud(subject='Pendiente', status=ContactRequest.Status.PENDIENTE)
+        self.crear_solicitud(
+            subject='Respondida',
+            status=ContactRequest.Status.RESPONDIDA,
+            reply='Ya revisamos tu caso.',
+        )
+        self.client.force_login(self.cliente)
+        response = self.client.get(self.lista_url)
+        self.assertContains(response, 'Pendiente')
+        self.assertContains(response, 'Respondida')
+        self.assertEqual(response.context['total_count'], 2)
+        self.assertEqual(response.context['pending_count'], 1)
+
+    def test_detail_shows_the_reply_and_mentions_the_email(self):
+        contact_request = self.crear_solicitud(
+            status=ContactRequest.Status.RESPONDIDA,
+            reply='Tu pedido llega mañana.',
+        )
+        self.client.force_login(self.cliente)
+        response = self.client.get(self.detalle_url(contact_request))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, contact_request.message)
+        self.assertContains(response, 'Respuesta de Carely')
+        self.assertContains(response, contact_request.reply)
+        self.assertContains(response, self.cliente.email)
+
+    def test_pending_detail_explains_that_the_reply_is_on_the_way(self):
+        contact_request = self.crear_solicitud()
+        self.client.force_login(self.cliente)
+        response = self.client.get(self.detalle_url(contact_request))
+        self.assertContains(response, 'Estamos revisando tu solicitud')
+        self.assertNotContains(response, 'Respuesta de Carely')
+
+    def test_other_users_request_returns_404(self):
+        ajena = self.crear_solicitud(
+            subject='Privada',
+            user=self.otro,
+            email=self.otro.email,
+        )
+        self.client.force_login(self.cliente)
+        self.assertEqual(self.client.get(self.detalle_url(ajena)).status_code, 404)
+
+    def test_authenticated_submission_is_linked_to_the_user(self):
+        self.client.force_login(self.cliente)
+        with patch('apps.core.services.GmailService.send_message', return_value=True):
+            response = self.client.post(reverse('core:contact'), {
+                'name': 'Laura Cliente',
+                'email': self.cliente.email,
+                'subject': 'Consulta desde la cuenta',
+                'message': 'Quiero saber si tienen envíos a mi ciudad.',
+            })
+        self.assertEqual(response.status_code, 200)
+        contact_request = ContactRequest.objects.get(subject='Consulta desde la cuenta')
+        self.assertEqual(contact_request.user, self.cliente)
+
+    def test_profile_links_to_my_requests(self):
+        self.client.force_login(self.cliente)
+        response = self.client.get(reverse('users:profile'))
+        self.assertContains(response, self.lista_url)
 
 
 class PageRenderSmokeTests(TestCase):

@@ -66,7 +66,7 @@ def describe_reactivation_validity():
 
 class GmailService:
     @staticmethod
-    def send_message(subject, recipient, text_template, html_template, context):
+    def send_message(subject, recipient, text_template, html_template, context, reply_to=None):
         recipients = [recipient] if isinstance(recipient, str) else list(recipient)
         text_body = render_to_string(text_template, context).strip()
         html_body = render_to_string(html_template, context)
@@ -75,6 +75,7 @@ class GmailService:
             body=text_body,
             from_email=settings.DEFAULT_FROM_EMAIL,
             to=recipients,
+            reply_to=reply_to,
         )
         message.attach_alternative(html_body, 'text/html')
         try:

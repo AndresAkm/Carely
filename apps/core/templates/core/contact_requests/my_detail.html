@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Solicitud del {{ contact_request.created_at|date:'d/m/Y' }} - Carely{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'users/css/profile.css' %}?v=6" rel="stylesheet">
+<link href="{% static 'core/css/contact-requests.css' %}?v=2" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+{% include 'navbar.html' %}
+
+<main class="profile-page">
+    <div class="container">
+        <div class="profile-header">
+            <span class="profile-eyebrow"><i class="bi bi-envelope-paper me-1"></i>Mi solicitud</span>
+            <h1 class="profile-title">{{ contact_request.subject|default:'Solicitud de contacto' }}</h1>
+            <p class="profile-subtitle">Enviada el {{ contact_request.created_at|date:'d/m/Y' }} a las {{ contact_request.created_at|date:'H:i' }}.</p>
+        </div>
+
+        <div class="row g-4 g-lg-5 align-items-start">
+            <div class="col-lg-4">
+                <aside class="profile-summary">
+                    <div class="profile-avatar">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</div>
+                    <h2>{{ user.get_full_name|default:user.email }}</h2>
+                    <p class="profile-summary-email">{{ user.email }}</p>
+                    <span class="profile-role"><i class="bi bi-heart-fill me-1"></i>Cliente Carely</span>
+                    <dl class="profile-summary-details">
+                        <div><dt>Estado</dt><dd>{{ contact_request.get_status_display }}</dd></div>
+                        <div><dt>Asunto</dt><dd>{{ contact_request.subject|default:'Sin asunto' }}</dd></div>
+                    </dl>
+                    <a href="{% url 'users:contact_request_list' %}" class="profile-password-link"><i class="bi bi-arrow-left me-2"></i>Volver a mis solicitudes</a>
+                </aside>
+            </div>
+
+            <div class="col-lg-8">
+                <section class="profile-card">
+                    <div class="profile-card-header cr-detail__head">
+                        <div>
+                            <h2>Tu mensaje</h2>
+                            <p>Esto es lo que nos escribiste.</p>
+                        </div>
+                        {% if contact_request.status == 'respondida' %}
+                        <span class="cr-status cr-status--respondida"><i class="bi bi-check2-circle"></i>Respondida</span>
+                        {% else %}
+                        <span class="cr-status cr-status--pendiente"><i class="bi bi-clock"></i>Pendiente</span>
+                        {% endif %}
+                    </div>
+
+                    <dl class="contact-request-meta mb-4">
+                        <div>
+                            <dt>Enviada</dt>
+                            <dd>{{ contact_request.created_at|date:'d/m/Y H:i' }}</dd>
+                        </div>
+                        <div>
+                            <dt>Asunto</dt>
+                            <dd>{{ contact_request.subject|default:'(sin asunto)' }}</dd>
+                        </div>
+                        <div>
+                            <dt>Correo de contacto</dt>
+                            <dd>{{ contact_request.email }}</dd>
+                        </div>
+                    </dl>
+
+                    <div class="contact-request-message">{{ contact_request.message }}</div>
+
+                    {% if contact_request.status == 'respondida' %}
+                    <div class="cr-reply">
+                        <div class="cr-reply__head">
+                            <span class="cr-reply__icon"><i class="bi bi-reply-fill"></i></span>
+                            <div>
+                                <strong>Respuesta de Carely</strong>
+                                {% if contact_request.replied_at %}
+                                <span>{{ contact_request.replied_at|date:'d/m/Y H:i' }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="contact-request-message contact-request-message--reply">{{ contact_request.reply }}</div>
+                        <p class="cr-reply__note">
+                            <i class="bi bi-envelope-check me-1"></i>
+                            Esta respuesta también se envió a {{ contact_request.email }}.
+                        </p>
+                    </div>
+                    {% else %}
+                    <div class="cr-pending">
+                        <i class="bi bi-hourglass-split"></i>
+                        <div>
+                            <strong>Estamos revisando tu solicitud</strong>
+                            <p>Te responderemos a {{ contact_request.email }}. La respuesta también aparecerá aquí.</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </section>
+            </div>
+        </div>
+    </div>
+</main>
+
+{% include 'footer.html' %}
+{% endblock %}

@@ -173,6 +173,24 @@ class ContactMessageForm(forms.Form):
         return message
 
 
+class ContactReplyForm(forms.Form):
+    reply = forms.CharField(
+        label='Respuesta',
+        error_messages={'required': 'Escribe una respuesta antes de enviarla.'},
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 6,
+            'placeholder': 'Escribe la respuesta que se enviará por correo…',
+        }),
+    )
+
+    def clean_reply(self):
+        reply = self.cleaned_data['reply'].strip()
+        if len(reply) < 5:
+            raise forms.ValidationError('Escribe una respuesta antes de enviarla.')
+        return reply
+
+
 class ReportFilterForm(forms.Form):
     created_from = forms.DateField(
         label='Desde',
