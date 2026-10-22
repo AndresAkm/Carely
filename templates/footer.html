@@ -5,7 +5,7 @@
         <div class="footer-grid">
             <div class="footer-brand">
                 <a href="{% url 'core:home' %}" class="c-nav__brand footer-brand__logo" aria-label="{{ site_name }}">
-                    <img src="{% static 'core/images/carely-logo.webp' %}" alt="{{ site_name }}" class="c-footer__logo">
+                    <img src="{{ site_logo_icon_url }}" alt="{{ site_name }}" class="c-footer__logo">
                 </a>
                 <p>{{ site_description }}. Productos originales, asesoria personalizada y envios rapidos.</p>
                 <div class="footer-social">

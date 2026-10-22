@@ -12,6 +12,7 @@ from apps.core.models import (
 from apps.orders.models import Order
 
 MAX_HERO_IMAGE_BYTES = 5 * 1024 * 1024
+MAX_LOGO_IMAGE_BYTES = 2 * 1024 * 1024
 
 
 class ProductChoiceField(forms.ModelMultipleChoiceField):
@@ -58,6 +59,8 @@ class SiteCustomizationForm(forms.ModelForm):
             'hero_subtitle',
             'hero_button_text',
             'hero_image',
+            'logo',
+            'logo_icon',
             'featured_products',
             'featured_categories',
             'footer_email',
@@ -85,13 +88,34 @@ class SiteCustomizationForm(forms.ModelForm):
             if name not in ('featured_products', 'featured_categories'):
                 field.widget.attrs.setdefault('class', 'form-control')
 
-    def clean_hero_image(self):
-        image = self.cleaned_data.get('hero_image')
+    def _validate_image_size(self, field_name, limit, message):
+        image = self.cleaned_data.get(field_name)
         # Solo se mide un archivo recién subido: medir uno ya guardado obligaría
         # a una consulta al almacenamiento en cada guardado.
-        if isinstance(image, UploadedFile) and image.size > MAX_HERO_IMAGE_BYTES:
-            raise forms.ValidationError('La imagen supera 5 MB. Elige una más liviana.')
+        if isinstance(image, UploadedFile) and image.size > limit:
+            raise forms.ValidationError(message)
         return image
+
+    def clean_hero_image(self):
+        return self._validate_image_size(
+            'hero_image',
+            MAX_HERO_IMAGE_BYTES,
+            'La imagen supera 5 MB. Elige una más liviana.',
+        )
+
+    def clean_logo(self):
+        return self._validate_image_size(
+            'logo',
+            MAX_LOGO_IMAGE_BYTES,
+            'El logo supera 2 MB. Elige una imagen más liviana.',
+        )
+
+    def clean_logo_icon(self):
+        return self._validate_image_size(
+            'logo_icon',
+            MAX_LOGO_IMAGE_BYTES,
+            'El isotipo supera 2 MB. Elige una imagen más liviana.',
+        )
 
     def clean_featured_products(self):
         products = self.cleaned_data.get('featured_products') or []

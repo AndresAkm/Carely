@@ -5,14 +5,14 @@
 
 {% block extra_css %}
 {{ block.super }}
-<link href="{% static 'core/css/site-customization.css' %}?v=5" rel="stylesheet">
+<link href="{% static 'core/css/site-customization.css' %}?v=6" rel="stylesheet">
 {% endblock %}
 
 {% block dashboard_content %}
 <div class="dashboard-page-header">
     <div>
         <h1 class="dashboard-heading">Personalización del sitio</h1>
-        <p class="dashboard-muted">Edita la portada, las categorías, los productos destacados, los beneficios y el pie de página.</p>
+        <p class="dashboard-muted">Edita la portada, las categorías, los productos destacados, los beneficios, el pie de página y los logos.</p>
     </div>
     <a href="{% url 'core:home' %}" target="_blank" rel="noopener" class="btn btn-carely-outline">
         <i class="bi bi-box-arrow-up-right me-1"></i>Ver landing
@@ -222,7 +222,10 @@
         </div>
     </section>
 
-    {# BENTO CELDA 5: Pie de página (span 6) #}
+    {# Columna derecha: pie de página y logos, para aprovechar el alto de beneficios. #}
+    <div class="bento-column bento-column--side">
+
+    {# BENTO CELDA 5: Pie de página #}
     <section class="dashboard-card dashboard-form-card bento-card bento-card--footer">
         <div class="dashboard-card-body bento-card__body">
             <div class="bento-card__head">
@@ -257,6 +260,39 @@
         </div>
     </section>
 
+    {# BENTO CELDA 6: Logos #}
+    <section class="dashboard-card dashboard-form-card bento-card bento-card--logos">
+        <div class="dashboard-card-body bento-card__body">
+            <div class="bento-card__head">
+                <span class="bento-card__icon bento-card__icon--logos">
+                    <i class="bi bi-palette2"></i>
+                </span>
+                <div class="bento-card__head-text">
+                    <span class="bento-card__tag">Sección 06</span>
+                    <h2 class="site-customization__title">Logos</h2>
+                </div>
+            </div>
+            <p class="bento-card__desc">Reemplaza la identidad visual del sitio. Si dejas un campo vacío se usa el logo actual.</p>
+
+            <div class="bento-logos-grid">
+                <div class="bento-logo-field">
+                    <div class="bento-logo-preview bento-logo-preview--wide">
+                        <img src="{{ logo_url }}" alt="Logo principal actual" data-logo-preview="logo">
+                    </div>
+                    {% include 'core/dashboard/_field.html' with field=form.logo %}
+                </div>
+                <div class="bento-logo-field">
+                    <div class="bento-logo-preview">
+                        <img src="{{ logo_icon_url }}" alt="Isotipo actual" data-logo-preview="logo_icon">
+                    </div>
+                    {% include 'core/dashboard/_field.html' with field=form.logo_icon %}
+                </div>
+            </div>
+            <p class="bento-logos-note"><i class="bi bi-info-circle me-1"></i>JPG, PNG o WebP de máximo 2 MB. Se guardan en el mismo almacenamiento que la imagen de portada.</p>
+        </div>
+    </section>
+    </div>
+
     {# BENTO ACCIONES (span 12) #}
     <div class="bento-card bento-actions-card">
         <div class="bento-actions-bar">
@@ -280,5 +316,5 @@
 
 {% block extra_js %}
 {{ block.super }}
-<script src="{% static 'core/js/site_customization.js' %}?v=2"></script>
+<script src="{% static 'core/js/site_customization.js' %}?v=3"></script>
 {% endblock %}

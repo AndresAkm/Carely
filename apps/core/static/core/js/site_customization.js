@@ -35,6 +35,33 @@
 (function () {
     'use strict';
 
+    var allowed = ['image/jpeg', 'image/png', 'image/webp'];
+
+    ['logo', 'logo_icon'].forEach(function (name) {
+        var input = document.querySelector('input[name="' + name + '"]');
+        var preview = document.querySelector('[data-logo-preview="' + name + '"]');
+        if (!input || !preview) return;
+
+        var currentSrc = preview.getAttribute('src');
+        input.addEventListener('change', function () {
+            var file = input.files && input.files[0];
+            if (!file) {
+                preview.setAttribute('src', currentSrc);
+                return;
+            }
+            if (allowed.indexOf(file.type) === -1) {
+                input.value = '';
+                preview.setAttribute('src', currentSrc);
+                return;
+            }
+            preview.setAttribute('src', URL.createObjectURL(file));
+        });
+    });
+})();
+
+(function () {
+    'use strict';
+
     var form = document.querySelector('.site-customization');
     if (!form) return;
 

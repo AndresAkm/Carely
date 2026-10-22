@@ -4,6 +4,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 from django.db import models
+from django.templatetags.static import static
 
 from apps.catalog.models import Category, Product
 
@@ -53,6 +54,20 @@ class SiteCustomization(models.Model):
         validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp'])],
         help_text='JPG, PNG o WebP de máximo 5 MB. Si la dejas vacía se usa la imagen por defecto.',
     )
+    logo = models.ImageField(
+        'logo principal',
+        upload_to='branding/',
+        blank=True,
+        validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp'])],
+        help_text='Logo con el nombre de la marca. Se usa en la barra de navegación y en las pantallas de acceso.',
+    )
+    logo_icon = models.ImageField(
+        'isotipo',
+        upload_to='branding/',
+        blank=True,
+        validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp'])],
+        help_text='Símbolo o isotipo de la marca. Se usa en el pie de página y en el panel.',
+    )
     featured_products = models.ManyToManyField(
         Product,
         blank=True,
@@ -88,6 +103,16 @@ class SiteCustomization(models.Model):
     def load(cls):
         obj, _ = cls.objects.get_or_create(pk=SINGLETON_PK)
         return obj
+
+    def get_logo_url(self):
+        if self.logo:
+            return self.logo.url
+        return static('core/images/carely-logo-text.webp')
+
+    def get_logo_icon_url(self):
+        if self.logo_icon:
+            return self.logo_icon.url
+        return static('core/images/carely-logo.webp')
 
 
 class LandingBenefit(models.Model):

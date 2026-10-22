@@ -31,6 +31,8 @@ def site_settings(request):
             'instagram': config.footer_instagram or socials.get('instagram', ''),
             'whatsapp': config.footer_whatsapp or socials.get('whatsapp', ''),
         },
+        'site_logo_url': config.get_logo_url(),
+        'site_logo_icon_url': config.get_logo_icon_url(),
     }
 
 

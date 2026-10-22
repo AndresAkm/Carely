@@ -15,7 +15,7 @@
 <div class="auth-wrapper">
     <div class="auth-card">
         <div class="auth-header text-center">
-            <img src="{% static 'core/images/carely-logo-text.webp' %}" alt="Carely" class="auth-logo__image mx-auto mb-4">
+            <img src="{{ site_logo_url }}" alt="{{ site_name }}" class="auth-logo__image mx-auto mb-4">
             {% if valid %}
             <h1 class="auth-title">Reactivar mi cuenta</h1>
             {% else %}

@@ -27,8 +27,8 @@
     </div>
 
     <main class="error-wrapper">
-        <a href="{% url 'core:home' %}" class="error-logo" aria-label="Carely">
-            <img src="{% static 'core/images/carely-logo-text.webp' %}" alt="Carely" class="error-logo__image">
+        <a href="{% url 'core:home' %}" class="error-logo" aria-label="{{ site_name }}">
+            <img src="{{ site_logo_url }}" alt="{{ site_name }}" class="error-logo__image">
         </a>
 
         {% block error_content %}

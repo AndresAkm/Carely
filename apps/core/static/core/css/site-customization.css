@@ -40,8 +40,11 @@
         grid-column: span 6;
     }
 
-    .bento-card--footer {
+    .bento-column--side {
         grid-column: span 6;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
     }
 
     .bento-card--actions,
@@ -74,8 +77,11 @@
         grid-column: span 12;
     }
 
-    .bento-card--footer {
-        grid-column: span 12;
+    .bento-column--side {
+        grid-column: span 6;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
     }
 
     .bento-card--actions,
@@ -87,6 +93,12 @@
 /* Breakpoint móvil */
 @media (max-width: 767.98px) {
     .site-customization {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .bento-column--side {
         display: flex;
         flex-direction: column;
         gap: 16px;
@@ -171,6 +183,11 @@
 .bento-card__icon--footer {
     background: linear-gradient(135deg, rgba(111, 66, 193, 0.16) 0%, rgba(111, 66, 193, 0.06) 100%);
     color: #6f42c1;
+}
+
+.bento-card__icon--logos {
+    background: linear-gradient(135deg, rgba(13, 202, 240, 0.16) 0%, rgba(13, 202, 240, 0.06) 100%);
+    color: #0aa2c0;
 }
 
 .bento-card__tag {
@@ -612,7 +629,66 @@
     margin-bottom: 0;
 }
 
-/* 11. Barra de acciones flotante / anclada */
+/* 11. Logos de la marca */
+.bento-logos-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.bento-logo-field {
+    min-width: 0;
+    padding: 16px;
+    border: 1px solid var(--clr-border);
+    border-radius: 14px;
+    background: var(--clr-bg-2);
+}
+
+.bento-logo-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 92px;
+    margin-bottom: 14px;
+    padding: 12px;
+    border: 1px dashed rgba(91, 141, 239, 0.3);
+    border-radius: 12px;
+    background: #ffffff;
+}
+
+.bento-logo-preview img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.bento-logo-preview--wide img {
+    max-width: 100%;
+    width: auto;
+}
+
+.bento-logo-field .dashboard-field {
+    margin-bottom: 0;
+}
+
+.bento-logo-field .dashboard-field label {
+    overflow-wrap: anywhere;
+}
+
+.bento-logos-note {
+    margin: 14px 0 0;
+    color: var(--clr-text-2);
+    font-size: 0.78rem;
+    line-height: 1.45;
+}
+
+@media (max-width: 420px) {
+    .bento-logos-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* 12. Barra de acciones flotante / anclada */
 .bento-actions-card {
     background: var(--clr-card);
     border: 1px solid var(--clr-border);
@@ -640,7 +716,7 @@
     font-size: 1.25rem;
 }
 
-/* 12. Elementos vacíos */
+/* 13. Elementos vacíos */
 .site-empty {
     grid-column: 1 / -1;
     text-align: center;

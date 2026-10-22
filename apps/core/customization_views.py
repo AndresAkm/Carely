@@ -21,6 +21,7 @@ PRODUCTS_PER_PAGE = 12
 # Botones de paginación y de filtro: su presencia en el POST indica que el
 # usuario solo está navegando, así que no se guarda nada.
 BROWSE_FIELD = 'browse_page'
+IMAGE_FIELDS = ('hero_image', 'logo', 'logo_icon')
 
 
 def valid_ids(values):
@@ -95,14 +96,17 @@ class SiteCustomizationView(DashboardCustomizationMixin, View):
         config = SiteCustomization.load()
         form = SiteCustomizationForm(instance=config)
         benefits_form = LandingBenefitsForm(initial=benefits_initial())
-        return self._render(request, form, benefits_form, get_hero_image_url(config))
+        return self._render(request, form, benefits_form, self._image_urls(config))
 
     def post(self, request, *args, **kwargs):
         config = SiteCustomization.load()
-        # Antes de validar: el formulario reasigna `config.hero_image` al
-        # construir la instancia, y hay que saber cuál era el archivo anterior.
-        old_image = config.hero_image.name if config.hero_image else ''
-        current_hero_url = get_hero_image_url(config)
+        # Antes de validar: el formulario reasigna las imágenes al construir la
+        # instancia, y hay que saber cuáles eran los archivos anteriores.
+        old_images = {
+            field: getattr(config, field).name if getattr(config, field) else ''
+            for field in IMAGE_FIELDS
+        }
+        image_urls = self._image_urls(config)
 
         form = SiteCustomizationForm(request.POST, request.FILES, instance=config)
         benefits_form = LandingBenefitsForm(request.POST)
@@ -110,30 +114,39 @@ class SiteCustomizationView(DashboardCustomizationMixin, View):
         if BROWSE_FIELD in request.POST:
             # Paginar o filtrar solo rearma la pantalla con lo que el usuario
             # ya escribió o marcó: no valida ni guarda.
-            return self._render(request, form, benefits_form, current_hero_url)
+            return self._render(request, form, benefits_form, image_urls)
 
         if form.is_valid() and benefits_form.is_valid():
             with transaction.atomic():
                 form.save()
                 benefits_form.save()
-            self._remove_replaced_image(form, old_image)
+            self._remove_replaced_images(form, old_images)
             messages.success(request, 'Los cambios se guardaron. Ya se ven en la landing.')
             return redirect('dashboard:site_customization')
 
         messages.error(request, 'Revisa los campos marcados antes de guardar.')
-        return self._render(request, form, benefits_form, current_hero_url)
+        return self._render(request, form, benefits_form, image_urls)
 
-    def _remove_replaced_image(self, form, old_image):
-        if 'hero_image' not in form.changed_data or not old_image:
-            return
-        new_image = form.instance.hero_image.name if form.instance.hero_image else ''
-        if new_image == old_image:
-            return
-        try:
-            default_storage.delete(old_image)
-        except Exception:
-            # Un archivo huérfano no justifica revertir un guardado correcto.
-            logger.warning('No se pudo borrar la imagen anterior de la landing: %s', old_image)
+    def _image_urls(self, config):
+        return {
+            'hero_image_url': get_hero_image_url(config),
+            'logo_url': config.get_logo_url(),
+            'logo_icon_url': config.get_logo_icon_url(),
+        }
+
+    def _remove_replaced_images(self, form, old_images):
+        for field, old_name in old_images.items():
+            if field not in form.changed_data or not old_name:
+                continue
+            current = getattr(form.instance, field)
+            new_name = current.name if current else ''
+            if new_name == old_name:
+                continue
+            try:
+                default_storage.delete(old_name)
+            except Exception:
+                # Un archivo huérfano no justifica revertir un guardado correcto.
+                logger.warning('No se pudo borrar la imagen anterior: %s', old_name)
 
     def _picker_state(self, request):
         source = request.POST if request.method == 'POST' else {}
@@ -144,7 +157,7 @@ class SiteCustomizationView(DashboardCustomizationMixin, View):
         page_number = source.get(BROWSE_FIELD, 1)
         return query, category_id, only_selected, page_number
 
-    def _render(self, request, form, benefits_form, hero_image_url):
+    def _render(self, request, form, benefits_form, image_urls):
         # Con el formulario sin enlazar, el valor inicial son los ids guardados.
         # Con el POST, es lo que el usuario acaba de marcar en todas las páginas.
         selected = valid_ids(form['featured_products'].value())
@@ -154,7 +167,7 @@ class SiteCustomizationView(DashboardCustomizationMixin, View):
         context = {
             'form': form,
             'benefits_form': benefits_form,
-            'hero_image_url': hero_image_url,
+            **image_urls,
             'picker': build_product_picker(selected, query, category_id, only_selected, page_number),
             'selected_category_ids': {str(value) for value in form['featured_categories'].value() or []},
             'benefit_blocks': [

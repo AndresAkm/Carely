@@ -883,6 +883,22 @@ class SiteCustomizationFormTests(TestCase):
             self.assertFalse(form.is_valid())
         self.assertIn('hero_image', form.errors)
 
+    def test_rechaza_logo_mas_grande_que_el_limite(self):
+        with patch('apps.core.forms.MAX_LOGO_IMAGE_BYTES', 10):
+            form = SiteCustomizationForm(
+                self.datos(), files={'logo': make_png_upload('logo.png')}, instance=self.config,
+            )
+            self.assertFalse(form.is_valid())
+        self.assertIn('logo', form.errors)
+
+    def test_rechaza_isotipo_con_extension_no_permitida(self):
+        bmp = SimpleUploadedFile('isotipo.bmp', make_png_bytes(), content_type='image/bmp')
+        form = SiteCustomizationForm(
+            self.datos(), files={'logo_icon': bmp}, instance=self.config,
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn('logo_icon', form.errors)
+
 
 class LandingCustomizationTests(TestCase):
     """La landing lee la configuración guardada y conserva el contenido original sin ella."""
@@ -978,6 +994,22 @@ class LandingCustomizationTests(TestCase):
         content = self.client.get(self.url).content.decode()
         self.assertIn(f'mailto:{settings.CARELY_EMAIL}', content)
 
+    def test_sin_logos_guardados_usa_los_archivos_por_defecto(self):
+        content = self.client.get(self.url).content.decode()
+        self.assertIn('carely-logo-text.webp', content)
+        self.assertIn('carely-logo.webp', content)
+
+    def test_logos_guardados_se_muestran_en_la_landing(self):
+        config = SiteCustomization.load()
+        config.logo = 'branding/logo.png'
+        config.logo_icon = 'branding/isotipo.png'
+        config.save()
+
+        content = self.client.get(self.url).content.decode()
+        self.assertIn(config.logo.url, content)
+        self.assertIn(config.logo_icon.url, content)
+        self.assertNotIn('carely-logo-text.webp', content)
+
 
 class SiteCustomizationPanelTests(TestCase):
     """Solo los administradores editan la landing; los cambios llegan a la página pública."""
@@ -1037,6 +1069,9 @@ class SiteCustomizationPanelTests(TestCase):
         self.assertContains(response, 'name="featured_products"')
         self.assertContains(response, 'name="title_1"')
         self.assertContains(response, 'name="footer_email"')
+        self.assertContains(response, 'name="logo"')
+        self.assertContains(response, 'name="logo_icon"')
+        self.assertContains(response, 'Sección 06')
 
     def test_admin_guarda_los_cambios_y_se_publican(self):
         self.client.force_login(self.admin)
@@ -1071,6 +1106,26 @@ class SiteCustomizationPanelTests(TestCase):
         self.assertTrue(config.hero_image.name.startswith('landing/'))
         landing = self.client.get(reverse('core:home')).content.decode()
         self.assertIn(config.hero_image.url, landing)
+
+    def test_logos_subidos_se_guardan_y_se_publican(self):
+        self.client.force_login(self.admin)
+        response = self.client.post(
+            self.url,
+            self.datos_validos(
+                logo=make_png_upload('logo.png'),
+                logo_icon=make_png_upload('isotipo.png'),
+            ),
+            follow=True,
+        )
+        self.assertContains(response, 'Los cambios se guardaron')
+
+        config = SiteCustomization.load()
+        self.assertTrue(config.logo.name.startswith('branding/'))
+        self.assertTrue(config.logo_icon.name.startswith('branding/'))
+
+        content = self.client.get(reverse('core:home')).content.decode()
+        self.assertIn(config.logo.url, content)
+        self.assertIn(config.logo_icon.url, content)
 
     def test_reemplazar_la_imagen_borra_la_anterior_del_almacenamiento(self):
         from django.core.files.storage import default_storage
