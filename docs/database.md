@@ -67,12 +67,16 @@ Las imágenes de producto se almacenan en WebP con fondo transparente. Al subir
 o reemplazar la imagen de un producto desde el panel, el admin o la API,
 `Product.save()` aplica el recorte automáticamente y guarda el archivo como
 `products/<nombre>-sin-fondo.webp`. Si el fondo no es claro, conserva la imagen
-original.
+original. Las cards usan `--product-card-image-ratio` (por defecto `3 / 2`) y
+`object-fit: contain` para mostrar la imagen completa, sin deformarla ni
+recortarla.
 
-El comando `manage.py quitar_fondo_imagenes` hace el mismo proceso sobre las
-rutas ya existentes referenciadas por `Product.image`, guarda una copia del
-original en `_originales/` y actualiza el campo. Acepta `--dry-run`, `--umbral`,
-`--limite` y `--producto`; es idempotente y no toca las imágenes de categoría.
+El comando `manage.py quitar_fondo_imagenes` procesa las rutas existentes
+referenciadas por `Product.image`, guarda una copia del original en
+`_originales/` (salvo `--sin-respaldo`), repara referencias faltantes (salvo
+`--no-reparar-referencias`) y actualiza el campo. Acepta `--dry-run`, `--umbral`,
+`--limite`, `--producto`, `--sin-respaldo` y `--no-reparar-referencias`; es
+idempotente y no toca las imágenes de categoría.
 
 ## Modelos
 
