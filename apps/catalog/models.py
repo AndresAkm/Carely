@@ -4,6 +4,8 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils.text import slugify
 
+from .services import procesar_imagen_de_producto
+
 
 class Category(models.Model):
     name = models.CharField('nombre', max_length=100)
@@ -64,4 +66,9 @@ class Product(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
+        update_fields = kwargs.get('update_fields')
+        if update_fields is None or 'image' in update_fields:
+            imagen = procesar_imagen_de_producto(self.image)
+            if imagen is not None:
+                self.image = imagen
         super().save(*args, **kwargs)

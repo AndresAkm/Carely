@@ -111,7 +111,7 @@ PRODUCTS = (
         'price': Decimal('143900.00'),
         'stock': 10,
         'featured': True,
-        'image': 'products/sun-protect-anthelios-400-la-roche-posay.jpg',
+        'image': 'products/sun-protect-anthelios-400-la-roche-posay-sin-fondo.webp',
     },
     {
         'name': 'Fusion Water FPS50+ x50 ml',
@@ -124,7 +124,7 @@ PRODUCTS = (
         'price': Decimal('142100.00'),
         'stock': 10,
         'featured': True,
-        'image': 'products/sun-protect-fusion-water-isdin.jpg',
+        'image': 'products/sun-protect-fusion-water-isdin-sin-fondo.webp',
     },
     {
         'name': 'Gel Oil Free FPS50+ x50 ml',
@@ -137,7 +137,7 @@ PRODUCTS = (
         'price': Decimal('129900.00'),
         'stock': 8,
         'featured': False,
-        'image': 'products/sun-protect-gel-heliocare.jpg',
+        'image': 'products/sun-protect-gel-heliocare-sin-fondo.webp',
     },
     {
         'name': 'Protector Solar Corporal FPS50 x200 ml',
@@ -150,7 +150,7 @@ PRODUCTS = (
         'price': Decimal('59900.00'),
         'stock': 15,
         'featured': False,
-        'image': 'products/sun-protect-body-fps50-nivea.jpg',
+        'image': 'products/sun-protect-body-fps50-nivea-sin-fondo.webp',
     },
     {
         'name': 'Protector Solar Niños FPS50 x180 ml',
@@ -163,7 +163,7 @@ PRODUCTS = (
         'price': Decimal('69900.00'),
         'stock': 12,
         'featured': False,
-        'image': 'products/sun-protect-kids-fps50-dermaglos.jpg',
+        'image': 'products/sun-protect-kids-fps50-dermaglos-sin-fondo.webp',
     },
     {
         'name': 'Shampoo Hair Food Hidratación x300 ml',
@@ -176,7 +176,7 @@ PRODUCTS = (
         'price': Decimal('33950.00'),
         'stock': 20,
         'featured': True,
-        'image': 'products/hair-hydrating-shampoo.jpg',
+        'image': 'products/hair-hydrating-shampoo-sin-fondo.webp',
     },
     {
         'name': 'Acondicionador Reparador Bond Repair x300 ml',
@@ -189,7 +189,7 @@ PRODUCTS = (
         'price': Decimal('32900.00'),
         'stock': 18,
         'featured': False,
-        'image': 'products/hair-bond-repair-aconditionador.jpg',
+        'image': 'products/hair-bond-repair-aconditionador-sin-fondo.webp',
     },
     {
         'name': 'Mascarilla Capilar Hair Food x350 ml',
@@ -202,7 +202,7 @@ PRODUCTS = (
         'price': Decimal('35950.00'),
         'stock': 15,
         'featured': True,
-        'image': 'products/hair-mask-garnier.jpg',
+        'image': 'products/hair-mask-garnier-sin-fondo.webp',
     },
     {
         'name': 'Sérum Óleo Extraordinario x100 ml',
@@ -215,7 +215,7 @@ PRODUCTS = (
         'price': Decimal('45950.00'),
         'stock': 14,
         'featured': False,
-        'image': 'products/hair-serum-loreal.jpg',
+        'image': 'products/hair-serum-loreal-sin-fondo.webp',
     },
     {
         'name': 'Gel de Baño Suave x295 ml',
@@ -228,7 +228,7 @@ PRODUCTS = (
         'price': Decimal('64900.00'),
         'stock': 18,
         'featured': False,
-        'image': 'products/body-wash-cetaphil.jpg',
+        'image': 'products/body-wash-cetaphil-sin-fondo.webp',
     },
     {
         'name': 'Jabón Líquido Corporal Go Fresh x591 ml',
@@ -241,7 +241,7 @@ PRODUCTS = (
         'price': Decimal('48550.00'),
         'stock': 20,
         'featured': True,
-        'image': 'products/liquid-soap-dove.jpg',
+        'image': 'products/liquid-soap-dove-sin-fondo.webp',
     },
     {
         'name': 'Desodorante Invisible Dry x150 ml',
@@ -254,7 +254,7 @@ PRODUCTS = (
         'price': Decimal('22900.00'),
         'stock': 25,
         'featured': False,
-        'image': 'products/deodorant-dove.jpg',
+        'image': 'products/deodorant-dove-sin-fondo.webp',
     },
     {
         'name': 'Esponja Facial Konjac',
@@ -267,7 +267,7 @@ PRODUCTS = (
         'price': Decimal('15900.00'),
         'stock': 30,
         'featured': False,
-        'image': 'products/facial-sponge-konjac.jpg',
+        'image': 'products/facial-sponge-konjac-sin-fondo.webp',
     },
     {
         'name': 'Gel Antibacterial x250 ml',
@@ -280,7 +280,7 @@ PRODUCTS = (
         'price': Decimal('12900.00'),
         'stock': 30,
         'featured': False,
-        'image': 'products/sanitizing-gel.jpg',
+        'image': 'products/sanitizing-gel-sin-fondo.webp',
     },
     {
         'name': 'Kit Self-Care',
@@ -293,7 +293,7 @@ PRODUCTS = (
         'price': Decimal('39900.00'),
         'stock': 10,
         'featured': False,
-        'image': 'products/naceser-self-care.webp',
+        'image': 'products/naceser-self-care-sin-fondo.webp',
     },
     {
         'name': 'Diadema para el Cabello',
@@ -306,7 +306,7 @@ PRODUCTS = (
         'price': Decimal('9900.00'),
         'stock': 25,
         'featured': False,
-        'image': 'products/hair-band.jpg',
+        'image': 'products/hair-band-sin-fondo.webp',
     },
     {
         'name': 'Cepillo para el Cabello',
@@ -319,7 +319,7 @@ PRODUCTS = (
         'price': Decimal('24900.00'),
         'stock': 20,
         'featured': False,
-        'image': 'products/hairbrush.jpg',
+        'image': 'products/hairbrush-sin-fondo.webp',
     },
 )
 

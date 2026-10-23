@@ -17,6 +17,7 @@
     --ff-sans:   'Poppins', system-ui, sans-serif;
 
     --section-py: clamp(60px, 8vw, 120px);
+    --product-card-image-ratio: 3 / 2;
 
     --sh-sm:  0 2px 8px rgba(0,0,0,.04);
     --sh-md:  0 8px 30px rgba(0,0,0,.07);

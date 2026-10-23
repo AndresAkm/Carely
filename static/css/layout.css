@@ -412,7 +412,7 @@
 .product-image-wrapper {
   position: relative;
   background: var(--clr-bg-2);
-  height: 220px;
+  aspect-ratio: var(--product-card-image-ratio);
   overflow: hidden;
   flex-shrink: 0;
 }

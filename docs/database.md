@@ -63,6 +63,17 @@ Las credenciales S3 se utilizan únicamente en el backend. No se exponen en
 templates, JavaScript ni respuestas API. Las rutas conservan los prefijos
 `categories/` y `products/`.
 
+Las imágenes de producto se almacenan en WebP con fondo transparente. Al subir
+o reemplazar la imagen de un producto desde el panel, el admin o la API,
+`Product.save()` aplica el recorte automáticamente y guarda el archivo como
+`products/<nombre>-sin-fondo.webp`. Si el fondo no es claro, conserva la imagen
+original.
+
+El comando `manage.py quitar_fondo_imagenes` hace el mismo proceso sobre las
+rutas ya existentes referenciadas por `Product.image`, guarda una copia del
+original en `_originales/` y actualiza el campo. Acepta `--dry-run`, `--umbral`,
+`--limite` y `--producto`; es idempotente y no toca las imágenes de categoría.
+
 ## Modelos
 
 | App | Modelos |
