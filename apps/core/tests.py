@@ -3,6 +3,7 @@ from decimal import Decimal
 from unittest.mock import patch
 
 from django.conf import settings
+from django.templatetags.static import static
 from django.urls import reverse
 from django.test import TestCase
 from rest_framework.test import APITestCase
@@ -11,7 +12,7 @@ from apps.cart.models import Cart, CartItem
 from apps.catalog.models import Category, Product
 from apps.orders.models import Order, OrderItem
 from apps.payments.models import Payment
-from apps.users.models import User
+from apps.users.models import Address, City, Department, User
 from apps.users.services import GmailServiceError
 from io import BytesIO
 
@@ -503,6 +504,13 @@ class PageRenderSmokeTests(TestCase):
             with self.subTest(url=url):
                 self.assertEqual(self.client.get(url).status_code, 200)
 
+    def test_favicon_usa_la_url_de_estaticos(self):
+        response = self.client.get(reverse('core:home'))
+        self.assertContains(
+            response,
+            f'href="{static("core/images/carely-logo.webp")}"',
+        )
+
     def test_extracted_stylesheets_are_linked(self):
         expectations = {
             reverse('cart:cart'): 'cart/css/cart.css',
@@ -512,6 +520,51 @@ class PageRenderSmokeTests(TestCase):
         for url, static_path in expectations.items():
             with self.subTest(url=url):
                 self.assertContains(self.client.get(url), static_path)
+
+    def test_driver_assets_are_loaded(self):
+        response = self.client.get(reverse('core:home'))
+        self.assertContains(response, static('vendors/driver.js/driver.css'))
+        self.assertContains(response, static('vendors/driver.js/driver.js.iife.js'))
+        self.assertContains(response, static('js/tour.js'))
+
+    def test_public_tour_pages_have_data_attributes(self):
+        self.client.logout()
+        pages = {
+            reverse('users:login'): 'login',
+            reverse('catalog:home'): 'catalog',
+            reverse('catalog:product_detail', args=[self.product.slug]): 'product',
+        }
+        for url, tour in pages.items():
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, f'data-tour="{tour}"')
+
+    def test_authenticated_tour_pages_have_data_attributes(self):
+        department = Department.objects.create(api_id=1, name='Cundinamarca')
+        city = City.objects.create(api_id=1, name='Bogotá', department=department)
+        Address.objects.create(
+            user=self.user,
+            recipient_name='Jaime Parra',
+            address_line='Calle 123',
+            city=city,
+            department=department,
+            is_default=True,
+        )
+        pages = {
+            reverse('cart:cart'): 'cart',
+            reverse('orders:checkout'): 'checkout',
+            reverse('orders:order_list'): 'orders',
+            reverse('orders:order_detail', args=[self.order.pk]): 'order-detail',
+            reverse('users:profile'): 'profile',
+            reverse('users:address_list'): 'addresses',
+            reverse('users:two_factor_setup'): 'two-factor',
+        }
+        for url, tour in pages.items():
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, f'data-tour="{tour}"')
 
 
 class DashboardSidebarTests(TestCase):
@@ -526,6 +579,18 @@ class DashboardSidebarTests(TestCase):
         response = self.client.get(reverse('core:dashboard'))
         self.assertEqual(response.status_code, 200)
         self.assertNotIn('href="#"', response.content.decode())
+
+    def test_dashboard_has_tour_marker(self):
+        response = self.client.get(reverse('core:dashboard'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-tour="dashboard"')
+        self.assertContains(response, 'id="dashboard-recent-users"')
+        self.assertContains(response, 'id="dashboard-recent-orders"')
+
+    def test_site_customization_has_tour_marker(self):
+        response = self.client.get(reverse('dashboard:site_customization'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-tour="site-customization"')
 
 
 class OrderStatusFormTemplateTests(TestCase):

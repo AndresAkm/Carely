@@ -42,9 +42,26 @@
 
     .bento-column--side {
         grid-column: span 6;
+        align-self: stretch;
         display: flex;
         flex-direction: column;
         gap: 24px;
+    }
+
+    .bento-column--side .bento-card--logos {
+        flex: 1;
+    }
+
+    .bento-column--side .bento-card--logos .dashboard-card-body,
+    .bento-column--side .bento-card--logos .bento-card__body {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .bento-column--side .bento-card--logos .bento-logos-grid {
+        flex: 1;
+        grid-template-rows: 1fr;
     }
 
     .bento-card--actions,
@@ -79,9 +96,26 @@
 
     .bento-column--side {
         grid-column: span 6;
+        align-self: stretch;
         display: flex;
         flex-direction: column;
         gap: 20px;
+    }
+
+    .bento-column--side .bento-card--logos {
+        flex: 1;
+    }
+
+    .bento-column--side .bento-card--logos .dashboard-card-body,
+    .bento-column--side .bento-card--logos .bento-card__body {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .bento-column--side .bento-card--logos .bento-logos-grid {
+        flex: 1;
+        grid-template-rows: 1fr;
     }
 
     .bento-card--actions,

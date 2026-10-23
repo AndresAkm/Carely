@@ -10,7 +10,7 @@
 {% block body_class %}dashboard-page{% endblock %}
 
 {% block content %}
-<div class="dashboard-layout">
+<div class="dashboard-layout" data-tour="dashboard">
     {% include 'core/dashboard_sidebar.html' %}
     <div class="dashboard-main">
         <header class="dashboard-topbar">
@@ -116,7 +116,7 @@
                         </div>
                     </div>
                     <div class="col-lg-4">
-                        <div class="dashboard-card">
+                        <div class="dashboard-card" id="dashboard-recent-users">
                             <div class="dashboard-card-header">
                                 <h5 class="dashboard-card-title">Usuarios Recientes</h5>
                             </div>
@@ -144,7 +144,7 @@
                 </div>
                 <div class="row g-4 mt-1">
                     <div class="col-12">
-                        <div class="dashboard-card">
+                        <div class="dashboard-card" id="dashboard-recent-orders">
                             <div class="dashboard-card-header d-flex justify-content-between align-items-center">
                                 <div><h5 class="dashboard-card-title">Pedidos recientes</h5><p class="dashboard-card-subtitle mb-0">Últimas órdenes recibidas en la tienda.</p></div>
                                 <a href="{% url 'dashboard:order_list' %}" class="btn btn-sm btn-carely-outline">Ver todos</a>

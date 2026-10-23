@@ -5,11 +5,11 @@
 
 {% block extra_css %}
 {{ block.super }}
-<link href="{% static 'core/css/site-customization.css' %}?v=6" rel="stylesheet">
+<link href="{% static 'core/css/site-customization.css' %}?v=7" rel="stylesheet">
 {% endblock %}
 
 {% block dashboard_content %}
-<div class="dashboard-page-header">
+<div class="dashboard-page-header" data-tour="site-customization">
     <div>
         <h1 class="dashboard-heading">Personalización del sitio</h1>
         <p class="dashboard-muted">Edita la portada, las categorías, los productos destacados, los beneficios, el pie de página y los logos.</p>

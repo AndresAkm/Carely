@@ -1,0 +1,126 @@
+.tour-help-btn {
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  z-index: 1400;
+  width: 48px;
+  height: 48px;
+  border: none;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: var(--accent);
+  box-shadow: var(--sh-md);
+  cursor: pointer;
+  transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease), background 0.25s var(--ease);
+}
+
+.tour-help-btn:hover,
+.tour-help-btn:focus-visible {
+  transform: translateY(-2px) scale(1.04);
+  background: var(--color-button-hover);
+  box-shadow: var(--sh-lg);
+  outline: none;
+}
+
+.tour-help-btn i {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.carely-popover {
+  min-width: 260px;
+  max-width: 320px;
+  padding: 18px 20px;
+  border: 1px solid var(--clr-border);
+  border-radius: var(--r-md);
+  background: var(--clr-card);
+  box-shadow: var(--sh-lg);
+  color: var(--clr-text);
+  font-family: var(--ff-sans);
+}
+
+.carely-popover .driver-popover-title {
+  margin-bottom: 6px;
+  color: var(--accent);
+  font-family: var(--ff-serif);
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.carely-popover .driver-popover-description {
+  color: var(--clr-text-2);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.carely-popover .driver-popover-close-btn {
+  color: var(--clr-text-2);
+}
+
+.carely-popover .driver-popover-close-btn:hover,
+.carely-popover .driver-popover-close-btn:focus-visible {
+  color: var(--clr-text);
+}
+
+.carely-popover .driver-popover-footer {
+  margin-top: 16px;
+}
+
+.carely-popover .driver-popover-progress-text {
+  color: var(--clr-text-2);
+  font-size: 0.8rem;
+}
+
+.carely-popover .driver-popover-footer-btn {
+  min-width: 88px;
+  padding: 7px 14px;
+  border: 1px solid var(--clr-border);
+  border-radius: var(--r-pill);
+  background: var(--clr-card);
+  color: var(--clr-text);
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: background 0.2s var(--ease), border-color 0.2s var(--ease), color 0.2s var(--ease);
+}
+
+.carely-popover .driver-popover-footer-btn:hover,
+.carely-popover .driver-popover-footer-btn:focus {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--clr-card);
+}
+
+.carely-popover .driver-popover-next-btn {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.carely-popover .driver-popover-next-btn:hover,
+.carely-popover .driver-popover-next-btn:focus {
+  border-color: var(--color-button-hover);
+  background: var(--color-button-hover);
+  color: #fff;
+}
+
+.carely-popover .driver-popover-arrow {
+  border-color: var(--clr-card);
+}
+
+@media (max-width: 575.98px) {
+  .tour-help-btn {
+    left: 16px;
+    bottom: 16px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .carely-popover {
+    min-width: 240px;
+    max-width: 280px;
+    padding: 16px 18px;
+  }
+}
