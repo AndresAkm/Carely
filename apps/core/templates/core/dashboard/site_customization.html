@@ -46,7 +46,7 @@
                 <div class="col-lg-5">
                     {% include 'core/dashboard/_field.html' with field=form.hero_image %}
                     <div class="site-image-preview">
-                        <img src="{{ hero_image_url }}" alt="Imagen de la portada" data-image-preview>
+                        <img src="{{ hero_image_url }}" alt="Imagen de la portada" data-image-preview data-loading-image loading="lazy" decoding="async">
                         <span class="site-image-preview__badge"><i class="bi bi-eye me-1"></i>Vista previa</span>
                     </div>
                     <p class="site-image-preview__hint" data-image-hint>Imagen actual de la portada</p>
@@ -75,7 +75,7 @@
                     <input class="form-check-input" type="checkbox" name="featured_categories" value="{{ category.pk }}"
                         {% if category.pk|stringformat:"s" in selected_category_ids %}checked{% endif %}>
                     {% if category.image %}
-                    <img src="{{ category.image.url }}" alt="" class="site-choice__thumb">
+                    <img src="{{ category.image.url }}" alt="" class="site-choice__thumb" data-loading-image loading="lazy" decoding="async">
                     {% else %}
                     <span class="site-choice__thumb site-choice__thumb--empty"><i class="bi {{ category.icon }}"></i></span>
                     {% endif %}
@@ -148,7 +148,7 @@
                     <input class="form-check-input" type="checkbox" name="featured_products" value="{{ product.pk }}"
                         {% if product.pk|stringformat:"s" in picker.selected_ids %}checked{% endif %}>
                     {% if product.image %}
-                    <img src="{{ product.image.url }}" alt="" class="site-choice__thumb">
+                    <img src="{{ product.image.url }}" alt="" class="site-choice__thumb" data-loading-image loading="lazy" decoding="async">
                     {% else %}
                     <span class="site-choice__thumb site-choice__thumb--empty"><i class="bi bi-box"></i></span>
                     {% endif %}
@@ -277,13 +277,13 @@
             <div class="bento-logos-grid">
                 <div class="bento-logo-field">
                     <div class="bento-logo-preview bento-logo-preview--wide">
-                        <img src="{{ logo_url }}" alt="Logo principal actual" data-logo-preview="logo">
+                        <img src="{{ logo_url }}" alt="Logo principal actual" data-logo-preview="logo" data-loading-image loading="lazy" decoding="async">
                     </div>
                     {% include 'core/dashboard/_field.html' with field=form.logo %}
                 </div>
                 <div class="bento-logo-field">
                     <div class="bento-logo-preview">
-                        <img src="{{ logo_icon_url }}" alt="Isotipo actual" data-logo-preview="logo_icon">
+                        <img src="{{ logo_icon_url }}" alt="Isotipo actual" data-logo-preview="logo_icon" data-loading-image loading="lazy" decoding="async">
                     </div>
                     {% include 'core/dashboard/_field.html' with field=form.logo_icon %}
                 </div>

@@ -3,7 +3,7 @@
         aria-label="Ver {{ product.name }}">
         <div class="product-card__img-wrap">
             {% if product.image %}
-            <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-card__img">
+            <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-card__img" data-loading-image loading="lazy" decoding="async">
             {% else %}
             <div class="product-image-placeholder"
                 style="margin:auto;position:relative;top:50%;transform:translateY(-50%);text-align:center;">

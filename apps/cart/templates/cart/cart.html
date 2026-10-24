@@ -81,6 +81,9 @@ Revisa los productos en tu carrito de compras Carely antes de proceder al pago.
                                             <img
                                                 src="{{ item.product.image.url }}"
                                                 alt="{{ item.product.name }}"
+                                                data-loading-image
+                                                loading="lazy"
+                                                decoding="async"
                                             >
                                             {% else %}
                                             <i class="bi bi-box"></i>
@@ -556,12 +559,27 @@ Revisa los productos en tu carrito de compras Carely antes de proceder al pago.
 
         function triggerUpdate(productId, quantity, stock) {
 
+            const stepper =
+                document.getElementById('qty-' + productId)
+                    ?.closest('.qty-stepper');
+
+            if (stepper) {
+                window.CarelyLoading.overlay(
+                    stepper,
+                    'Actualizando…'
+                );
+            }
+
             apiPost(
                 `/carrito/actualizar/${productId}/`,
                 { quantity }
             )
 
             .then(data => {
+
+                if (stepper) {
+                    window.CarelyLoading.resetOverlay(stepper);
+                }
 
                 if (!data.ok) {
                     showToast(data.message, true);
@@ -623,6 +641,9 @@ Revisa los productos en tu carrito de compras Carely antes de proceder al pago.
             })
 
             .catch(() => {
+                if (stepper) {
+                    window.CarelyLoading.resetOverlay(stepper);
+                }
                 showToast(
                     'Error de red. Inténtalo de nuevo.',
                     true
@@ -645,6 +666,7 @@ Revisa los productos en tu carrito de compras Carely antes de proceder al pago.
             const productId =
                 btn.dataset.productId;
 
+            window.CarelyLoading.button(btn, '');
 
             apiPost(
                 `/carrito/eliminar/${productId}/`,
@@ -652,6 +674,8 @@ Revisa los productos en tu carrito de compras Carely antes de proceder al pago.
             )
 
             .then(data => {
+
+                window.CarelyLoading.resetButton(btn);
 
                 if (!data.ok) {
                     showToast(data.message, true);
@@ -677,6 +701,7 @@ Revisa los productos en tu carrito de compras Carely antes de proceder al pago.
             })
 
             .catch(() => {
+                window.CarelyLoading.resetButton(btn);
                 showToast(
                     'Error de red. Inténtalo de nuevo.',
                     true

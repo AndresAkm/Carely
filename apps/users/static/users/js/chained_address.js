@@ -12,12 +12,15 @@
                 return;
             }
             var endpoint = endpointTemplate.replace('0', String(departmentId));
+            citySelect.disabled = true;
+            citySelect.innerHTML = '<option value="">Cargando municipios…</option>';
             fetch(endpoint)
                 .then(function (response) {
                     if (!response.ok) throw new Error('Error al cargar municipios');
                     return response.json();
                 })
                 .then(function (data) {
+                    citySelect.disabled = false;
                     citySelect.innerHTML = '<option value="">---------</option>';
                     (data.cities || []).forEach(function (city) {
                         var option = document.createElement('option');
@@ -30,6 +33,7 @@
                     });
                 })
                 .catch(function () {
+                    citySelect.disabled = false;
                     citySelect.innerHTML = '<option value="">---------</option>';
                 });
         }

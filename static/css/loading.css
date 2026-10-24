@@ -1,0 +1,127 @@
+.loading-container {
+  position: relative;
+}
+
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  color: var(--clr-text);
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(2px);
+  border-radius: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.loading-overlay .spinner-border {
+  color: var(--accent);
+}
+
+.btn.is-loading,
+.c-btn.is-loading {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+
+.btn.is-loading::after,
+.c-btn.is-loading::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1rem;
+  height: 1rem;
+  margin: -0.5rem 0 0 -0.5rem;
+  border: 0.15rem solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  color: var(--accent);
+  animation: 0.75s linear infinite spinner-border;
+}
+
+.btn.is-loading[disabled],
+.c-btn.is-loading[disabled] {
+  opacity: 0.75;
+}
+
+.image-skeleton {
+  position: relative;
+  overflow: hidden;
+}
+
+.image-skeleton img {
+  position: relative;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.25s var(--ease);
+}
+
+.image-skeleton.is-loaded img {
+  opacity: 1;
+}
+
+.image-skeleton__placeholder {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    rgba(226, 232, 240, 0.9) 0%,
+    rgba(241, 245, 249, 0.95) 50%,
+    rgba(226, 232, 240, 0.9) 100%
+  );
+  background-size: 200% 100%;
+}
+
+.image-skeleton.is-visible .image-skeleton__placeholder {
+  animation: 1.4s ease-in-out infinite placeholder-shimmer;
+}
+
+.image-skeleton__placeholder::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.55) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+}
+
+.image-skeleton.is-visible .image-skeleton__placeholder::after {
+  animation: 1.4s ease-in-out infinite placeholder-shimmer;
+}
+
+@keyframes placeholder-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-card {
+  min-height: 220px;
+}
+
+.skeleton-thumb {
+  width: 44px;
+  height: 44px;
+}
+
+.skeleton-line {
+  height: 0.85rem;
+  border-radius: 999px;
+}

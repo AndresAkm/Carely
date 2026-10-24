@@ -651,7 +651,7 @@
     document.body.appendChild(button);
   }
 
-  document.addEventListener('DOMContentLoaded', function () {
+  function initTour() {
     if (!driver) {
       return;
     }
@@ -668,5 +668,11 @@
     }
 
     createHelpButton(steps);
-  });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initTour);
+  } else {
+    initTour();
+  }
 })();

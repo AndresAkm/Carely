@@ -91,6 +91,19 @@
         });
     }
 
+    form.addEventListener('submit', function (event) {
+        if (!event.submitter) return;
+        if (
+            event.submitter.hasAttribute('data-product-filter') ||
+            event.submitter.name === 'browse_page'
+        ) {
+            window.CarelyLoading.overlay(
+                document.getElementById('productos-destacados'),
+                'Filtrando…'
+            );
+        }
+    });
+
     // Cuenta lo que se guardaría: los marcados en pantalla más los ocultos.
     function updateCounter() {
         if (!counter) return;

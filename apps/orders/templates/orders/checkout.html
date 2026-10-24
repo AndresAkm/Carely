@@ -129,6 +129,8 @@
                         method="post"
                         action="{% url 'orders:checkout' %}"
                         id="formCoupon"
+                        data-loading
+                        data-loading-text="Aplicando…"
                     >
                         {% csrf_token %}
 
@@ -219,6 +221,9 @@
                         <img
                             src="{{ item.product.image.url }}"
                             alt="{{ item.product.name }}"
+                            data-loading-image
+                            loading="lazy"
+                            decoding="async"
                         >
 
                         {% else %}
@@ -330,6 +335,8 @@
                         method="post"
                         action="{% url 'orders:checkout' %}"
                         id="formConfirm"
+                        data-loading
+                        data-loading-text="Redirigiendo…"
                     >
                         {% csrf_token %}
 
@@ -380,6 +387,7 @@
     const CSRF_TOKEN = "{{ csrf_token }}";
 
     const couponInput = document.getElementById('couponInput');
+    const couponButton = document.getElementById('btnApplyCoupon');
     const couponResult = document.getElementById('couponResult');
     const discountRow = document.getElementById('discountRow');
     const discountAmount = document.getElementById('discountAmount');
@@ -420,6 +428,9 @@
     }
 
     async function validateCouponAjax(code) {
+        if (couponButton) {
+            window.CarelyLoading.button(couponButton, 'Validando…');
+        }
         try {
             const resp = await fetch(VALIDATE_URL, {
                 method: 'POST',
@@ -469,19 +480,18 @@
             }
 
         } catch (e) {
-            // Silenciar errores de red en validación en tiempo real.
+            couponResult.className = 'coupon-result';
+            couponResult.innerHTML = '';
+        } finally {
+            if (couponButton) {
+                window.CarelyLoading.resetButton(couponButton);
+            }
         }
     }
 
-    // Deshabilitar botón confirmar al enviar.
     document.getElementById('formConfirm').addEventListener('submit', function () {
-
         const btn = document.getElementById('btnConfirm');
-
-        btn.disabled = true;
-
-        btn.innerHTML =
-            '<i class="bi bi-hourglass-split"></i> Redirigiendo a Wompi...';
+        window.CarelyLoading.button(btn, 'Redirigiendo…');
     });
 </script>
 {% endblock %}

@@ -292,8 +292,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const originalHtml = btn ? btn.innerHTML : "";
 
       if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Añadiendo...';
+        window.CarelyLoading.button(btn, "Añadiendo…");
       }
 
       const csfr = document.cookie.match(/csrftoken=([^;]+)/)?.[1] ?? "";
@@ -317,6 +316,7 @@ document.addEventListener("DOMContentLoaded", () => {
               badge.classList.toggle("is-empty", data.cart_count <= 0);
             });
             if (btn) {
+              window.CarelyLoading.resetButton(btn);
               btn.innerHTML = '<i class="bi bi-check2-all"></i> ¡Éxito!';
               btn.style.background = "#4CAF50";
               btn.style.borderColor = "#4CAF50";
@@ -332,16 +332,14 @@ document.addEventListener("DOMContentLoaded", () => {
           } else {
             alert(data.message || "Error al agregar al carrito.");
             if (btn) {
-              btn.disabled = false;
-              btn.innerHTML = originalHtml;
+              window.CarelyLoading.resetButton(btn);
             }
           }
         })
         .catch(() => {
           alert("Error de red. Inténtalo de nuevo.");
           if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = originalHtml;
+            window.CarelyLoading.resetButton(btn);
           }
         });
     });

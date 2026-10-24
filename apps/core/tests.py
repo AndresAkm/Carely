@@ -527,6 +527,40 @@ class PageRenderSmokeTests(TestCase):
         self.assertContains(response, static('vendors/driver.js/driver.js.iife.js'))
         self.assertContains(response, static('js/tour.js'))
 
+    def test_loading_assets_are_loaded(self):
+        response = self.client.get(reverse('core:home'))
+        self.assertContains(response, static('css/loading.css'))
+        self.assertContains(response, static('js/loading.js'))
+
+    def test_loading_attributes_are_used_on_key_pages(self):
+        pages = {
+            reverse('catalog:home'): 'data-loading',
+            reverse('orders:checkout'): 'data-loading',
+            reverse('users:address_create'): 'data-loading',
+        }
+        for url, attribute in pages.items():
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, attribute)
+
+    def test_product_images_use_loading_skeleton(self):
+        self.product.image = 'products/test.jpg'
+        self.product.save(update_fields=['image'])
+        response = self.client.get(
+            reverse('catalog:product_detail', args=[self.product.slug])
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-loading-image')
+        self.assertContains(response, 'loading="lazy"')
+        self.assertContains(response, 'decoding="async"')
+
+    def test_cart_actions_use_loading_helpers(self):
+        response = self.client.get(reverse('cart:cart'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'CarelyLoading.overlay')
+        self.assertContains(response, 'CarelyLoading.button')
+
     def test_public_tour_pages_have_data_attributes(self):
         self.client.logout()
         pages = {

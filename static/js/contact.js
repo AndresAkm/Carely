@@ -30,9 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
     event.preventDefault();
     clearErrors();
 
-    const original = submit.innerHTML;
-    submit.disabled = true;
-    submit.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Enviando…';
+    window.CarelyLoading.button(submit, 'Enviando…');
 
     try {
       const response = await fetch(form.action, {
@@ -66,8 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (error) {
       showFeedback('Revisa tu conexión e inténtalo de nuevo.');
     } finally {
-      submit.disabled = false;
-      submit.innerHTML = original;
+      window.CarelyLoading.resetButton(submit);
     }
   });
 
