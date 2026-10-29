@@ -55,7 +55,7 @@
                                 <form method="post" action="{% url 'users:address_set_default' addr.pk %}">{% csrf_token %}<button type="submit" class="btn btn-sm btn-carely-outline" title="Marcar como predeterminada"><i class="bi bi-star"></i></button></form>
                                 {% endif %}
                                 <a href="{% url 'users:address_update' addr.pk %}" class="btn btn-sm btn-carely-outline" title="Editar" style="padding:4px 12px;"><i class="bi bi-pencil"></i></a>
-                                <form method="post" action="{% url 'users:address_delete' addr.pk %}" onsubmit="return confirm('¿Eliminar esta dirección?');">{% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar"><i class="bi bi-trash3"></i></button></form>
+                                <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar" data-delete-url="{% url 'users:address_delete' addr.pk %}" data-bs-toggle="modal" data-bs-target="#deleteAddressModal"><i class="bi bi-trash3"></i></button>
                             </div>
                         </div>
                     </div>
@@ -71,6 +71,39 @@
         </div>
     </div>
 </main>
+
+<!-- Modal de confirmación de eliminación de dirección -->
+<div class="modal fade" id="deleteAddressModal" tabindex="-1" aria-labelledby="deleteAddressModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteAddressModalLabel">¿Eliminar esta dirección?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">Esta acción no se puede deshacer. La dirección se eliminará de tu cuenta.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-carely-outline" data-bs-dismiss="modal">Cancelar</button>
+                <form method="post" id="deleteAddressForm" action="">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger">
+                        <i class="bi bi-trash3 me-1"></i>Eliminar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener('show.bs.modal', function (event) {
+        var trigger = event.relatedTarget;
+        if (!trigger) return;
+        var url = trigger.getAttribute('data-delete-url');
+        var form = document.getElementById('deleteAddressForm');
+        if (url && form) form.action = url;
+    });
+</script>
 
 {% include 'footer.html' %}
 {% endblock %}
