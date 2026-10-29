@@ -7,6 +7,7 @@ from decimal import Decimal
 from django.contrib.auth import get_user_model
 from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
+from rest_framework.test import APITestCase
 
 from apps.orders.models import Order, OrderStatusHistory
 from apps.payments.gateways import get_gateway
@@ -760,3 +761,58 @@ class PaymentWebViewsTests(PaymentFactoryMixin, TestCase):
         self.order.refresh_from_db()
         self.assertEqual(self.payment.status, Payment.Status.RECHAZADO)
         self.assertEqual(self.order.status, Order.Status.PENDIENTE)
+
+
+class SimulatePaymentAPITests(PaymentFactoryMixin, APITestCase):
+    """Pago simulado desde la app móvil (POST /pagos/simular/)."""
+
+    def setUp(self):
+        self.user = self.make_user()
+        self.order = self.make_order(user=self.user)
+        self.url = reverse('pagos-simular')
+
+    def test_aprueba_el_pago_y_confirma_el_pedido(self):
+        self.client.force_authenticate(self.user)
+        response = self.client.post(self.url, {
+            'order_id': self.order.pk,
+            'payment_method': 'card',
+        })
+        self.assertEqual(response.status_code, 201)
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, Order.Status.CONFIRMADO)
+        payment = Payment.objects.get(order=self.order)
+        self.assertEqual(payment.gateway, Payment.Gateway.SIMULADO)
+        self.assertEqual(payment.status, Payment.Status.APROBADO)
+        self.assertEqual(payment.amount, self.order.total)
+        self.assertTrue(OrderStatusHistory.objects.filter(
+            order=self.order, status=Order.Status.CONFIRMADO,
+        ).exists())
+        self.assertEqual(response.data['order_status'], Order.Status.CONFIRMADO)
+
+    def test_rechaza_metodo_de_pago_invalido(self):
+        self.client.force_authenticate(self.user)
+        response = self.client.post(self.url, {
+            'order_id': self.order.pk,
+            'payment_method': 'bitcoin',
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(Payment.objects.filter(order=self.order).exists())
+
+    def test_no_permite_pagar_un_pedido_ajeno(self):
+        otro = self.make_user('otro')
+        self.client.force_authenticate(otro)
+        response = self.client.post(self.url, {'order_id': self.order.pk})
+        self.assertEqual(response.status_code, 404)
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, Order.Status.PENDIENTE)
+
+    def test_no_permite_pagar_dos_veces(self):
+        self.client.force_authenticate(self.user)
+        self.client.post(self.url, {'order_id': self.order.pk})
+        response = self.client.post(self.url, {'order_id': self.order.pk})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(Payment.objects.filter(order=self.order).count(), 1)
+
+    def test_requiere_autenticacion(self):
+        response = self.client.post(self.url, {'order_id': self.order.pk})
+        self.assertIn(response.status_code, (401, 403))

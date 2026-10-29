@@ -2,6 +2,7 @@ from decimal import Decimal
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from rest_framework.test import APITestCase
 
 from apps.catalog.models import Category, Product
 from apps.cart.models import Cart, CartItem
@@ -809,4 +810,71 @@ class OrderStatusNotificationTests(TestCase):
         self.assertEqual(self.order.status, Order.Status.CANCELADO)
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].to, [self.user.email])
+
+
+class OrderCheckoutAPITests(APITestCase):
+    """Checkout desde la app móvil (POST /pedidos/pedidos/checkout/)."""
+
+    def setUp(self):
+        self.user = make_user('api@example.com')
+        self.address = make_address(
+            self.user, recipient_name='Ana', address_line='Calle 1',
+        )
+        self.product = make_product('Crema API', price='50.00', stock=5)
+        self.cart = Cart.objects.create(user=self.user)
+        CartItem.objects.create(
+            cart=self.cart, product=self.product, quantity=2,
+        )
+        self.url = reverse('pedidos-checkout')
+
+    def test_crea_pedido_y_vacia_el_carrito(self):
+        self.client.force_authenticate(self.user)
+        response = self.client.post(self.url, {
+            'address_id': self.address.pk,
+            'notes': 'Dejar en portería',
+        })
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['status'], Order.Status.PENDIENTE)
+        self.assertEqual(len(response.data['items']), 1)
+        self.assertEqual(response.data['items'][0]['quantity'], 2)
+        self.assertEqual(Decimal(response.data['total']), Decimal('100.00'))
+        self.assertEqual(response.data['notes'], 'Dejar en portería')
+        self.assertFalse(CartItem.objects.filter(cart=self.cart).exists())
+
+    def test_rechaza_carrito_vacio(self):
+        CartItem.objects.all().delete()
+        self.client.force_authenticate(self.user)
+        response = self.client.post(self.url, {'address_id': self.address.pk})
+        self.assertEqual(response.status_code, 400)
+
+    def test_rechaza_direccion_ajena(self):
+        otro = make_user('otro@example.com')
+        direccion_ajena = make_address(otro)
+        self.client.force_authenticate(self.user)
+        response = self.client.post(self.url, {'address_id': direccion_ajena.pk})
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(Order.objects.exists())
+
+    def test_requiere_autenticacion(self):
+        response = self.client.post(self.url, {'address_id': self.address.pk})
+        self.assertIn(response.status_code, (401, 403))
+
+
+class OrderListAPITests(APITestCase):
+    def setUp(self):
+        self.user = make_user('mio@example.com')
+        self.otro = make_user('ajeno@example.com')
+        self.order = Order.objects.create(
+            user=self.user, total=Decimal('100.00'),
+        )
+        Order.objects.create(user=self.otro, total=Decimal('200.00'))
+        self.url = reverse('pedidos-list')
+
+    def test_solo_devuelve_los_pedidos_propios(self):
+        self.client.force_authenticate(self.user)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        results = response.data['results'] if isinstance(response.data, dict) else response.data
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['id'], self.order.pk)
 

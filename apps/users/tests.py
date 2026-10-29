@@ -2014,3 +2014,101 @@ class JWTTokenTests(APITestCase):
         response = self.client.post(reverse('token_refresh'), {'refresh': refresh})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('access', response.data)
+
+
+class RegisterAPITests(APITestCase):
+    """Alta de clientes desde la app móvil."""
+
+    def setUp(self):
+        self.url = reverse('api_register')
+        self.payload = {
+            'first_name': 'Nuevo',
+            'last_name': 'Cliente',
+            'email': 'nuevo@carely.test',
+            'phone': '3001234567',
+            'password1': 'Clave1234',
+            'password2': 'Clave1234',
+            'accept_terms': True,
+        }
+
+    def test_crea_usuario_y_devuelve_tokens(self):
+        response = self.client.post(self.url, self.payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        user = User.objects.get(email='nuevo@carely.test')
+        self.assertEqual(user.username, 'nuevo@carely.test')
+        self.assertTrue(user.check_password('Clave1234'))
+        self.assertIsNotNone(user.accepted_terms_at)
+        self.assertEqual(user.terms_version, settings.TERMS_VERSION)
+        self.assertIn('access', response.data)
+        self.assertIn('refresh', response.data)
+        self.assertEqual(response.data['user']['email'], 'nuevo@carely.test')
+
+    def test_normaliza_el_correo(self):
+        self.payload['email'] = '  NUEVO@Carely.TEST '
+        response = self.client.post(self.url, self.payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(User.objects.filter(email='nuevo@carely.test').exists())
+
+    def test_rechaza_correo_duplicado(self):
+        create_user(username='existente', email='nuevo@carely.test')
+        response = self.client.post(self.url, self.payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('email', response.data)
+
+    def test_rechaza_password_debil(self):
+        self.payload['password1'] = 'abcdefgh'
+        self.payload['password2'] = 'abcdefgh'
+        response = self.client.post(self.url, self.payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('password1', response.data)
+
+    def test_rechaza_passwords_distintas(self):
+        self.payload['password2'] = 'Otra12345'
+        response = self.client.post(self.url, self.payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('password2', response.data)
+
+    def test_exige_aceptar_terminos(self):
+        self.payload['accept_terms'] = False
+        response = self.client.post(self.url, self.payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('accept_terms', response.data)
+
+
+class MeAPITests(APITestCase):
+    def setUp(self):
+        self.user = create_user(
+            username='me@carely.test',
+            email='me@carely.test',
+            password='Clave1234',
+        )
+        self.url = reverse('usuarios-me')
+
+    def test_requiere_autenticacion(self):
+        response = self.client.get(self.url)
+        self.assertIn(response.status_code, (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN))
+
+    def test_devuelve_el_perfil_propio(self):
+        self.client.force_authenticate(self.user)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['email'], 'me@carely.test')
+
+    def test_actualiza_perfil_y_username(self):
+        self.client.force_authenticate(self.user)
+        response = self.client.patch(self.url, {
+            'first_name': 'Ana',
+            'email': 'ana@carely.test',
+        })
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.first_name, 'Ana')
+        self.assertEqual(self.user.email, 'ana@carely.test')
+        self.assertEqual(self.user.username, 'ana@carely.test')
+
+    def test_no_permite_usar_el_correo_de_otro(self):
+        create_user(username='otro', email='otro@carely.test')
+        self.client.force_authenticate(self.user)
+        response = self.client.patch(self.url, {'email': 'otro@carely.test'})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('email', response.data)

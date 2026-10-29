@@ -366,3 +366,74 @@ class CartItemAPITests(APITestCase):
             'quantity': 1,
         })
         self.assertIn(response.status_code, (401, 403))
+
+
+class CartCurrentAPITests(APITestCase):
+    """El carrito "actual" que usa la app móvil."""
+
+    def setUp(self):
+        self.user = make_user()
+        self.url = reverse('carritos-actual')
+
+    def test_crea_y_devuelve_el_carrito(self):
+        self.client.force_authenticate(self.user)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(Cart.objects.filter(user=self.user).exists())
+        self.assertIn('items', response.data)
+        self.assertEqual(response.data['total'], '0.00')
+
+    def test_reutiliza_el_mismo_carrito(self):
+        self.client.force_authenticate(self.user)
+        self.client.get(self.url)
+        self.client.get(self.url)
+        self.assertEqual(Cart.objects.filter(user=self.user).count(), 1)
+
+    def test_requiere_autenticacion(self):
+        response = self.client.get(self.url)
+        self.assertIn(response.status_code, (401, 403))
+
+
+class CartItemMergeAPITests(APITestCase):
+    """Agregar dos veces el mismo producto suma cantidades, no duplica filas."""
+
+    def setUp(self):
+        self.user = make_user()
+        self.cart = get_or_create_cart(self.user)
+        self.product = make_product(stock=10)
+        self.url = reverse('items-carrito-list')
+
+    def test_suma_cantidad_si_el_producto_ya_esta(self):
+        add_item(self.user, self.product, quantity=2)
+        self.client.force_authenticate(self.user)
+        response = self.client.post(self.url, {
+            'cart': self.cart.pk,
+            'product': self.product.pk,
+            'quantity': 3,
+        })
+        self.assertEqual(response.status_code, 201)
+        item = CartItem.objects.get(cart=self.cart, product=self.product)
+        self.assertEqual(item.quantity, 5)
+        self.assertEqual(CartItem.objects.count(), 1)
+
+    def test_rechaza_cantidad_mayor_al_stock(self):
+        self.client.force_authenticate(self.user)
+        response = self.client.post(self.url, {
+            'cart': self.cart.pk,
+            'product': self.product.pk,
+            'quantity': 11,
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(CartItem.objects.exists())
+
+    def test_rechaza_suma_que_supera_el_stock(self):
+        add_item(self.user, self.product, quantity=8)
+        self.client.force_authenticate(self.user)
+        response = self.client.post(self.url, {
+            'cart': self.cart.pk,
+            'product': self.product.pk,
+            'quantity': 3,
+        })
+        self.assertEqual(response.status_code, 400)
+        item = CartItem.objects.get(cart=self.cart, product=self.product)
+        self.assertEqual(item.quantity, 8)

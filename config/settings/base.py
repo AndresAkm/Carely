@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
     'rest_framework',
     'drf_spectacular',
+    'corsheaders',
     'apps.core',
     'apps.catalog',
     'apps.users',
@@ -60,6 +61,7 @@ MIDDLEWARE = [
     # sitio y pintarlas con las plantillas de Carely aun con DEBUG=True.
     'apps.core.middleware.CarelyErrorPagesMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',

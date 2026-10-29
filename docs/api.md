@@ -12,6 +12,7 @@ La documentación interactiva se genera con drf-spectacular:
 
 - `POST /api/v1/auth/token/` obtiene tokens JWT usando `username` y `password`.
 - `POST /api/v1/auth/token/refresh/` renueva el token de acceso.
+- `POST /api/v1/auth/register/` crea una cuenta de cliente y devuelve `user`, `access` y `refresh`.
 - `POST /api/v1/auth/login/` y `POST /api/v1/auth/logout/` (sesión DRF).
 - Las peticiones protegidas deben enviar `Authorization: Bearer <access>`.
 
@@ -25,16 +26,28 @@ ViewSets registrados en `config/api_router.py`, bajo el prefijo `/api/v1/`:
 |---------|---------|----------|-------|
 | `catalogo/productos/` | `ProductViewSet` | `IsAdminOrReadOnly` | CRUD completo |
 | `catalogo/categorias/` | `CategoryViewSet` | `IsAdminOrReadOnly` | CRUD completo |
-| `usuarios/` | `UserViewSet` | `IsAdminOnly` | Sin `DELETE` (`http_method_names`) |
+| `usuarios/` | `UserViewSet` | `IsAdminOnly` salvo `me/` | Sin `DELETE` (`http_method_names`); `GET/PATCH /me/` para el usuario autenticado |
 | `direcciones/` | `AddressViewSet` | `IsAuthenticatedOwnedOrAdmin` | `PATCH /<id>/establecer-predeterminada/` |
 | `geo/departamentos/` | `DepartmentViewSet` | lectura | Departamentos de Colombia |
 | `geo/municipios/` | `CityViewSet` | lectura | Filtro `?department=<id>` |
 | `inventario/movimientos/` | `InventoryMovementViewSet` | `IsAdminOnly` | `@action` POST `entrada/`, `salida/`, `ajuste/` |
-| `carrito/carritos/` | `CartViewSet` | `IsAuthenticatedOwnedOrAdmin` | Un carrito por usuario |
-| `carrito/items/` | `CartItemViewSet` | `IsAuthenticatedOwnedOrAdmin` | Único por carrito + producto; el dueño solo puede usar su carrito |
-| `pedidos/pedidos/` | `OrderViewSet` | `IsAuthenticatedOrAdminReadOnly` | Lectura; escritura solo admin |
-| `pedidos/items/` | `OrderItemViewSet` | `IsAuthenticatedOrAdminReadOnly` | Lectura; escritura solo admin |
-| `pagos/` | `PaymentViewSet` | `IsAuthenticatedOrAdminReadOnly` | Solo lectura |
+| `carrito/carritos/` | `CartViewSet` | `IsAuthenticatedOwnedOrAdmin` | Un carrito por usuario; `GET actual/` devuelve o crea el carrito |
+| `carrito/items/` | `CartItemViewSet` | `IsAuthenticatedOwnedOrAdmin` | Único por carrito + producto; el alta suma cantidades |
+| `pedidos/pedidos/` | `OrderViewSet` | `IsAuthenticatedOrAdminReadOnly` | Lectura; escritura solo admin; `POST checkout/` para el usuario |
+| `pedidos/items/` | `OrderItemViewSet` | `IsAuthenticatedOrAdminReadOnly` | Lectura; escritura solo admin; filtro `?order=<id>` |
+| `pagos/` | `PaymentViewSet` | `IsAuthenticatedOrAdminReadOnly` | Solo lectura; `POST simular/` registra un pago simulado |
+
+### Endpoints para la app móvil
+
+- `POST /api/v1/auth/register/` (público): `first_name`, `last_name`, `email`, `phone`, `password1`, `password2` y `accept_terms`. Devuelve 201 con `user`, `access` y `refresh`. El `username` es el correo normalizado.
+- `GET|PATCH /api/v1/usuarios/me/`: perfil del usuario autenticado. El PATCH acepta `first_name`, `last_name`, `email` y `phone`; al cambiar el correo se sincroniza el `username`.
+- `GET /api/v1/carrito/carritos/actual/`: devuelve el carrito del usuario y lo crea si no existe. Incluye `items` con `product_name`, `product_price`, `product_image`, `stock` y `subtotal`, además de `total`.
+- `POST /api/v1/carrito/items/`: si el producto ya está en el carrito suma `quantity` en lugar de duplicar la fila y valida el stock total.
+- `POST /api/v1/pedidos/pedidos/checkout/`: `{address_id, notes}`. Crea el pedido desde el carrito y responde 201 con `items`, `status_history` y `payment` anidados. Carrito vacío, dirección inválida o stock insuficiente responden 400.
+- `POST /api/v1/pagos/simular/`: `{order_id, payment_method}`. Crea o reutiliza el pago con `gateway=simulado` y lo aprueba con el mismo servicio que Wompi, confirmando el pedido. Solo aplica a pedidos pendientes del usuario.
+- `GET /api/v1/pedidos/pedidos/` devuelve solo los pedidos del usuario; `GET /api/v1/pedidos/items/?order=<id>` filtra los items de un pedido.
+
+En desarrollo `CORS_ALLOW_ALL_ORIGINS=True` para que Flutter Web pueda consumir la API. En producción hay que definir los orígenes permitidos.
 
 ## Rutas web
 

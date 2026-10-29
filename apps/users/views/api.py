@@ -1,12 +1,41 @@
 from django.db import transaction
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from ..models import Address, City, Department, User
-from ..serializer import AddressSerializer, CitySerializer, DepartmentSerializer, UserSerializer
+from ..serializer import (
+    AddressSerializer,
+    CitySerializer,
+    DepartmentSerializer,
+    ProfileUpdateSerializer,
+    RegisterSerializer,
+    UserSerializer,
+)
 from apps.core.permissions import IsAdminOnly, IsAuthenticatedOwnedOrAdmin, is_admin
+
+
+class RegisterView(APIView):
+    """Crea una cuenta de cliente y devuelve los tokens JWT."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        refresh = RefreshToken.for_user(user)
+        return Response(
+            {
+                'user': UserSerializer(user).data,
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
+            },
+            status=201,
+        )
 
 
 # Vistas para las APIs
@@ -20,6 +49,16 @@ class UserViewSet(viewsets.ModelViewSet):
         if self.request.user.is_superuser or self.request.user.is_staff or getattr(self.request.user, 'role', None) == User.Role.ADMIN:
             return super().get_queryset()
         return User.objects.filter(pk=self.request.user.pk)
+
+    @action(detail=False, methods=['get', 'patch'], permission_classes=[IsAuthenticated])
+    def me(self, request):
+        user = request.user
+        if request.method == 'PATCH':
+            serializer = ProfileUpdateSerializer(user, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            user.refresh_from_db()
+        return Response(UserSerializer(user).data)
 
 
 class AddressViewSet(viewsets.ModelViewSet):
