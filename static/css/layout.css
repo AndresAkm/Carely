@@ -495,6 +495,32 @@
   font-weight: 700;
 }
 
+.product-card__price--original {
+  margin-right: 8px;
+  color: var(--clr-text-2);
+  font-size: 0.95rem;
+  font-weight: 400;
+  text-decoration: line-through;
+}
+
+.product-card__price--final {
+  color: var(--clr-primary);
+  font-weight: 700;
+}
+
+.product-card__discount-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--clr-primary);
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
 .product-card__stock,
 .product-stock {
   font-size: 0.76rem;

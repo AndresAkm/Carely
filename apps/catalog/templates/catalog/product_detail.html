@@ -35,8 +35,8 @@
                     <h1 class="product-detail-title">{{ product.name }}</h1>
                     {% if product.has_discount %}
                     <p class="product-detail-price">
-                        <span class="product-card__price--original" style="font-size: 1rem; text-decoration: line-through;">COP {{ product.price|floatformat:0 }}</span>
-                        <span class="text-primary fw-bold">COP {{ product.discounted_price|floatformat:0 }}</span>
+                        <span class="product-card__price--original">COP {{ product.price|floatformat:0 }}</span>
+                        <span class="product-card__price--final">COP {{ product.discounted_price|floatformat:0 }}</span>
                     </p>
                     {% else %}
                     <p class="product-detail-price">COP {{ product.price|floatformat:0 }}</p>
