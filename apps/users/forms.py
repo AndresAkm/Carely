@@ -405,6 +405,16 @@ class _ColombiaAddressMixin:
             self.add_error('city', 'El municipio no pertenece al departamento seleccionado.')
         return cleaned_data
 
+    def clean_phone(self):
+        phone = (self.cleaned_data.get('phone') or '').strip()
+        if not phone:
+            return phone
+        if not phone.isdigit():
+            raise forms.ValidationError('El teléfono solo puede contener números.')
+        if len(phone) > 10:
+            raise forms.ValidationError('El teléfono no puede tener más de 10 dígitos.')
+        return phone
+
 
 class AddressForm(_ColombiaAddressMixin, forms.ModelForm):
     class Meta:
@@ -416,7 +426,7 @@ class AddressForm(_ColombiaAddressMixin, forms.ModelForm):
         ]
         widgets = {
             'recipient_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre del destinatario'}),
-            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Teléfono de contacto'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Teléfono de contacto', 'maxlength': '10', 'inputmode': 'numeric', 'pattern': '[0-9]{1,10}'}),
             'address_line': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Calle, número, barrio'}),
             'address_line2': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Apt, suite, piso (opcional)'}),
             'city': forms.Select(attrs={'class': 'form-control'}),
@@ -444,8 +454,7 @@ class DashboardAddressForm(_ColombiaAddressMixin, forms.ModelForm):
         ]
         widgets = {
             'recipient_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'phone': forms.TextInput(attrs={'class': 'form-control'}),
-            'address_line': forms.TextInput(attrs={'class': 'form-control'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control', 'maxlength': '10', 'inputmode': 'numeric', 'pattern': '[0-9]{1,10}'}),
             'address_line2': forms.TextInput(attrs={'class': 'form-control'}),
             'city': forms.Select(attrs={'class': 'form-control'}),
             'department': forms.Select(attrs={'class': 'form-control'}),

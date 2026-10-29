@@ -162,7 +162,7 @@ class Address(models.Model):
     )
     phone = models.CharField(
         'teléfono de contacto',
-        max_length=20,
+        max_length=10,
         blank=True,
     )
     address_line = models.CharField(
