@@ -125,6 +125,10 @@ class Coupon(models.Model):
 NOTAS_POR_DEFECTO = 'Sin instrucciones adicionales'
 
 class Order(models.Model):
+    class Channel(models.TextChoices):
+        WEB = 'web', 'Sitio web'
+        MOBILE = 'mobile', 'App móvil'
+
     class Status(models.TextChoices):
         PENDIENTE = 'pendiente', 'Pendiente'
         CONFIRMADO = 'confirmado', 'Confirmado'
@@ -143,6 +147,13 @@ class Order(models.Model):
         max_length=20,
         choices=Status.choices,
         default=Status.PENDIENTE,
+    )
+    channel = models.CharField(
+        'canal de origen',
+        max_length=10,
+        choices=Channel.choices,
+        default=Channel.WEB,
+        db_index=True,
     )
     total = models.DecimalField('total', max_digits=12, decimal_places=2, default=0)
     shipping_address = models.TextField('dirección de envío', blank=True)

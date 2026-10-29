@@ -18,6 +18,12 @@ class OrderFilterForm(forms.Form):
         choices=[('', 'Todos los estados'), *Order.Status.choices],
         widget=forms.Select(attrs={'class': 'form-control'}),
     )
+    channel = forms.ChoiceField(
+        label='Canal',
+        required=False,
+        choices=[('', 'Todos los canales'), *Order.Channel.choices],
+        widget=forms.Select(attrs={'class': 'form-control'}),
+    )
     created_from = forms.DateField(
         label='Desde',
         required=False,

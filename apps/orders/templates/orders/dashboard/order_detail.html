@@ -6,7 +6,7 @@
 <div class="dashboard-page-header">
     <div>
         <h1 class="dashboard-heading">Pedido #{{ order.pk }}</h1>
-        <p class="dashboard-muted">Creado el {{ order.created_at|date:'d/m/Y H:i' }}</p>
+        <p class="dashboard-muted">Creado el {{ order.created_at|date:'d/m/Y H:i' }} · <span class="badge rounded-pill {% if order.channel == 'mobile' %}bg-primary-subtle text-primary{% else %}bg-secondary-subtle text-secondary{% endif %}"><i class="bi {% if order.channel == 'mobile' %}bi-phone{% else %}bi-globe2{% endif %} me-1"></i>{{ order.get_channel_display }}</span></p>
     </div>
     <div class="d-flex gap-2">
         <a href="{% url 'dashboard:order_list' %}" class="btn btn-carely-outline">Volver</a>

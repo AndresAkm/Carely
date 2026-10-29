@@ -54,7 +54,9 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = '__all__'
-        read_only_fields = ['id', 'user', 'total', 'status', 'created_at', 'updated_at']
+        read_only_fields = [
+            'id', 'user', 'total', 'status', 'channel', 'created_at', 'updated_at',
+        ]
 
     def get_payment(self, obj):
         payment = obj.payments.order_by('-created_at').first()

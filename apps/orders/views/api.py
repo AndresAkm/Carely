@@ -51,6 +51,7 @@ class OrderViewSet(viewsets.ModelViewSet):
                 address_id,
                 notes=notes,
                 site_url=request.build_absolute_uri('/')[:-1],
+                channel=Order.Channel.MOBILE,
             )
         except (EmptyCartError, InvalidAddressError, InvalidCouponError, InsufficientStockError) as exc:
             return Response({'detail': str(exc)}, status=400)

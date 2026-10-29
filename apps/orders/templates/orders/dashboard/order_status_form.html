@@ -12,7 +12,7 @@
 <div class="dashboard-page-header">
     <div>
         <h1 class="dashboard-heading">Actualizar pedido #{{ order.pk }}</h1>
-        <p class="dashboard-muted">Cambia el estado y agrega una nota interna.</p>
+        <p class="dashboard-muted">Cambia el estado y agrega una nota interna. Origen: <strong>{{ order.get_channel_display }}</strong>.</p>
     </div>
     <a href="{% url 'dashboard:order_detail' order.pk %}" class="btn btn-carely-outline">Volver</a>
 </div>

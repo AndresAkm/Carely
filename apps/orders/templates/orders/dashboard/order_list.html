@@ -13,13 +13,17 @@
 <div class="dashboard-card dashboard-filter-card">
     <div class="dashboard-card-body">
         <form method="get" class="row g-2 align-items-end">
-            <div class="col-lg-4">
+            <div class="col-lg-3">
                 <label class="dashboard-filter-label" for="id_q">Buscar</label>
                 {{ filter_form.q }}
             </div>
             <div class="col-lg-2 col-md-4">
                 <label class="dashboard-filter-label" for="id_status">Estado</label>
                 {{ filter_form.status }}
+            </div>
+            <div class="col-lg-2 col-md-4">
+                <label class="dashboard-filter-label" for="id_channel">Canal</label>
+                {{ filter_form.channel }}
             </div>
             <div class="col-lg-2 col-md-4">
                 <label class="dashboard-filter-label" for="id_created_from">Desde</label>
@@ -29,8 +33,8 @@
                 <label class="dashboard-filter-label" for="id_created_to">Hasta</label>
                 {{ filter_form.created_to }}
             </div>
-            <div class="col-lg-2">
-                <button class="btn btn-carely-outline w-100" type="submit"><i class="bi bi-search me-1"></i>Filtrar</button>
+            <div class="col-lg-1">
+                <button class="btn btn-carely-outline w-100" type="submit" title="Filtrar" aria-label="Filtrar"><i class="bi bi-search"></i></button>
             </div>
             {% if filter_form.non_field_errors or filter_form.created_to.errors %}
             <div class="col-12 field-error">{{ filter_form.non_field_errors }}{{ filter_form.created_to.errors }}</div>
@@ -44,13 +48,14 @@
         <div class="table-responsive">
             <table class="table dashboard-table align-middle mb-0">
                 <thead>
-                    <tr><th>Pedido</th><th class="d-none d-md-table-cell">Cliente</th><th class="d-none d-md-table-cell">Artículos</th><th class="d-none d-md-table-cell">Total</th><th>Estado</th><th class="d-none d-md-table-cell">Fecha</th><th class="text-end">Acciones</th></tr>
+                    <tr><th>Pedido</th><th class="d-none d-md-table-cell">Cliente</th><th>Canal</th><th class="d-none d-md-table-cell">Artículos</th><th class="d-none d-md-table-cell">Total</th><th>Estado</th><th class="d-none d-md-table-cell">Fecha</th><th class="text-end">Acciones</th></tr>
                 </thead>
                 <tbody>
                 {% for order in orders %}
                     <tr>
                         <td data-label="Pedido"><strong>#{{ order.pk }}</strong></td>
                         <td data-label="Cliente" class="d-none d-md-table-cell"><strong>{{ order.user.get_full_name|default:order.user.email }}</strong><small class="d-block text-secondary">{{ order.user.email }}</small></td>
+                        <td data-label="Canal"><span class="badge rounded-pill {% if order.channel == 'mobile' %}bg-primary-subtle text-primary{% else %}bg-secondary-subtle text-secondary{% endif %}"><i class="bi {% if order.channel == 'mobile' %}bi-phone{% else %}bi-globe2{% endif %} me-1"></i>{{ order.get_channel_display }}</span></td>
                         <td data-label="Artículos" class="d-none d-md-table-cell">{{ order.item_count }}</td>
                         <td data-label="Total" class="d-none d-md-table-cell">COP {{ order.total|floatformat:2 }}</td>
                         <td data-label="Estado"><span class="status-badge status-badge--{{ order.status }}">{{ order.get_status_display }}</span></td>
@@ -58,7 +63,7 @@
                         <td class="text-end"><button type="button" class="btn btn-sm btn-carely-outline" data-table-detail data-table-detail-title="Pedido #{{ order.pk }}" title="Ver detalle" aria-label="Ver detalle"><i class="bi bi-list-ul"></i></button><a href="{% url 'dashboard:order_detail' order.pk %}" class="btn btn-sm btn-carely-outline" title="Ver pedido"><i class="bi bi-eye"></i></a><a href="{% url 'dashboard:order_status' order.pk %}" class="btn btn-sm btn-carely-outline" title="Actualizar estado"><i class="bi bi-pencil"></i></a></td>
                     </tr>
                 {% empty %}
-                    <tr><td colspan="7" class="text-center py-5 text-secondary">No hay pedidos que coincidan con los filtros.</td></tr>
+                    <tr><td colspan="8" class="text-center py-5 text-secondary">No hay pedidos que coincidan con los filtros.</td></tr>
                 {% endfor %}
                 </tbody>
             </table>

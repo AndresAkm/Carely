@@ -15,11 +15,13 @@ class OrderItemInline(admin.TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ['id', 'user', 'status', 'coupon_code', 'discount_amount', 'total', 'created_at']
-    list_filter = ['status', 'created_at']
+    list_display = ['id', 'user', 'channel', 'status', 'coupon_code', 'discount_amount', 'total', 'created_at']
+    list_filter = ['channel', 'status', 'created_at']
     search_fields = ['user__email', 'shipping_address', 'coupon_code']
     autocomplete_fields = ['user']
-    readonly_fields = ['created_at', 'updated_at', 'coupon_code', 'discount_amount', 'coupon']
+    readonly_fields = [
+        'channel', 'created_at', 'updated_at', 'coupon_code', 'discount_amount', 'coupon',
+    ]
     inlines = [OrderItemInline]
 
 

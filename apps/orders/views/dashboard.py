@@ -44,6 +44,8 @@ class OrderListView(DashboardOrderMixin, ListView):
             queryset = queryset.filter(search_filter)
         if filters.get('status'):
             queryset = queryset.filter(status=filters['status'])
+        if filters.get('channel'):
+            queryset = queryset.filter(channel=filters['channel'])
         if filters.get('created_from'):
             queryset = queryset.filter(created_at__date__gte=filters['created_from'])
         if filters.get('created_to'):

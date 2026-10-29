@@ -224,6 +224,7 @@ def checkout_cart(
     notes: str = '',
     coupon_code: str = '',
     site_url: str = '',
+    channel: str = Order.Channel.WEB,
 ) -> Order:
     """
     Procesa el checkout transformando el carrito en un pedido final.
@@ -326,6 +327,7 @@ def checkout_cart(
         order = Order(
             user=user,
             status=Order.Status.PENDIENTE,
+            channel=channel,
             shipping_address=address_snapshot,
             # `blank=True` deja pasar cadena vacía, y el `default` del modelo no
             # se aplicaría: se decide aquí para que el texto llegue a guardarse

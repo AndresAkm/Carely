@@ -71,6 +71,7 @@ class CheckoutServiceTests(TestCase):
         
         self.assertEqual(Order.objects.count(), 1)
         self.assertEqual(order.user, self.user)
+        self.assertEqual(order.channel, Order.Channel.WEB)
         self.assertEqual(order.notes, 'Entregar mañana')
         # Total = (50*2) + (30*1) = 130
         self.assertEqual(order.total, Decimal('130.00'))
@@ -91,6 +92,15 @@ class CheckoutServiceTests(TestCase):
         self.assertEqual(self.prod1.stock, 8)
         self.prod2.refresh_from_db()
         self.assertEqual(self.prod2.stock, 4)
+
+    def test_checkout_guarda_el_canal_movil_cuando_se_indica(self):
+        order = checkout_cart(
+            self.user,
+            self.address.id,
+            channel=Order.Channel.MOBILE,
+        )
+
+        self.assertEqual(order.channel, Order.Channel.MOBILE)
         
     def test_sin_notas_guarda_un_texto_por_defecto(self):
         # El campo se muestra al cliente: un hueco en blanco se lee como un dato
@@ -832,9 +842,11 @@ class OrderCheckoutAPITests(APITestCase):
         response = self.client.post(self.url, {
             'address_id': self.address.pk,
             'notes': 'Dejar en portería',
+            'channel': Order.Channel.WEB,
         })
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data['status'], Order.Status.PENDIENTE)
+        self.assertEqual(response.data['channel'], Order.Channel.MOBILE)
         self.assertEqual(len(response.data['items']), 1)
         self.assertEqual(response.data['items'][0]['quantity'], 2)
         self.assertEqual(Decimal(response.data['total']), Decimal('100.00'))
@@ -877,4 +889,44 @@ class OrderListAPITests(APITestCase):
         results = response.data['results'] if isinstance(response.data, dict) else response.data
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]['id'], self.order.pk)
+
+
+class DashboardOrderChannelFilterTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            username='canal-admin',
+            email='canal-admin@carely.test',
+            password='password123',
+            role=User.Role.ADMIN,
+            is_staff=True,
+        )
+        customer = make_user('canal-customer@carely.test')
+        self.web_order = Order.objects.create(
+            user=customer,
+            total=Decimal('100.00'),
+            channel=Order.Channel.WEB,
+        )
+        self.mobile_order = Order.objects.create(
+            user=customer,
+            total=Decimal('200.00'),
+            channel=Order.Channel.MOBILE,
+        )
+        self.url = reverse('dashboard:order_list')
+
+    def test_filtra_pedidos_por_canal(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.get(self.url, {'channel': Order.Channel.MOBILE})
+
+        self.assertEqual(response.status_code, 200)
+        orders = list(response.context['orders'])
+        self.assertEqual([order.pk for order in orders], [self.mobile_order.pk])
+
+    def test_muestra_el_canal_en_el_listado(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.get(self.url)
+
+        self.assertContains(response, 'App móvil')
+        self.assertContains(response, 'Sitio web')
 
