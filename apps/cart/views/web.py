@@ -100,8 +100,8 @@ def cart_update(request, product_pk):
             return JsonResponse({
                 'ok': True,
                 'item_quantity': item.quantity if item else 0,
-                'item_subtotal': str(item.subtotal) if item else '0',
-                'cart_total': str(ctx['cart_total']),
+                'item_subtotal': f'{item.subtotal:.2f}' if item else '0.00',
+                'cart_total': f"{ctx['cart_total']:.2f}",
                 'cart_count': ctx['cart_count'],
                 'removed': item is None,
             })
@@ -135,7 +135,7 @@ def cart_remove(request, product_pk):
             'ok': True,
             'message': f'"{product.name}" eliminado del carrito.',
             'cart_count': ctx['cart_count'],
-            'cart_total': str(ctx['cart_total']),
+                'cart_total': f"{ctx['cart_total']:.2f}",
         })
 
     if removed:
