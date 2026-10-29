@@ -202,8 +202,8 @@ Pasos restantes:
 - Sin `DJANGO_CSRF_TRUSTED_ORIGINS` los POST (login, admin, checkout) dan 403.
 - El filesystem es solo lectura: sin las 4 `SUPABASE_*`, las imágenes de
   `catalog` no se pueden subir.
-- `gunicorn` y `psycopg` viven en `requirements.txt` (necesarios para el
-  servidor tradicional; en Vercel se instalan pero no se usan como servidor).
+- `gunicorn` vive en `requirements.txt` (necesario para el servidor tradicional;
+  en Vercel se instala pero no se usa como servidor).
 
 ## Requisitos (servidor tradicional)
 

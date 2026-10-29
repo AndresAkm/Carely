@@ -82,7 +82,7 @@ herramientas de calidad: **no hay linter, ni formateador, ni pre-commit en este
 repositorio**. No asumas que un comando de ruff o black va a existir.
 
 Si añades una dependencia que ya está en `base.txt` pero falta en
-`production.txt` (`psycopg` es el caso actual), menciónalo en vez de
+`production.txt` , menciónalo en vez de
 "arreglarlo" de paso.
 
 ## 7. Antes de decir "hecho"

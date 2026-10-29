@@ -193,10 +193,11 @@ Lo mismo con `staticfiles/` (133 archivos) y 7 `.pyc` sueltos bajo
 `apps/core/__pycache__/`. **Pide confirmación antes de hacerlo**: son cambios de
 índice que el usuario puede no querer.
 
-### `psycopg` está en `production.txt` sin usarse
+### `psycopg` fue retirado de `production.txt`
 
-El proyecto usa **MySQL** vía PyMySQL. `psycopg` (driver de PostgreSQL) está
-listado pero ningún motor de base de datos es PostgreSQL. Es residuo.
+El proyecto usa **MySQL** vía PyMySQL. `psycopg` (driver de PostgreSQL) estaba
+listado pero ningún motor de base de datos es PostgreSQL; se eliminó de
+`requirements/production.txt` y de `requirements.txt`.
 
 ### `docs/` queda desactualizado con facilidad
 
