@@ -3,13 +3,21 @@
 from django.db import migrations, models
 
 
-class Migration(migrations.Migration):
+def truncate_phones(apps, schema_editor):
+    Address = apps.get_model('users', 'Address')
+    for address in Address.objects.exclude(phone='').iterator():
+        if len(address.phone) > 10:
+            address.phone = address.phone[:10]
+            address.save(update_fields=['phone'])
 
+
+class Migration(migrations.Migration):
     dependencies = [
         ('users', '0007_user_google_sub'),
     ]
 
     operations = [
+        migrations.RunPython(truncate_phones, migrations.RunPython.noop),
         migrations.AlterField(
             model_name='address',
             name='phone',
