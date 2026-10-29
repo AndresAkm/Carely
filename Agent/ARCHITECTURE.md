@@ -76,6 +76,8 @@ Convenciones, aplicadas de forma casi uniforme:
 
 - `email` único (y `username = email` por convención)
 - `phone`, `role` (`client` | `admin`)
+- `google_sub` — `sub` estable de Google, único y opcional. Vincula la cuenta
+  con OAuth 2.0 sin guardar tokens. Vacío = la cuenta no usa Google.
 - `accepted_terms_at`, `terms_version` — consentimiento auditable de los
   términos. `has_accepted_current_terms` compara contra `settings.TERMS_VERSION`.
 - `deactivated_at`, `deactivated_by` (FK a sí mismo, SET_NULL) — rastro de la
@@ -89,6 +91,12 @@ Convenciones, aplicadas de forma casi uniforme:
 El login autentica por `username = email` (`LoginView` llama
 `authenticate(username=email, ...)`). Cualquier usuario creado por admin, seed
 o importación con `username` distinto de su email **no podrá iniciar sesión**.
+
+El login con Google vive en `apps/users/views/google.py` y usa OAuth 2.0 propio
+(`apps/users/google_oauth.py`), sin `django-allauth`. Si el correo verificado ya
+existe, vincula `google_sub` y envía un aviso; si no, pide aceptar términos en
+`users:google_complete` antes de crear el usuario. El botón solo aparece si
+`GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` están definidos.
 
 En el mismo archivo, `TwoFactorCode` guarda los códigos de un solo uso
 (`purpose`: `enable` | `deactivate` | `reactivate`), con `code_hash` hasheado,
@@ -109,6 +117,9 @@ sirve; el admin solo los consulta.
 | `/dashboard/` | `core:dashboard` | staff |
 | `/admin/` | Django admin | staff |
 | `/accounts/*` | login, registro, perfil, direcciones, desactivar cuenta | según caso |
+| `/accounts/google/login/` | `users:google_login` | público |
+| `/accounts/google/callback/` | `users:google_callback` | público (valida `state`) |
+| `/accounts/google/completar/` | `users:google_complete` | sesión con registro pendiente |
 | `/accounts/cuenta-pausada/` | `users:account_paused` | con la sesión que dejó el login |
 | `/accounts/reactivar-cuenta/<token>/` | `users:account_reactivate` | público (enlace firmado) |
 | `/accounts/verificacion-dos-pasos/` | `users:two_factor_setup` | cliente (los admin al panel) |

@@ -258,6 +258,12 @@ DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'no-reply@carely.com')
 SITE_URL = os.environ.get('SITE_URL', '').rstrip('/')
 PASSWORD_RESET_TIMEOUT = 3600
 
+# Inicio de sesión con Google. Si falta el Client ID o el secreto, el botón no
+# se muestra y las rutas responden con un error controlado.
+GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
+GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')
+GOOGLE_OAUTH_REDIRECT_URI = os.environ.get('GOOGLE_OAUTH_REDIRECT_URI', '')
+
 # Vigencia del enlace de reactivación que se envía al deshabilitar una cuenta.
 ACCOUNT_REACTIVATION_TIMEOUT = int(os.environ.get('ACCOUNT_REACTIVATION_TIMEOUT', 604800))
 

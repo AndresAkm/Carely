@@ -37,6 +37,19 @@ class LoginForm(forms.Form):
         return email
 
 
+class GoogleCompleteRegistrationForm(forms.Form):
+    accept_terms = forms.BooleanField(
+        label='Acepto los términos y la política de privacidad',
+        error_messages={
+            'required': 'Debes aceptar los Términos y Condiciones y la Política de Privacidad para crear tu cuenta.',
+        },
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input',
+            'id': 'id_accept_terms',
+        }),
+    )
+
+
 class RegisterForm(forms.ModelForm):
     first_name = forms.CharField(
         label='Nombre',

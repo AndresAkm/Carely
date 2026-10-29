@@ -3,12 +3,16 @@ from django.urls import path
 
 from apps.core.contact_views import MyContactRequestDetailView, MyContactRequestListView
 
+from .views.google import GoogleCallbackView, GoogleCompleteRegistrationView, GoogleLoginView
 from .views.web import AccountDeactivateView, AddressCreateView, AddressDeleteView, AddressListView, AddressSetDefaultView, AddressUpdateView, LoginView, LogoutView, PasswordChangeView, PasswordResetConfirmView, PausedAccountView, ProfileView, ReactivateAccountView, RegisterView, RegistrationConfirmationView, TwoFactorSetupView, department_cities_api
 
 app_name = 'users'
 
 urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),
+    path('google/login/', GoogleLoginView.as_view(), name='google_login'),
+    path('google/callback/', GoogleCallbackView.as_view(), name='google_callback'),
+    path('google/completar/', GoogleCompleteRegistrationView.as_view(), name='google_complete'),
     path('register/', RegisterView.as_view(), name='register'),
     path('register/confirmation/', RegistrationConfirmationView.as_view(), name='registration_confirmation'),
     path('logout/', LogoutView.as_view(), name='logout'),

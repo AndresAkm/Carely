@@ -41,6 +41,14 @@ class User(AbstractUser):
         verbose_name='versión de los términos aceptados',
         help_text='Identificador de la versión de los términos aceptados, p. ej. 2026-01-01.',
     )
+    google_sub = models.CharField(
+        max_length=255,
+        unique=True,
+        null=True,
+        blank=True,
+        verbose_name='identificador de Google',
+        help_text='Identificador estable de la cuenta de Google vinculada.',
+    )
     deactivated_at = models.DateTimeField(
         null=True,
         blank=True,

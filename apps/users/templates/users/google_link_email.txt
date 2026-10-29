@@ -1,0 +1,6 @@
+Hola {{ user.first_name|default:user.email }},
+
+Vinculamos tu cuenta Carely con Google usando {{ user.email }}.
+Desde ahora puedes iniciar sesión con el botón de Google.
+
+Si no reconoces esta vinculación, escribe a {{ carely_email }}.

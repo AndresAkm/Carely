@@ -4,7 +4,7 @@
 {% block title %}Iniciar Sesión - Carely{% endblock %}
 
 {% block extra_css %}
-<link href="{% static 'users/css/auth.css' %}?v=3" rel="stylesheet">
+<link href="{% static 'users/css/auth.css' %}?v=5" rel="stylesheet">
 {% endblock %}
 
 {% block body_class %}auth-page{% endblock %}
@@ -39,6 +39,14 @@
 
             <form method="post" novalidate>
                 {% csrf_token %}
+
+                {% if google_enabled %}
+                <a href="{% url 'users:google_login' %}" class="btn btn-google w-100 btn-lg mb-3">
+                    <img src="{% static 'users/images/google.svg' %}" alt="" width="20" height="20" class="btn-google__icon">
+                    <span>Continuar con Google</span>
+                </a>
+                <div class="auth-divider"><span>o inicia con tu correo</span></div>
+                {% endif %}
 
                 {% if form.non_field_errors %}
                 <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">

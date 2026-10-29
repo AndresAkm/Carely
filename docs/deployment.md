@@ -34,6 +34,22 @@ Storage → Buckets, o las URLs `/storage/v1/object/public/...` devuelven
 **Gmail SMTP**: `.env` ya trae host, puerto, usuario y contraseña de
 aplicación; se copian tal cual.
 
+**Google OAuth**: crear credenciales OAuth 2.0 de tipo *Web application* en
+Google Cloud Console → **APIs & Services** → **Credentials**. Agregar como
+*Authorized redirect URIs*:
+
+- `http://localhost:8000/accounts/google/callback/`
+- `http://127.0.0.1:8000/accounts/google/callback/`
+- `https://carely-nine.vercel.app/accounts/google/callback/`
+
+Copiar el *Client ID* y *Client Secret* a `GOOGLE_CLIENT_ID` y
+`GOOGLE_CLIENT_SECRET`. Los scopes usados son `openid`, `email` y `profile`.
+Si la app de Google queda en modo *Testing*, agregar las cuentas de prueba en
+la pantalla de consentimiento. Si se usa un dominio propio, agregar también su
+callback y, si hace falta, fijar `GOOGLE_OAUTH_REDIRECT_URI` a la URL exacta.
+Sin estas credenciales el botón de Google no aparece y el login por contraseña
+sigue funcionando igual.
+
 **Wompi**: el proyecto está en ambiente sandbox (`pub_test_`/`prv_test_`/
 `test_integrity_`/`test_events_`) con `PAYMENT_GATEWAY=wompi` y
 `WOMPI_API_URL=https://sandbox.wompi.co/v1`. Para pasar a real hay que
@@ -83,6 +99,8 @@ falla a propósito si no están. Marcar cada variable para **Production**
 | `SUPABASE_URL` / `SUPABASE_S3_ACCESS_KEY_ID` / `SUPABASE_S3_SECRET_ACCESS_KEY` / `SUPABASE_STORAGE_BUCKET` | igual que en `.env` (`SUPABASE_STORAGE_BUCKET=carely-images`), copiar y pegar |
 | `DJANGO_EMAIL_BACKEND` | `django.core.mail.backends.smtp.EmailBackend` |
 | `EMAIL_HOST` / `EMAIL_PORT` / `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` / `EMAIL_USE_TLS` / `DEFAULT_FROM_EMAIL` | igual que en `.env` |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | credenciales OAuth 2.0 de Google Cloud; sin ellas se oculta el botón de Google |
+| `GOOGLE_OAUTH_REDIRECT_URI` | opcional; URL exacta registrada en Google. Si falta se usa `<host actual>/accounts/google/callback/` |
 | `WOMPI_PUBLIC_KEY` / `WOMPI_PRIVATE_KEY` / `WOMPI_INTEGRITY_SECRET` / `WOMPI_EVENTS_SECRET` / `WOMPI_API_URL` / `WOMPI_CHECKOUT_URL` | igual que en `.env` (sandbox: `pub_test_`/`prv_test_`/`test_integrity_`/`test_events_`, `https://sandbox.wompi.co/v1`) |
 | `PAYMENT_GATEWAY` | `wompi` (sandbox actualmente; cambiar llaves para producción) |
 | `CARELY_*` | opcionales (hay defaults en `base.py`) |
@@ -174,7 +192,7 @@ Pasos restantes:
    "Firma inválida." si el checksum no coincide con `WOMPI_EVENTS_SECRET`.
 2. Smoke test: `/`, `/catalogo/`, `/admin/` (login completo),
    `/api/v1/swagger/`, estáticos, checkout en sandbox de Wompi, correo de
-   registro.
+   registro, botón de Google y callback de OAuth.
 3. Dominio custom: mantener actualizados `DJANGO_ALLOWED_HOSTS` y
    `DJANGO_CSRF_TRUSTED_ORIGINS` con todos los dominios que responde Vercel.
 
@@ -208,6 +226,7 @@ Pasos restantes:
    - `DJANGO_DB_*`: credenciales de MariaDB/MySQL.
    - `SUPABASE_*`: bucket S3-compatible para imágenes.
    - `EMAIL_*`: SMTP de Gmail.
+   - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`: login con Google (opcional).
    - `CARELY_*`: datos públicos de la tienda (nombre, email, teléfono, redes).
 
 3. Aplicar migraciones y recolectar estáticos:
@@ -233,4 +252,6 @@ Pasos restantes:
 | `DJANGO_DB_PORT` | No | Puerto (por defecto `3306`) |
 | `SUPABASE_STORAGE_BUCKET` | Sí | Bucket de imágenes |
 | `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` | Sí | Credenciales SMTP |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | No | Login con Google; sin ellas se oculta el botón |
+| `GOOGLE_OAUTH_REDIRECT_URI` | No | URL de callback registrada en Google |
 | `CARELY_*` | No | Datos públicos de la tienda (hay defaults) |

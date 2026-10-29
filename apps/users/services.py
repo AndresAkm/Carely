@@ -98,6 +98,21 @@ class GmailService:
         )
 
     @classmethod
+    def send_google_link_notice(cls, user):
+        context = {
+            'user': user,
+            'login_url': reverse('users:login'),
+            'carely_email': settings.CARELY_EMAIL,
+        }
+        return cls.send_message(
+            subject='Tu cuenta Carely se vinculó con Google',
+            recipient=user.email,
+            text_template='users/google_link_email.txt',
+            html_template='users/google_link_email.html',
+            context=context,
+        )
+
+    @classmethod
     def send_password_reset_confirmation(cls, user):
         context = {
             'user': user,

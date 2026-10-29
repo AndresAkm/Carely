@@ -1,8 +1,10 @@
 from datetime import timedelta
 from pathlib import Path
 import re
-from unittest.mock import patch
+from unittest.mock import Mock, patch
+from urllib.parse import parse_qs, urlparse
 
+import requests
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
@@ -13,8 +15,14 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from .google_oauth import GoogleOAuthError, exchange_code, fetch_userinfo
 from .models import Address, City, Department, TwoFactorCode, User
 from .services import GmailServiceError, build_reactivation_token
+from .views.google import (
+    GOOGLE_PENDING_SESSION_KEY,
+    GOOGLE_STATE_CREATED_KEY,
+    GOOGLE_STATE_SESSION_KEY,
+)
 
 
 def create_user(**kwargs):
@@ -1331,6 +1339,295 @@ class LoginTermsNoticeTests(TestCase):
         })
         self.assertEqual(response.status_code, 302)
         self.assertIn('_auth_user_id', self.client.session)
+
+
+def google_profile(**overrides):
+    profile = {
+        'sub': 'google-123',
+        'email': 'ana@example.com',
+        'email_verified': True,
+        'given_name': 'Ana',
+        'family_name': 'Restrepo',
+        'name': 'Ana Restrepo',
+    }
+    profile.update(overrides)
+    return profile
+
+
+@override_settings(
+    GOOGLE_CLIENT_ID='client-id',
+    GOOGLE_CLIENT_SECRET='client-secret',
+)
+class GoogleOAuthFlowTests(TestCase):
+
+    def setUp(self):
+        self.login_url = reverse('users:login')
+        self.callback_url = reverse('users:google_callback')
+        self.complete_url = reverse('users:google_complete')
+
+    def set_state(self, state='state', created_at=None):
+        session = self.client.session
+        session[GOOGLE_STATE_SESSION_KEY] = state
+        session[GOOGLE_STATE_CREATED_KEY] = (
+            int(timezone.now().timestamp()) if created_at is None else created_at
+        )
+        session.save()
+
+    def set_pending(self, **overrides):
+        pending = {
+            'sub': 'google-123',
+            'email': 'ana@example.com',
+            'first_name': 'Ana',
+            'last_name': 'Restrepo',
+            'created_at': int(timezone.now().timestamp()),
+        }
+        pending.update(overrides)
+        session = self.client.session
+        session[GOOGLE_PENDING_SESSION_KEY] = pending
+        session.save()
+
+    def callback(self, state='state', profile=None, **params):
+        self.set_state(state)
+        data = {'state': state, 'code': 'code'}
+        data.update(params)
+        with patch('apps.users.views.google.exchange_code', return_value='token') as exchange, \
+                patch('apps.users.views.google.fetch_userinfo', return_value=profile or google_profile()):
+            response = self.client.get(self.callback_url, data)
+        return response, exchange
+
+    def test_login_button_is_visible_when_configured(self):
+        response = self.client.get(self.login_url)
+        self.assertContains(response, reverse('users:google_login'))
+        self.assertContains(response, 'Continuar con Google')
+        self.assertContains(response, 'users/images/google.svg')
+
+    def test_login_button_is_hidden_without_configuration(self):
+        with self.settings(GOOGLE_CLIENT_ID='', GOOGLE_CLIENT_SECRET=''):
+            response = self.client.get(self.login_url)
+        self.assertNotContains(response, reverse('users:google_login'))
+        self.assertNotContains(response, 'Continuar con Google')
+
+    def test_start_redirects_to_google_with_state(self):
+        response = self.client.get(reverse('users:google_login'))
+        self.assertEqual(response.status_code, 302)
+        parsed = urlparse(response.url)
+        query = parse_qs(parsed.query)
+        self.assertEqual(parsed.netloc, 'accounts.google.com')
+        self.assertEqual(query['client_id'], ['client-id'])
+        self.assertEqual(query['redirect_uri'], ['http://testserver/accounts/google/callback/'])
+        self.assertEqual(query['scope'], ['openid email profile'])
+        self.assertEqual(query['state'], [self.client.session[GOOGLE_STATE_SESSION_KEY]])
+
+    def test_start_without_configuration_redirects_to_login(self):
+        with self.settings(GOOGLE_CLIENT_ID='', GOOGLE_CLIENT_SECRET=''):
+            response = self.client.get(reverse('users:google_login'))
+        self.assertRedirects(response, self.login_url, fetch_redirect_response=False)
+
+    def test_callback_rejects_invalid_state(self):
+        self.set_state('expected')
+        with patch('apps.users.views.google.exchange_code') as exchange:
+            response = self.client.get(self.callback_url, {'state': 'wrong', 'code': 'code'})
+        exchange.assert_not_called()
+        self.assertRedirects(response, self.login_url, fetch_redirect_response=False)
+
+    def test_callback_rejects_expired_state(self):
+        self.set_state('state', int(timezone.now().timestamp()) - 601)
+        with patch('apps.users.views.google.exchange_code') as exchange:
+            response = self.client.get(self.callback_url, {'state': 'state', 'code': 'code'})
+        exchange.assert_not_called()
+        self.assertRedirects(response, self.login_url, fetch_redirect_response=False)
+
+    def test_callback_rejects_missing_code(self):
+        self.set_state('state')
+        with patch('apps.users.views.google.exchange_code') as exchange:
+            response = self.client.get(self.callback_url, {'state': 'state'})
+        exchange.assert_not_called()
+        self.assertRedirects(response, self.login_url, fetch_redirect_response=False)
+
+    def test_callback_handles_cancelled_consent(self):
+        self.set_state('state')
+        response = self.client.get(self.callback_url, {'error': 'access_denied', 'state': 'state'})
+        self.assertRedirects(response, self.login_url, fetch_redirect_response=False)
+
+    def test_callback_rejects_unverified_google_email(self):
+        self.set_state('state')
+        with patch('apps.users.views.google.exchange_code', return_value='token'), \
+                patch('apps.users.views.google.fetch_userinfo', side_effect=GoogleOAuthError('correo no verificado')):
+            response = self.client.get(self.callback_url, {'state': 'state', 'code': 'code'})
+        self.assertRedirects(response, self.login_url, fetch_redirect_response=False)
+        self.assertFalse(User.objects.exists())
+
+    def test_callback_sends_new_user_to_terms_screen(self):
+        response, exchange = self.callback()
+        exchange.assert_called_once()
+        self.assertRedirects(response, self.complete_url, fetch_redirect_response=False)
+        pending = self.client.session[GOOGLE_PENDING_SESSION_KEY]
+        self.assertEqual(pending['email'], 'ana@example.com')
+        self.assertFalse(User.objects.filter(email='ana@example.com').exists())
+
+    def test_completion_rejects_expired_pending(self):
+        self.set_pending(created_at=int(timezone.now().timestamp()) - 901)
+        response = self.client.get(self.complete_url)
+        self.assertRedirects(response, self.login_url, fetch_redirect_response=False)
+        self.assertNotIn(GOOGLE_PENDING_SESSION_KEY, self.client.session)
+
+    def test_completion_requires_terms(self):
+        self.set_pending()
+        response = self.client.post(self.complete_url, {})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('accept_terms', response.context['form'].errors)
+        self.assertFalse(User.objects.filter(email='ana@example.com').exists())
+
+    def test_completion_ignores_authenticated_user(self):
+        user = create_user(
+            username='ana@example.com',
+            email='ana@example.com',
+            password='Pass1234',
+        )
+        self.client.force_login(user)
+        self.set_pending(email='otra@example.com')
+        response = self.client.post(self.complete_url, {'accept_terms': 'on'})
+        self.assertRedirects(response, reverse('catalog:home'), fetch_redirect_response=False)
+        self.assertFalse(User.objects.filter(email='otra@example.com').exists())
+        self.assertEqual(User.objects.count(), 1)
+
+    def test_completion_creates_user_and_logs_in(self):
+        self.set_pending()
+        mail.outbox = []
+        response = self.client.post(self.complete_url, {'accept_terms': 'on'})
+        self.assertRedirects(response, reverse('catalog:home'), fetch_redirect_response=False)
+        user = User.objects.get(email='ana@example.com')
+        self.assertEqual(user.username, 'ana@example.com')
+        self.assertEqual(user.google_sub, 'google-123')
+        self.assertEqual(user.role, User.Role.CLIENT)
+        self.assertTrue(user.has_accepted_current_terms)
+        self.assertFalse(user.has_usable_password())
+        self.assertEqual(int(self.client.session['_auth_user_id']), user.pk)
+        self.assertEqual(mail.outbox[0].subject, 'Tu cuenta Carely fue creada correctamente')
+
+    def test_existing_email_is_linked_automatically(self):
+        user = create_user(
+            username='ana@example.com',
+            email='ana@example.com',
+            password='Pass1234',
+        )
+        mail.outbox = []
+        response, _ = self.callback(profile=google_profile(email='ANA@EXAMPLE.COM'))
+        self.assertRedirects(response, reverse('catalog:home'), fetch_redirect_response=False)
+        user.refresh_from_db()
+        self.assertEqual(user.google_sub, 'google-123')
+        self.assertEqual(mail.outbox[0].subject, 'Tu cuenta Carely se vinculó con Google')
+
+    def test_existing_linked_account_logs_in_without_linking_again(self):
+        user = create_user(
+            username='ana@example.com',
+            email='ana@example.com',
+            password='Pass1234',
+            google_sub='google-123',
+        )
+        mail.outbox = []
+        response, _ = self.callback()
+        self.assertRedirects(response, reverse('catalog:home'), fetch_redirect_response=False)
+        self.assertEqual(int(self.client.session['_auth_user_id']), user.pk)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_existing_email_linked_to_another_google_account_is_rejected(self):
+        user = create_user(
+            username='ana@example.com',
+            email='ana@example.com',
+            password='Pass1234',
+            google_sub='another-google-sub',
+        )
+        response, _ = self.callback(profile=google_profile(sub='google-123'))
+        self.assertRedirects(response, self.login_url, fetch_redirect_response=False)
+        user.refresh_from_db()
+        self.assertEqual(user.google_sub, 'another-google-sub')
+
+    def test_self_deactivated_account_goes_to_paused_flow(self):
+        user = create_user(
+            username='ana@example.com',
+            email='ana@example.com',
+            password='Pass1234',
+            is_active=False,
+        )
+        response, _ = self.callback()
+        self.assertRedirects(response, reverse('users:account_paused'), fetch_redirect_response=False)
+        self.assertEqual(self.client.session['paused_user_id'], user.pk)
+        self.assertNotIn('_auth_user_id', self.client.session)
+
+    def test_admin_deactivated_account_is_blocked(self):
+        admin = create_user(
+            username='admin@example.com',
+            email='admin@example.com',
+            role=User.Role.ADMIN,
+            is_staff=True,
+        )
+        create_user(
+            username='ana@example.com',
+            email='ana@example.com',
+            password='Pass1234',
+            is_active=False,
+            deactivated_by=admin,
+        )
+        response, _ = self.callback()
+        self.assertRedirects(response, self.login_url, fetch_redirect_response=False)
+        self.assertNotIn('_auth_user_id', self.client.session)
+
+    def test_state_is_single_use(self):
+        response, _ = self.callback()
+        self.assertRedirects(response, self.complete_url, fetch_redirect_response=False)
+        with patch('apps.users.views.google.exchange_code') as exchange:
+            second = self.client.get(self.callback_url, {'state': 'state', 'code': 'code'})
+        exchange.assert_not_called()
+        self.assertRedirects(second, self.login_url, fetch_redirect_response=False)
+
+
+@override_settings(
+    GOOGLE_CLIENT_ID='client-id',
+    GOOGLE_CLIENT_SECRET='client-secret',
+)
+class GoogleOAuthServiceTests(TestCase):
+
+    def test_exchange_code_returns_access_token(self):
+        response = Mock()
+        response.json.return_value = {'access_token': 'access-token'}
+        with patch('apps.users.google_oauth.requests.post', return_value=response) as post:
+            token = exchange_code('code', 'http://testserver/callback')
+        self.assertEqual(token, 'access-token')
+        post.assert_called_once()
+        self.assertEqual(post.call_args.kwargs['data']['client_secret'], 'client-secret')
+
+    def test_exchange_code_wraps_network_error(self):
+        with patch('apps.users.google_oauth.requests.post', side_effect=requests.RequestException('sin red')):
+            with self.assertRaises(GoogleOAuthError):
+                exchange_code('code', 'http://testserver/callback')
+
+    def test_fetch_userinfo_returns_verified_profile(self):
+        response = Mock()
+        response.json.return_value = google_profile()
+        with patch('apps.users.google_oauth.requests.get', return_value=response) as get:
+            data = fetch_userinfo('access-token')
+        self.assertEqual(data['email'], 'ana@example.com')
+        self.assertEqual(get.call_args.kwargs['headers'], {'Authorization': 'Bearer access-token'})
+
+    def test_fetch_userinfo_rejects_unverified_email(self):
+        response = Mock()
+        response.json.return_value = google_profile(email_verified=False)
+        with patch('apps.users.google_oauth.requests.get', return_value=response):
+            with self.assertRaises(GoogleOAuthError):
+                fetch_userinfo('access-token')
+
+    def test_fetch_userinfo_rejects_missing_email(self):
+        response = Mock()
+        response.json.return_value = google_profile(email='')
+        with patch('apps.users.google_oauth.requests.get', return_value=response):
+            with self.assertRaises(GoogleOAuthError):
+                fetch_userinfo('access-token')
+
+    def test_fetch_userinfo_wraps_network_error(self):
+        with patch('apps.users.google_oauth.requests.get', side_effect=requests.RequestException('sin red')):
+            with self.assertRaises(GoogleOAuthError):
+                fetch_userinfo('access-token')
 
 
 class LegalPageTests(TestCase):

@@ -13,9 +13,11 @@ class CarelyUserAdmin(UserAdmin):
     fieldsets = UserAdmin.fieldsets + (
         ('Información adicional', {'fields': ('phone', 'role')}),
         ('Términos y condiciones', {'fields': ('accepted_terms_at', 'terms_version')}),
+        ('Autenticación con Google', {'fields': ('google_sub',)}),
         ('Deshabilitación', {'fields': (('deactivated_at', 'deactivated_by'),)}),
         ('Verificación en dos pasos', {'fields': ('two_factor_enabled', 'two_factor_enabled_at')}),
     )
+    readonly_fields = ('google_sub',)
     add_fieldsets = UserAdmin.add_fieldsets + (
         ('Información adicional', {'fields': ('phone', 'role')}),
     )

@@ -14,6 +14,7 @@ from django.views.generic import TemplateView
 from apps.core.permissions import is_admin
 
 from ..forms import AddressForm, DeactivateAccountForm, LoginForm, ProfileForm, RegisterForm, TwoFactorCodeForm, TwoFactorDisableForm
+from ..google_oauth import is_configured
 from ..models import Address, City, Department, TwoFactorCode, User
 from ..services import (
     GmailService,
@@ -36,6 +37,10 @@ def get_redirect_url(user):
     return 'catalog:home'
 
 
+def login_context(form):
+    return {'form': form, 'google_enabled': is_configured()}
+
+
 def get_paused_user(email, password):
     """Cuenta deshabilitada cuyas credenciales son correctas, o None.
 
@@ -56,7 +61,7 @@ class LoginView(View):
         if request.user.is_authenticated:
             return redirect(get_redirect_url(request.user))
         form = LoginForm()
-        return render(request, self.template_name, {'form': form})
+        return render(request, self.template_name, login_context(form))
 
     def post(self, request):
         form = LoginForm(request.POST)
@@ -74,7 +79,7 @@ class LoginView(View):
                 request.session[PAUSED_USER_SESSION_KEY] = paused_user.pk
                 return redirect('users:account_paused')
             messages.error(request, 'Correo electrónico o contraseña incorrectos.')
-        return render(request, self.template_name, {'form': form})
+        return render(request, self.template_name, login_context(form))
 
 
 class RegisterView(View):
