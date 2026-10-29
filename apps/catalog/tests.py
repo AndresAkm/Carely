@@ -81,6 +81,19 @@ class CatalogWebFilterTests(TestCase):
         self.assertNotContains(resp, 'Serum vitamina C')
         self.assertNotContains(resp, 'Jabon corporal')
 
+    def test_precio_con_descuento_se_muestra_en_catalogo_y_detalle(self):
+        self.p1.discount_percent = Decimal('20.00')
+        self.p1.save(update_fields=['discount_percent'])
+
+        catalog = self.client.get(self.url)
+        detail = self.client.get(
+            reverse('catalog:product_detail', args=[self.p1.slug]),
+        )
+
+        self.assertContains(catalog, 'product-card__discount-badge">-20%')
+        self.assertContains(catalog, 'product-card__price--final">COP 40000')
+        self.assertContains(detail, 'COP 40000')
+
     def test_search_q_name(self):
         resp = self.client.get(self.url + '?q=crema')
         self.assertContains(resp, 'Crema hidratante')

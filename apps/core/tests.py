@@ -1020,6 +1020,16 @@ class LandingCustomizationTests(TestCase):
             self.assertIn(block['title'], content)
         self.assertIn('Destacado Automatico', content)
 
+    def test_producto_destacado_muestra_el_descuento_en_su_tarjeta(self):
+        self.featured.discount_percent = Decimal('20.00')
+        self.featured.save(update_fields=['discount_percent'])
+
+        content = self.client.get(self.url).content.decode()
+
+        self.assertIn('product-card__discount-badge">-20%', content)
+        self.assertIn('product-card__price--original">COP 1000', content)
+        self.assertIn('product-card__price--final">COP 800', content)
+
     def test_los_cambios_guardados_se_reflejan_en_la_landing(self):
         config = SiteCustomization.load()
         config.hero_title = 'Descubre tu'

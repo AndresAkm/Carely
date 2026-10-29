@@ -63,6 +63,15 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 
+    @property
+    def has_discount(self):
+        return self.discount_percent > 0
+
+    @property
+    def discounted_price(self):
+        discount_amount = (self.price * self.discount_percent) / Decimal('100')
+        return self.price - discount_amount
+
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
