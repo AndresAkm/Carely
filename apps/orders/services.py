@@ -293,7 +293,7 @@ def checkout_cart(
         # ─────────────────────────────────────────────
 
         subtotal = sum(
-            (item.product.price * item.quantity for item in cart_items),
+            (item.product.discounted_price * item.quantity for item in cart_items),
             Decimal('0.00'),
         )
 
@@ -357,7 +357,7 @@ def checkout_cart(
         for cart_item in cart_items:
             product = cart_item.product
             quantity = cart_item.quantity
-            unit_price = product.price
+            unit_price = product.discounted_price
 
             InventoryService.remove_stock(
                 product=product,

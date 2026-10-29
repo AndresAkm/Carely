@@ -393,6 +393,23 @@ class CartCurrentAPITests(APITestCase):
         response = self.client.get(self.url)
         self.assertIn(response.status_code, (401, 403))
 
+    def test_devuelve_precio_original_y_descuento_aplicado(self):
+        cart = get_or_create_cart(self.user)
+        product = make_product(stock=10)
+        product.discount_percent = Decimal('20.00')
+        product.save(update_fields=['discount_percent'])
+        CartItem.objects.create(cart=cart, product=product, quantity=2)
+        self.client.force_authenticate(self.user)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['items'][0]['product_price'], '15.50')
+        self.assertEqual(response.data['items'][0]['product_discounted_price'], '12.40')
+        self.assertEqual(response.data['items'][0]['discount_percent'], '20.00')
+        self.assertEqual(response.data['items'][0]['subtotal'], '24.80')
+        self.assertEqual(response.data['total'], '24.80')
+
 
 class CartItemMergeAPITests(APITestCase):
     """Agregar dos veces el mismo producto suma cantidades, no duplica filas."""

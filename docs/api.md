@@ -41,9 +41,9 @@ ViewSets registrados en `config/api_router.py`, bajo el prefijo `/api/v1/`:
 
 - `POST /api/v1/auth/register/` (público): `first_name`, `last_name`, `email`, `phone`, `password1`, `password2` y `accept_terms`. Devuelve 201 con `user`, `access` y `refresh`. El `username` es el correo normalizado.
 - `GET|PATCH /api/v1/usuarios/me/`: perfil del usuario autenticado. El PATCH acepta `first_name`, `last_name`, `email` y `phone`; al cambiar el correo se sincroniza el `username`.
-- `GET /api/v1/carrito/carritos/actual/`: devuelve el carrito del usuario y lo crea si no existe. Incluye `items` con `product_name`, `product_price`, `product_image`, `stock` y `subtotal`, además de `total`.
+- `GET /api/v1/carrito/carritos/actual/`: devuelve el carrito del usuario y lo crea si no existe. Incluye `items` con `product_name`, `product_price` (precio original), `product_discounted_price`, `discount_percent`, `product_image`, `stock` y `subtotal` con el descuento aplicado; `total` también refleja los descuentos.
 - `POST /api/v1/carrito/items/`: si el producto ya está en el carrito suma `quantity` en lugar de duplicar la fila y valida el stock total.
-- `POST /api/v1/pedidos/pedidos/checkout/`: `{address_id, notes}`. Crea el pedido desde el carrito con `channel=mobile` y responde 201 con `channel`, `items`, `status_history` y `payment` anidados. Carrito vacío, dirección inválida o stock insuficiente responden 400.
+- `POST /api/v1/pedidos/pedidos/checkout/`: `{address_id, notes}`. Aplica los descuentos de producto al subtotal, crea el pedido desde el carrito con `channel=mobile` y responde 201 con `channel`, `items`, `status_history` y `payment` anidados. Carrito vacío, dirección inválida o stock insuficiente responden 400.
 - `POST /api/v1/pagos/simular/`: `{order_id, payment_method}`. Crea o reutiliza el pago con `gateway=simulado` y lo aprueba con el mismo servicio que Wompi, confirmando el pedido. Solo aplica a pedidos pendientes del usuario.
 - `GET /api/v1/pedidos/pedidos/` devuelve solo los pedidos del usuario; `GET /api/v1/pedidos/items/?order=<id>` filtra los items de un pedido.
 

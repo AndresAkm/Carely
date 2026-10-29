@@ -8,6 +8,13 @@ from .models import *
 class CartItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
     product_price = serializers.SerializerMethodField()
+    product_discounted_price = serializers.SerializerMethodField()
+    discount_percent = serializers.DecimalField(
+        source='product.discount_percent',
+        max_digits=5,
+        decimal_places=2,
+        read_only=True,
+    )
     product_image = serializers.SerializerMethodField()
     stock = serializers.IntegerField(source='product.stock', read_only=True)
     subtotal = serializers.SerializerMethodField()
@@ -23,6 +30,9 @@ class CartItemSerializer(serializers.ModelSerializer):
 
     def get_product_price(self, obj):
         return f'{obj.product.price:.2f}'
+
+    def get_product_discounted_price(self, obj):
+        return f'{obj.product.discounted_price:.2f}'
 
     def get_product_image(self, obj):
         if not obj.product.image:

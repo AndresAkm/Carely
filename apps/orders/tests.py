@@ -101,6 +101,19 @@ class CheckoutServiceTests(TestCase):
         )
 
         self.assertEqual(order.channel, Order.Channel.MOBILE)
+
+    def test_checkout_aplica_el_descuento_del_producto_al_total_y_snapshot(self):
+        self.prod1.discount_percent = Decimal('20.00')
+        self.prod1.save(update_fields=['discount_percent'])
+
+        order = checkout_cart(self.user, self.address.id)
+
+        # Crema: COP 50 x 2 con 20% de descuento; serum: COP 30.
+        self.assertEqual(order.total, Decimal('110.00'))
+        self.assertEqual(
+            order.items.get(product=self.prod1).unit_price,
+            Decimal('40.00'),
+        )
         
     def test_sin_notas_guarda_un_texto_por_defecto(self):
         # El campo se muestra al cliente: un hueco en blanco se lee como un dato
