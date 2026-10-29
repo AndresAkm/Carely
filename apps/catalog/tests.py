@@ -21,8 +21,8 @@ from apps.users.models import User
 
 class CatalogWebFilterTests(TestCase):
     def setUp(self):
-        self.cat1 = Category.objects.create(name='Cuidado facial', slug='cuidado-facial', icon='bi-person', order=1)
-        self.cat2 = Category.objects.create(name='Cuidado corporal', slug='cuidado-corporal', icon='bi-body-text', order=2)
+        self.cat1 = Category.objects.create(name='Cuidado facial', slug='cuidado-facial', order=1)
+        self.cat2 = Category.objects.create(name='Cuidado corporal', slug='cuidado-corporal', order=2)
         self.p1 = Product.objects.create(category=self.cat1, name='Crema hidratante', slug='crema-hidratante', price=Decimal('50000.00'), stock=10, is_active=True, featured=True, brand='Carely')
         self.p2 = Product.objects.create(category=self.cat1, name='Serum vitamina C', slug='serum-vitamina-c', price=Decimal('80000.00'), stock=0, is_active=True, brand='Acme')
         self.p3 = Product.objects.create(category=self.cat2, name='Jabon corporal', slug='jabon-corporal', price=Decimal('30000.00'), stock=5, is_active=True, brand='Carely')
@@ -147,7 +147,7 @@ class CatalogWebFilterTests(TestCase):
 
 class CatalogAPIFilterTests(APITestCase):
     def setUp(self):
-        self.cat = Category.objects.create(name='Cuidado facial', slug='cuidado-facial', icon='bi-person')
+        self.cat = Category.objects.create(name='Cuidado facial', slug='cuidado-facial')
         self.p1 = Product.objects.create(category=self.cat, name='Crema', slug='crema', price=Decimal('50000.00'), stock=5, is_active=True, featured=True, brand='Carely')
         self.p2 = Product.objects.create(category=self.cat, name='Serum', slug='serum', price=Decimal('80000.00'), stock=0, is_active=True, brand='Acme')
         self.url = reverse('productos-list')
@@ -241,7 +241,7 @@ class CatalogAPIFilterTests(APITestCase):
 class CargarCatalogoCommandTests(TestCase):
     def setUp(self):
         self.generica = Category.objects.create(
-            name='Maquillaje', slug='maquillaje', icon='bi-palette', order=3,
+            name='Maquillaje', slug='maquillaje', order=3,
         )
         self.producto_generico = Product.objects.create(
             category=self.generica,
@@ -314,7 +314,7 @@ class CatalogDashboardCRUDTests(TestCase):
             is_staff=True,
         )
         self.category = Category.objects.create(
-            name='Base', slug='base', icon='bi-box',
+            name='Base', slug='base',
         )
 
     def test_cliente_no_entra_al_panel(self):
@@ -402,7 +402,6 @@ class CatalogDashboardCRUDTests(TestCase):
         self.client.force_login(self.admin)
         response = self.client.post(reverse('dashboard:category_create'), {
             'name': 'Nueva Categoria',
-            'icon': 'bi-star',
             'order': 5,
         })
         self.assertRedirects(response, reverse('dashboard:category_list'))
@@ -438,7 +437,7 @@ class CatalogDeletionRulesTests(TestCase):
         )
         self.client.force_login(self.admin)
         self.inventory = InventoryService
-        self.categoria = Category.objects.create(name='Cuidado facial', slug='cuidado-facial', icon='bi-person')
+        self.categoria = Category.objects.create(name='Cuidado facial', slug='cuidado-facial')
 
     def producto(self, nombre, activo=True, categoria=None):
         return Product.objects.create(
@@ -476,7 +475,7 @@ class CatalogDeletionRulesTests(TestCase):
         self.assertTrue(Product.objects.filter(pk=p.pk).exists())
 
     def test_categoria_vacia_se_elimina(self):
-        vacia = Category.objects.create(name='Vacia', slug='vacia', icon='bi-x')
+        vacia = Category.objects.create(name='Vacia', slug='vacia')
         self.client.post(reverse('dashboard:category_delete', args=[vacia.pk]))
         self.assertFalse(Category.objects.filter(pk=vacia.pk).exists())
 
@@ -556,7 +555,7 @@ class QuitarFondoBlancoTests(SimpleTestCase):
 class QuitarFondoImagenesCommandTests(TestCase):
     def setUp(self):
         self.categoria = Category.objects.create(
-            name='Cuidado de prueba', slug='cuidado-de-prueba', icon='bi-x',
+            name='Cuidado de prueba', slug='cuidado-de-prueba',
         )
         self.token = uuid4().hex
 
@@ -709,7 +708,7 @@ class QuitarFondoImagenesCommandTests(TestCase):
 class ProductImagenAutomaticaTests(TestCase):
     def setUp(self):
         self.categoria = Category.objects.create(
-            name='Fondo automático', slug='fondo-automatico', icon='bi-x',
+            name='Fondo automático', slug='fondo-automatico',
         )
 
     def _crear_producto(self, contenido, formato='JPEG'):
@@ -762,7 +761,6 @@ class ProductImagenAutomaticaTests(TestCase):
         categoria = Category.objects.create(
             name=f'Categoría {nombre}',
             slug=f'categoria-{uuid4().hex}',
-            icon='bi-x',
             image=SimpleUploadedFile(
                 nombre,
                 _imagen_de_prueba('JPEG'),
@@ -813,7 +811,7 @@ class ProductImagenAPITests(APITestCase):
         )
         self.client.force_authenticate(self.admin)
         self.categoria = Category.objects.create(
-            name='Fondo API', slug='fondo-api', icon='bi-x',
+            name='Fondo API', slug='fondo-api',
         )
 
     def test_crear_producto_por_api_procesa_la_imagen(self):

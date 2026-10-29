@@ -24,7 +24,7 @@ from .services import InsufficientStockError, InventoryService
 # ---------------------------------------------------------------------------
 
 def make_category():
-    return Category.objects.create(name='Test', icon='bi-box')
+    return Category.objects.create(name='Test')
 
 
 def make_product(stock=10, **kwargs):
@@ -382,7 +382,7 @@ class ConcurrencyTests(TransactionTestCase):
         """
         import threading
 
-        cat = Category.objects.create(name='ConcTest', icon='bi-box')
+        cat = Category.objects.create(name='ConcTest')
         product = Product.objects.create(
             category=cat, name='ConcProduct', price=Decimal('1.00'), stock=5
         )

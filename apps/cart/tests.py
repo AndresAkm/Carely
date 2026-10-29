@@ -22,7 +22,7 @@ from .services import CartStockError, add_item, get_or_create_cart, remove_item,
 # ---------------------------------------------------------------------------
 
 def make_category():
-    cat, _ = Category.objects.get_or_create(name='TestCat', defaults={'icon': 'bi-box'})
+    cat, _ = Category.objects.get_or_create(name='TestCat')
     return cat
 
 

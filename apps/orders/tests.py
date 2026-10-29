@@ -25,7 +25,7 @@ def make_user(email='test@carely.com'):
     )
 
 def make_category(name='TestCat'):
-    cat, _ = Category.objects.get_or_create(name=name, defaults={'icon': 'box'})
+    cat, _ = Category.objects.get_or_create(name=name)
     return cat
 
 def make_product(name='Proc', price='10.0', stock=10):

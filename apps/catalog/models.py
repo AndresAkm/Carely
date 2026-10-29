@@ -10,7 +10,6 @@ from .services import procesar_imagen_de_producto
 class Category(models.Model):
     name = models.CharField('nombre', max_length=100)
     description = models.TextField('descripción', blank=True)
-    icon = models.CharField('icono', max_length=50, help_text='Clase de Bootstrap Icons (ej: bi-emoji-wink)')
     slug = models.SlugField('slug', unique=True, blank=True)
     image = models.ImageField('imagen', upload_to='categories/', blank=True, null=True)
     order = models.PositiveIntegerField('orden', default=0)

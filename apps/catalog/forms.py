@@ -14,7 +14,7 @@ class DashboardFormMixin:
 class CategoryForm(DashboardFormMixin, forms.ModelForm):
     class Meta:
         model = Category
-        fields = ['name', 'description', 'icon', 'image', 'order', 'is_active']
+        fields = ['name', 'description', 'image', 'order', 'is_active']
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4}),
             'image': forms.ClearableFileInput(),
