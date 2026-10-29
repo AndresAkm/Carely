@@ -26,24 +26,12 @@
 .btn.is-loading,
 .c-btn.is-loading {
   position: relative;
-  color: transparent !important;
   pointer-events: none;
 }
 
-.btn.is-loading::after,
-.c-btn.is-loading::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 1rem;
-  height: 1rem;
-  margin: -0.5rem 0 0 -0.5rem;
-  border: 0.15rem solid currentColor;
-  border-right-color: transparent;
-  border-radius: 50%;
-  color: var(--accent);
-  animation: 0.75s linear infinite spinner-border;
+.btn.is-loading .spinner-border,
+.c-btn.is-loading .spinner-border {
+  color: currentColor;
 }
 
 .btn.is-loading[disabled],

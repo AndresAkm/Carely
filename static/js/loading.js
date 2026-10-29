@@ -10,8 +10,7 @@
     button.classList.add('is-loading');
     button.setAttribute('aria-busy', 'true');
     button.innerHTML =
-      '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>' +
-      '<span class="ms-2">' + (text || 'Procesando…') + '</span>';
+      '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
   }
 
   function resetButtonLoading(button) {
@@ -37,8 +36,7 @@
       overlay = document.createElement('div');
       overlay.className = 'loading-overlay';
       overlay.innerHTML =
-        '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>' +
-        '<span>' + (text || 'Cargando…') + '</span>';
+        '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
       element.appendChild(overlay);
     }
   }
